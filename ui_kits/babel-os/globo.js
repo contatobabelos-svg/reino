@@ -41,7 +41,7 @@
       <div class="hg-globo-zoom">
         <button class="hg-icon-btn" data-zoom="1" aria-label="Aproximar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         <button class="hg-icon-btn" data-zoom="-1" aria-label="Afastar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
-        <button class="hg-icon-btn hg-globo-meu" data-meu-bairro aria-label="Ir para o meu bairro" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></button>
+        <button class="hg-icon-btn hg-globo-meu" data-meu-bairro aria-label="Mostrar minha localização" title="Mostrar minha localização" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></button>
         <button class="hg-icon-btn" data-terra aria-label="Ver o planeta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></button>
       </div>
       <div class="hg-globo-clima" role="status" hidden></div>
@@ -307,11 +307,33 @@
     });
     function definirUsuario(perfil) {
       st.usuario = perfil && perfil.uf && perfil.cidade ? { ...perfil, uf: String(perfil.uf).toUpperCase() } : null;
-      raiz.querySelector("[data-meu-bairro]").hidden = !st.usuario;
+      raiz.querySelector("[data-meu-bairro]").hidden = false; /* sem perfil ainda dá para achar pelo GPS/IP */
       sujo = true;
       renderPainel();
     }
-    async function irEnderecoDoUsuario() { return irEndereco(st.usuario); }
+    // "Minha localização": 1) GPS do aparelho (pede permissão; chega ao bairro) traduzido pelo
+    // OpenStreetMap; 2) sem permissão, cidade aproximada pelo IP (ipwho.is); 3) endereço do perfil.
+    async function localAtual() {
+      const gps = await new Promise((ok) => {
+        if (!navigator.geolocation) return ok(null);
+        navigator.geolocation.getCurrentPosition((p) => ok(p.coords), () => ok(null), { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 });
+      });
+      if (gps) {
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=pt-BR&zoom=16&lat=${gps.latitude}&lon=${gps.longitude}`);
+          const a = (await r.json()).address || {};
+          const uf = String(a["ISO3166-2-lvl4"] || "").replace("BR-", "");
+          const cidade = a.city || a.town || a.village || a.municipality;
+          if (uf && cidade) return { uf, cidade, bairro: a.suburb || a.neighbourhood || a.quarter || null };
+        } catch (e) { /* sem rede: tenta o IP */ }
+      }
+      try {
+        const j = await (await fetch("https://ipwho.is/?lang=pt-BR")).json();
+        if (j.success && j.country_code === "BR" && j.region_code) return { uf: j.region_code, cidade: j.city };
+      } catch (e) { /* segue para o perfil */ }
+      return null;
+    }
+    async function irEnderecoDoUsuario() { return irEndereco((await localAtual()) || st.usuario); }
     // [UI kit] voa até qualquer endereço { uf, cidade, bairro? } — usado por "Ver no mapa"
     async function irEndereco(u) {
       if (!u || !u.uf || !u.cidade) return;

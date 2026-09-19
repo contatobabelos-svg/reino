@@ -4,3 +4,6 @@
 node_modules
 site
 00-comando/logs/hook-ingestao.tsv
+.claude/dominic/backups/
+.claude/dominic/estado/
+00-comando/logs/dominic.tsv

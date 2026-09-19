@@ -1,11 +1,13 @@
-/* Reino Academy — trilhas fictícias do mapa mental + aulas reais, coladas por URL (YouTube/Panda Video).
-   A IA lê só o que a plataforma expõe (título, descrição, thumbnail) ou uma transcrição colada;
-   não há download nem transcrição automática do vídeo aqui. */
+/* Reino Academy — trilhas e aulas vêm do banco (Supabase): o administrador cola uma
+   URL do YouTube (vídeo ou canal) e o servidor (Edge Function academy-importar) monta
+   a trilha do canal e as aulas sozinho. Aqui só lemos e mostramos.
+   Aulas antigas gravadas no localStorage (versão anterior, por URL solta) continuam
+   visíveis numa seção à parte — não apagamos nada que o usuário já tinha. */
 (() => {
-const { PageHead, Panel, Button, Icon, Input, ProgressBar, ProgressRing, EmptyState, Pill } = window.BabelOSDesignSystem_5ad360;
+const { PageHead, Panel, Button, Icon, Field, Select, ProgressRing, EmptyState, Pill } = window.BabelOSDesignSystem_5ad360;
 const CHAVE = "reino.academy.aulas";
-const lerAulas = () => { try { return JSON.parse(localStorage.getItem(CHAVE) || "[]"); } catch (e) { return []; } };
-const gravarAulas = (lst) => { try { localStorage.setItem(CHAVE, JSON.stringify(lst)); } catch (e) {} };
+const lerAulasLocais = () => { try { return JSON.parse(localStorage.getItem(CHAVE) || "[]"); } catch (e) { return []; } };
+const NIVEIS = ["Barão", "Visconde", "Conde", "Marquês", "Duque", "Príncipe", "Rei", "Imperador"];
 
 function ehAdmin() {
   try {
@@ -14,150 +16,181 @@ function ehAdmin() {
   } catch (e) { return false; }
 }
 
-/* reconhece a URL e prepara o player, sem chave nenhuma */
-function detectarVideo(url) {
-  const u = String(url || "").trim();
-  let m = u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{6,})/i);
-  if (m) return { plataforma: "youtube", id: m[1], embedUrl: "https://www.youtube.com/embed/" + m[1], thumb: "https://i.ytimg.com/vi/" + m[1] + "/hqdefault.jpg" };
-  m = u.match(/pandavideo\.com\.br.*?[?&]v=([\w-]+)/i) || u.match(/pandavideo\.com\.br\/embed\/\?v=([\w-]+)/i);
-  if (m) return { plataforma: "panda", id: m[1], embedUrl: u.includes("/embed/") ? u : "https://player.pandavideo.com.br/embed/?v=" + m[1], thumb: null };
-  if (/pandavideo\.com\.br/i.test(u)) return { plataforma: "panda", id: null, embedUrl: u, thumb: null };
-  return null;
+/* leitura pública do banco — mesmo padrão REST de fotos.js/afiliados.js */
+async function lerTrilhasDoBanco() {
+  const cfg = window.REINO_SUPABASE;
+  if (!cfg || !cfg.url || !cfg.anon) return null;
+  const base = cfg.url.replace(/\/$/, "") + "/rest/v1/";
+  const cab = { apikey: cfg.anon, Authorization: "Bearer " + cfg.anon };
+  const [rt, ra] = await Promise.all([
+    fetch(base + "academy_trilhas?select=*&order=ordem.asc,criado_em.asc", { headers: cab }),
+    fetch(base + "academy_aulas?select=*&order=ordem.asc", { headers: cab }),
+  ]);
+  if (!rt.ok || !ra.ok) throw new Error("banco " + rt.status + "/" + ra.status);
+  const [trilhas, aulas] = await Promise.all([rt.json(), ra.json()]);
+  const porTrilha = {};
+  aulas.forEach((a) => { (porTrilha[a.trilha_id] || (porTrilha[a.trilha_id] = [])).push(a); });
+  return trilhas.map((t) => ({ ...t, aulas: porTrilha[t.id] || [] }));
 }
 
-/* metadados públicos do YouTube via oEmbed — sem chave */
-async function metaYouTube(url) {
-  try {
-    const r = await fetch("https://www.youtube.com/oembed?format=json&url=" + encodeURIComponent(url));
-    if (!r.ok) return null;
-    const j = await r.json();
-    return { titulo: j.title, autor: j.author_name, thumb: j.thumbnail_url };
-  } catch (e) { return null; }
-}
-
-async function gerarResumo({ titulo, descricao, transcricao }) {
-  const base = [titulo && "Título: " + titulo, descricao && "Descrição/metadados: " + descricao, transcricao && "Transcrição: " + transcricao.slice(0, 6000)].filter(Boolean).join("\n\n");
-  if (!base.trim()) return "Sem informação suficiente para resumir — o vídeo não trouxe título nem descrição.";
-  const prompt = "Você é o assistente do Reino Academy, uma trilha de formação sobre indicação, afiliados e vendas. " +
-    "Com base apenas no material abaixo (sem inventar o que não está escrito), escreva em português do Brasil:\n" +
-    "1) um resumo de 3 a 5 frases do que a aula ensina;\n" +
-    "2) o nível de experiência recomendado para assistir (Barão, Visconde, Conde, Marquês, Duque, Príncipe, Rei ou Imperador — do mais iniciante ao mais avançado);\n" +
-    "Responda só com JSON válido: {\"resumo\": \"...\", \"nivel\": \"...\"}\n\n" + base;
-  const texto = await window.claude.complete(prompt);
-  try {
-    const j = JSON.parse(String(texto).match(/\{[\s\S]*\}/)[0]);
-    return j;
-  } catch (e) { return { resumo: String(texto).slice(0, 900), nivel: "Barão" }; }
-}
-
-function FormularioAula({ onCriar, ocupado, setOcupado }) {
+/* formulário do admin: cola a URL, a Edge Function decide se é vídeo ou canal */
+function FormularioImportar({ onImportado }) {
   const [url, setUrl] = React.useState("");
-  const [tituloManual, setTituloManual] = React.useState("");
-  const [descManual, setDescManual] = React.useState("");
-  const [transcricao, setTranscricao] = React.useState("");
-  const [erro, setErro] = React.useState(null);
+  const [nivel, setNivel] = React.useState("");
+  const [ocupado, setOcupado] = React.useState(false);
+  const [aviso, setAviso] = React.useState(null); // { tipo: "erro" | "info" | "ok", texto }
   const [aberto, setAberto] = React.useState(false);
 
   const enviar = async (e) => {
     e.preventDefault();
-    setErro(null);
-    const v = detectarVideo(url);
-    if (!v) { setErro("Não reconheci essa URL. Cole um link do YouTube ou do Panda Video."); return; }
+    setAviso(null);
+    const tk = window.ReinoContas && window.ReinoContas.token ? await window.ReinoContas.token() : null;
+    if (!tk) { setAviso({ tipo: "erro", texto: "Entre com uma conta de administrador para importar." }); return; }
     setOcupado(true);
     try {
-      let titulo = tituloManual.trim(), thumb = v.thumb;
-      if (v.plataforma === "youtube" && !titulo) {
-        const m = await metaYouTube(url);
-        if (m) { titulo = m.titulo; thumb = m.thumb || thumb; }
+      const cfg = window.REINO_SUPABASE;
+      const r = await fetch("https://fxlansnepokjxdikxocb.supabase.co/functions/v1/academy-importar", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + tk, apikey: cfg.anon, "Content-Type": "application/json" },
+        body: JSON.stringify({ url, nivel: nivel || undefined }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        // 402 = a busca de canal inteiro exige a youtube138 assinada; não é uma falha do app, é aviso
+        setAviso({ tipo: r.status === 402 ? "info" : "erro", texto: j.erro || "Não foi possível importar agora." });
+        return;
       }
-      titulo = titulo || "Aula sem título";
-      const ia = await gerarResumo({ titulo, descricao: descManual, transcricao });
-      onCriar({ id: "aula-" + Date.now(), titulo, plataforma: v.plataforma, embedUrl: v.embedUrl, thumb, resumo: ia.resumo || "", nivel: ia.nivel || "Barão", criadoEm: new Date().toISOString() });
-      setUrl(""); setTituloManual(""); setDescManual(""); setTranscricao(""); setAberto(false);
-    } catch (err) { setErro("Não foi possível analisar agora: " + (err && err.message ? err.message : "tente de novo")); }
-    finally { setOcupado(false); }
+      setUrl("");
+      setAviso({ tipo: "ok", texto: (j.aulas ? j.aulas.length : 0) + " aula(s) adicionada(s) à trilha " + (j.trilha ? j.trilha.titulo : "") + "." });
+      onImportado();
+    } catch (err) {
+      setAviso({ tipo: "erro", texto: "Falha de conexão. Tente de novo." });
+    } finally { setOcupado(false); }
   };
 
-  if (!aberto) return <Button variant="cyan" icon="mais" onClick={() => setAberto(true)}>Adicionar aula por URL</Button>;
+  if (!aberto) return <Button variant="cyan" icon="mais" onClick={() => setAberto(true)}>Importar do YouTube</Button>;
   return (
     <form onSubmit={enviar} style={{ display: "grid", gap: ".6rem", padding: ".9rem", borderRadius: 14, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.1)" }}>
-      <strong style={{ fontSize: ".85rem" }}>Nova aula a partir de um vídeo</strong>
-      <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Link do YouTube ou do Panda Video" aria-label="URL do vídeo" required />
-      <Input value={tituloManual} onChange={(e) => setTituloManual(e.target.value)} placeholder="Título (opcional — no YouTube eu busco sozinho)" aria-label="Título" />
-      <textarea value={descManual} onChange={(e) => setDescManual(e.target.value)} placeholder="Descrição da aula, se quiser guiar o resumo" rows={2} style={{ padding: ".5rem .65rem", borderRadius: 8, border: "1px solid rgba(255,255,255,.18)", background: "rgba(7,12,22,.4)", color: "inherit", font: "inherit", resize: "vertical" }} />
-      <textarea value={transcricao} onChange={(e) => setTranscricao(e.target.value)} placeholder="Cole a transcrição aqui para um resumo mais fiel (opcional — eu não transcrevo o vídeo sozinho)" rows={3} style={{ padding: ".5rem .65rem", borderRadius: 8, border: "1px solid rgba(255,255,255,.18)", background: "rgba(7,12,22,.4)", color: "inherit", font: "inherit", resize: "vertical" }} />
-      {erro ? <span style={{ fontSize: ".78rem", color: "#ff9a9a" }}>{erro}</span> : null}
+      <strong style={{ fontSize: ".85rem" }}>Importar trilha ou aula do YouTube</strong>
+      <Field label="Link do YouTube (vídeo ou canal)">
+        <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=... ou https://www.youtube.com/@canal" aria-label="Link do YouTube" required
+          style={{ width: "100%", padding: ".5rem .65rem", borderRadius: 8, border: "1px solid rgba(255,255,255,.18)", background: "rgba(7,12,22,.4)", color: "inherit", font: "inherit" }} />
+      </Field>
+      <Field label="Nível sugerido (opcional)">
+        <Select value={nivel} onChange={(e) => setNivel(e.target.value)} aria-label="Nível sugerido">
+          <option value="">Sem nível fixo</option>
+          {NIVEIS.map((n) => <option key={n} value={n}>{n}</option>)}
+        </Select>
+      </Field>
+      {aviso ? <span style={{ fontSize: ".78rem", color: aviso.tipo === "erro" ? "var(--red)" : aviso.tipo === "ok" ? "var(--green)" : "var(--amber)" }}>{aviso.texto}</span> : null}
       <div style={{ display: "flex", gap: ".5rem" }}>
-        <Button type="submit" variant="cyan" disabled={ocupado}>{ocupado ? "Analisando com IA…" : "Analisar e adicionar"}</Button>
+        <Button type="submit" variant="cyan" disabled={ocupado}>{ocupado ? "Importando…" : "Importar"}</Button>
         <Button type="button" variant="ghost" onClick={() => setAberto(false)} disabled={ocupado}>Cancelar</Button>
       </div>
     </form>
   );
 }
 
-function AcademyScreen() {
-  const d = window.BABEL_DEMO;
-  const ordem = d.titulos.map((t) => t.nome).reverse();
-  const meu = ordem.indexOf(d.perfil.titulo);
-  const media = Math.round(d.academy.reduce((s, c) => s + c.progresso, 0) / d.academy.length);
-  const admin = ehAdmin();
-  const [aulas, setAulas] = React.useState(lerAulas);
-  const [ocupado, setOcupado] = React.useState(false);
-  const [tocando, setTocando] = React.useState(null);
+function segundosParaTexto(s) {
+  if (!Number.isFinite(s) || s <= 0) return null;
+  const m = Math.round(s / 60);
+  return m < 60 ? m + " min" : Math.floor(m / 60) + "h" + String(m % 60).padStart(2, "0");
+}
 
-  const criarAula = (aula) => setAulas((lst) => { const novo = [aula, ...lst]; gravarAulas(novo); return novo; });
-  const apagarAula = (id) => setAulas((lst) => { const novo = lst.filter((a) => a.id !== id); gravarAulas(novo); return novo; });
+function AcademyScreen() {
+  const [trilhas, setTrilhas] = React.useState(null); // null = carregando
+  const [erro, setErro] = React.useState(null);
+  const [recarga, setRecarga] = React.useState(0);
+  const [aulasLocais, setAulasLocais] = React.useState(lerAulasLocais);
+  const [tocando, setTocando] = React.useState(null);
+  const admin = ehAdmin();
+
+  React.useEffect(() => {
+    let vivo = true;
+    lerTrilhasDoBanco()
+      .then((lst) => { if (vivo) setTrilhas(lst || []); })
+      .catch(() => { if (vivo) { setErro("Não foi possível ler as trilhas agora."); setTrilhas([]); } });
+    return () => { vivo = false; };
+  }, [recarga]);
+
+  const totalAulas = (trilhas || []).reduce((s, t) => s + t.aulas.length, 0) + aulasLocais.length;
+  const apagarAulaLocal = (id) => setAulasLocais((lst) => {
+    const novo = lst.filter((a) => a.id !== id);
+    try { localStorage.setItem(CHAVE, JSON.stringify(novo)); } catch (e) {}
+    return novo;
+  });
 
   return (
     <>
-      <PageHead title="Reino Academy" subtitle="Trilhas curtas para render mais no Reino. Cada título libera novos cursos." />
+      <PageHead title="Reino Academy" subtitle="Trilhas de vídeo importadas do YouTube. Cada título libera novos conteúdos." />
       <div className="hg-ops hg-encher hg-duas-col" style={{ "--col1": "minmax(0,1fr)" }}>
-        <Panel fill title="Trilhas" subtitle={(d.academy.length + aulas.length) + " cursos"}>
-          <div className="hg-rolar" style={{ display: "grid", gap: "1rem" }}>
-            {admin ? <FormularioAula onCriar={criarAula} ocupado={ocupado} setOcupado={setOcupado} /> : null}
+        <Panel fill title="Trilhas" subtitle={totalAulas + " aula(s)"}>
+          <div className="hg-rolar" style={{ display: "grid", gap: "1.1rem" }}>
+            {admin ? <FormularioImportar onImportado={() => setRecarga((n) => n + 1)} /> : null}
 
-            {aulas.length ? (
-              <ul className="hg-cursos">
-                {aulas.map((a) => (
-                  <li key={a.id}>
-                    <span className="hg-cursos-ico">{a.thumb ? <img src={a.thumb} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 8 }} /> : <Icon name="revista" />}</span>
+            {trilhas === null ? (
+              <p className="hg-sub">Carregando trilhas…</p>
+            ) : erro && !trilhas.length ? (
+              <EmptyState icon="alerta" title="Trilhas indisponíveis" description={erro} />
+            ) : !trilhas.length && !aulasLocais.length ? (
+              <EmptyState icon="revista" title="Nenhuma trilha ainda" description={admin ? "Cole um link do YouTube acima para começar." : "Volte em breve: o Reino está preparando as primeiras trilhas."} />
+            ) : (
+              trilhas.map((t) => (
+                <section key={t.id} aria-label={t.titulo}>
+                  <div style={{ display: "flex", alignItems: "center", gap: ".6rem", marginBottom: ".5rem" }}>
+                    {t.capa ? <img src={t.capa} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: "cover" }} /> : <span className="hg-cursos-ico"><Icon name="revista" /></span>}
                     <div>
-                      <strong>{a.titulo}</strong>
-                      <span>{a.plataforma === "youtube" ? "YouTube" : "Panda Video"} · nível sugerido: {a.nivel}</span>
-                      {a.resumo ? <p style={{ fontSize: ".78rem", opacity: .75, margin: ".25rem 0 0" }}>{a.resumo}</p> : null}
+                      <strong style={{ display: "block", fontSize: ".95rem" }}>{t.titulo}</strong>
+                      <span className="hg-sub">{t.aulas.length} aula(s){t.descricao ? " · " + t.descricao : ""}</span>
                     </div>
-                    <div style={{ display: "flex", gap: ".4rem" }}>
-                      <Button variant="cyan" onClick={() => setTocando(a)}>Assistir</Button>
-                      {admin ? <Button variant="ghost" onClick={() => apagarAula(a.id)}>Remover</Button> : null}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                  </div>
+                  {t.aulas.length ? (
+                    <ul className="hg-cursos">
+                      {t.aulas.map((a) => (
+                        <li key={a.id}>
+                          <span className="hg-cursos-ico">{a.capa ? <img src={a.capa} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 8 }} /> : <Icon name="revista" />}</span>
+                          <div>
+                            <strong>{a.titulo}</strong>
+                            <span>{a.canal || "YouTube"}{a.nivel ? " · nível sugerido: " + a.nivel : ""}{segundosParaTexto(a.duracao_seg) ? " · " + segundosParaTexto(a.duracao_seg) : ""}</span>
+                          </div>
+                          <Button variant="cyan" onClick={() => setTocando(a)}>Assistir</Button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </section>
+              ))
+            )}
+
+            {aulasLocais.length ? (
+              <section aria-label="Aulas locais">
+                <div style={{ marginBottom: ".4rem" }}>
+                  <strong style={{ display: "block", fontSize: ".9rem" }}>Aulas locais (só neste aparelho)</strong>
+                  <span className="hg-sub">Guardadas antes da Academy usar o banco — não aparecem em outro dispositivo.</span>
+                </div>
+                <ul className="hg-cursos">
+                  {aulasLocais.map((a) => (
+                    <li key={a.id}>
+                      <span className="hg-cursos-ico">{a.thumb ? <img src={a.thumb} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 8 }} /> : <Icon name="revista" />}</span>
+                      <div>
+                        <strong>{a.titulo}</strong>
+                        <span>{a.plataforma === "youtube" ? "YouTube" : "Panda Video"}{a.nivel ? " · nível sugerido: " + a.nivel : ""}</span>
+                        {a.resumo ? <p style={{ fontSize: ".78rem", opacity: .75, margin: ".25rem 0 0" }}>{a.resumo}</p> : null}
+                      </div>
+                      <div style={{ display: "flex", gap: ".4rem" }}>
+                        <Button variant="cyan" onClick={() => setTocando({ ...a, youtube_id: a.plataforma === "youtube" ? a.id : null, embedUrlLocal: a.embedUrl })}>Assistir</Button>
+                        {admin ? <Button variant="ghost" onClick={() => apagarAulaLocal(a.id)}>Remover</Button> : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ) : null}
-
-            <ul className="hg-cursos">
-              {d.academy.map((c) => {
-                const liberado = ordem.indexOf(c.nivel) <= meu;
-                return (
-                  <li key={c.nome} className={liberado ? "" : "is-bloqueado"}>
-                    <span className="hg-cursos-ico"><Icon name={liberado ? "revista" : "coroa"} /></span>
-                    <div>
-                      <strong>{c.nome}</strong>
-                      <span>{c.aulas} aulas · {c.duracao}{liberado ? "" : " · exige " + c.nivel}</span>
-                      {liberado ? <ProgressBar value={c.progresso} /> : null}
-                    </div>
-                    {liberado ? (
-                      <Button variant={c.progresso ? "ghost" : "cyan"}>{c.progresso === 100 ? "Revisar" : c.progresso ? "Continuar" : "Começar"}</Button>
-                    ) : <span className="hg-sub">Bloqueado</span>}
-                  </li>
-                );
-              })}
-            </ul>
           </div>
         </Panel>
-        <Panel tone="conquistas" fill title="Seu progresso" headingLevel={3}>
-          <ProgressRing value={media} label="das trilhas liberadas" />
-          <p className="hg-sub" style={{ textAlign: "center" }}>Concluir uma trilha conta pontos para a sua guilda.</p>
+        <Panel tone="conquistas" fill title="Como funciona" headingLevel={3}>
+          <ProgressRing value={totalAulas ? 100 : 0} label="trilhas publicadas" />
+          <p className="hg-sub" style={{ textAlign: "center" }}>{admin ? "Cole um link de vídeo ou de canal — o Reino organiza a trilha sozinho." : "Assistir às aulas conta pontos para a sua guilda."}</p>
         </Panel>
       </div>
 
@@ -165,15 +198,18 @@ function AcademyScreen() {
         <div role="dialog" aria-modal="true" onClick={() => setTocando(null)} style={{ position: "fixed", inset: 0, background: "rgba(4,8,16,.82)", display: "grid", placeItems: "center", zIndex: 60, padding: "1rem" }}>
           <div onClick={(e) => e.stopPropagation()} style={{ width: "min(880px, 100%)", background: "#0b1220", borderRadius: 16, border: "1px solid rgba(255,255,255,.12)", overflow: "hidden" }}>
             <div style={{ position: "relative", paddingTop: "56.25%", background: "#000" }}>
-              <iframe src={tocando.embedUrl} title={tocando.titulo} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }} />
+              <iframe
+                src={tocando.youtube_id ? "https://www.youtube-nocookie.com/embed/" + tocando.youtube_id : tocando.embedUrlLocal}
+                title={tocando.titulo} loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }} />
             </div>
             <div style={{ padding: "1rem 1.1rem" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1rem" }}>
                 <strong style={{ fontSize: "1rem" }}>{tocando.titulo}</strong>
                 <Button variant="ghost" onClick={() => setTocando(null)}>Fechar</Button>
               </div>
-              <p style={{ fontSize: ".85rem", opacity: .8, marginTop: ".4rem" }}>{tocando.resumo}</p>
-              <span style={{ fontSize: ".75rem", opacity: .6 }}>Nível sugerido pela IA: {tocando.nivel}</span>
+              {tocando.descricao ? <p style={{ fontSize: ".85rem", opacity: .8, marginTop: ".4rem" }}>{tocando.descricao}</p> : null}
+              {tocando.nivel ? <span style={{ fontSize: ".75rem", opacity: .6 }}>Nível sugerido: {tocando.nivel}</span> : null}
             </div>
           </div>
         </div>

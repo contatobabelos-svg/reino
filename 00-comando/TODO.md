@@ -42,3 +42,32 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 ## F — "pode privar o github" (19/09)
 - [x] F1 Repositório `contatobabelos-svg/reino` privado
 - [x] F2 Voltou a público: no plano Hobby a Vercel bloqueia deploy de repo privado quando o autor do commit (`diegobabel`) não é o dono da conta (`contatobabelos-svg`). Fundador escolheu voltar a público
+
+## G — "quero que vá atrás das ultimas apis recentes e atualizadas em desing tecnologico e ux. Também preciso de uma skill que gera skills de acordo com o que meu sistema precisar para sempre estar protegido, seguro e anti quebra de código, com backup e limpeza de códigos errados ou mal feitos, nome desse criador de skills é Dominic Skill Creator. ele é uma hook que é ativada sempre que acontece alguma alteração, ele analisa o que é a mudança e tras a melhor skill do mercado para resolver ou criar aquilo." (19/09)
+- [x] G1 Pesquisa: APIs e referências recentes de design tecnológico e UX, com fonte e data (`01-contexto/design-ux-2026/RELATORIO.md`)
+- [x] G2 Dominic Skill Creator — hook disparado a cada alteração de arquivo (`.claude/dominic/dominic.py`)
+- [x] G3 Backup automático antes de cada alteração, com limpeza dos backups antigos (7 dias / 400)
+- [x] G4 Anti-quebra: checagem de sintaxe por tipo de arquivo; bloqueia e devolve o erro
+- [x] G5 Limpeza: detectar segredo, `debugger`, `console.log` solto e código mal feito
+- [x] G6 Análise da mudança → skill certa (instalada, do mercado com validação, ou criada nova)
+- [x] G7 Skill `dominic-skill-creator` com o processo de validação de 4 passos da aula (Módulo 1.4)
+- [ ] G8 Validar `supabase/agent-skills` (candidata da área banco) — passos 2 a 4 e aprovação do fundador
+
+## H — "use essa chave no app para criar empresas reais nos estados, pelo menos um por estado, 2 por cidade e 3 por bairro: [chave RapidAPI omitida — nunca registrar]" (19/09)
+- [x] H1 A chave assina a **Google Search Master Mega** (`/maps`), não a Local Business Data. Plano: 20 req, zera em 21/09 10:02; 1 de reserva
+- [x] H2 Chave no Vault do Supabase (`segredo_rapidapi()` só para service_role); nunca no app nem no git
+- [x] H3 Tabela `empresas_reais` + 358 empresas: 18 estados, 21 cidades, 29 bairros com 3+
+- [ ] H5 Após 21/09 10:02: os 9 estados que faltam (PB, RN, AL, PI, SE, RO, AC, AP, RR); a cota nova tem 20 chamadas
+- [ ] H6 Bairros sob demanda (3 por bairro ao abrir no mapa) — exige plano maior
+- [x] H4 Mostrar no mapa como camada "empresas da região", separada de "Empresas do Reino" (não é membro)
+
+## I — "isso é para o reino academy poder subir videos via url do youtube, ja montando as estruturas" (API youtube138 na RapidAPI; chave omitida) (19/09)
+- [x] I1 Tabelas `academy_trilhas` e `academy_aulas` no Supabase (leitura para todos, escrita só admin)
+- [x] I2 Edge Function `academy-importar` (admin): vídeo via oEmbed sem chave; canal via youtube138
+- [x] I3 Vídeo → aula na trilha do canal (criada sozinha); canal → trilha com 30 mais recentes
+- [ ] I5 **youtube138 não está assinada** (403): assinar para importar canal inteiro; testar a resposta real depois
+- [x] I4 AcademyScreen lendo do banco e formulário de admin chamando a função
+
+## J — "essa para o botão que mostra a minha localização" (API ip-to-location4 na RapidAPI; chave omitida) (19/09)
+- [x] J1 Testada: assinatura existe (plano 500 mil), mas o fornecedor responde 401 "Invalid API key" nas duas formas — API quebrada do lado deles; não usada
+- [x] J2 Botão "minha localização" no globo: GPS do aparelho (com permissão) → OpenStreetMap (bairro/cidade/UF); sem GPS → cidade por IP (ipwho.is); por último, endereço do perfil

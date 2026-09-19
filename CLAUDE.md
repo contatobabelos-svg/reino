@@ -50,6 +50,11 @@ permissão é da Vyra com o fundador, nunca do operário.
 agente confirma o próprio modelo. Agente novo em `.claude/agents/` só vale depois
 de reiniciar a sessão. Testes de navegador em paralelo: cada agente com sua porta.
 
+**Dominic.** Toda alteração passa pelo hook `.claude/dominic/dominic.py`: backup
+antes, sintaxe e segredos depois. Bloqueou → corrija ou `python3 .claude/dominic/dominic.py
+restaurar <arquivo>`. Indicou skill do mercado ou lacuna → skill `dominic-skill-creator`
+(nada do mercado entra sem validação de 4 passos e aprovação do fundador).
+
 **Antes de dizer "pronto".** Mostre evidência: teste rodado, screenshot, resposta
 da API. Sem evidência, diga o que falta verificar.
 <!-- REGRAS-ESSENCIAIS:FIM -->

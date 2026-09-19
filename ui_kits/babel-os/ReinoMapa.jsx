@@ -13,9 +13,9 @@ const GOOGLE = () => window.REINO_GOOGLE || "";
 const C = { fundo: "#070c16", agua: "#0b1a2e", verde: "#0d1b17", parque: "#102420", predio: "#111c2e", predioBorda: "#1b2740",
   ruaMaior: "#c79a3c", ruaMedia: "#8d6f2e", ruaMenor: "#3d3a2c", trilha: "#2a2a24", ferro: "#2b3347",
   limite: "#2d3d57", texto: "#e8dcc0", textoHalo: "#060a12", aguaTexto: "#5d86ad" };
-const COR = { empresas: "#5ad8ff", rede: "#b98bff", cliques: "#ffd34d", cadastros: "#63f2a5", eventos: "#ff7ba9", google: "#ffb35c" };
-const ROTULO = { empresas: "Empresas do Reino", rede: "Minha rede", cliques: "Cliques no link", cadastros: "Cadastros", eventos: "Eventos", google: "Google Maps", territorios: "Territórios", calor: "Calor" };
-const CURTO = { empresas: "Reino", rede: "Rede", cliques: "Cliques", cadastros: "Cadastros", eventos: "Eventos", google: "Google", territorios: "Territórios", calor: "Calor" };
+const COR = { empresas: "#5ad8ff", rede: "#b98bff", cliques: "#ffd34d", cadastros: "#63f2a5", eventos: "#ff7ba9", google: "#ffb35c", regiao: "#34e6a6" };
+const ROTULO = { empresas: "Empresas do Reino", rede: "Minha rede", cliques: "Cliques no link", cadastros: "Cadastros", eventos: "Eventos", google: "Google Maps", territorios: "Territórios", calor: "Calor", regiao: "Empresas da região" };
+const CURTO = { empresas: "Reino", rede: "Rede", cliques: "Cliques", cadastros: "Cadastros", eventos: "Eventos", google: "Google", territorios: "Territórios", calor: "Calor", regiao: "Região" };
 const TITULOS = ["Imperador", "Rei", "Príncipe", "Duque", "Marquês", "Conde", "Visconde", "Barão"];
 const CORTITULO = ["#ffd97a", "#ffb35c", "#ff8f6b", "#e07bd8", "#a98bff", "#6f9dff", "#4fc9d8", "#5fd8a4"];
 const norm = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -156,6 +156,33 @@ function camadaTerritorios(uf) {
     return { type: "Feature", geometry: { type: "Polygon", coordinates: aneis }, properties: { camada: "territorios", nome: m.nome, sub: "Território de " + TITULOS[t], cor: CORTITULO[t], titulo: TITULOS[t] } };
   }).filter(Boolean));
 }
+/* ---- Empresas da região: dados reais já coletados no Supabase (tabela empresas_reais) ----
+   Leitura pública, mesma chave publicável usada em fotos.js/afiliados.js. Cache em memória
+   por UF para não repetir a consulta a cada renderização. */
+const cacheRegiao = new Map();
+async function camadaRegiao(uf) {
+  const chave = uf ? String(uf).toUpperCase() : "__geral__";
+  if (cacheRegiao.has(chave)) return cacheRegiao.get(chave);
+  const cfg = window.REINO_SUPABASE;
+  if (!cfg || !cfg.url || !cfg.anon) return fc([]);
+  const campos = "place_id,nome,categoria,endereco,bairro,cidade,uf,lat,lng,nota,avaliacoes,telefone,site,foto_url";
+  const filtro = uf ? "&uf=eq." + encodeURIComponent(String(uf).toUpperCase()) : "&limit=400";
+  const url = cfg.url.replace(/\/$/, "") + "/rest/v1/empresas_reais?select=" + campos + filtro;
+  let dado = fc([]);
+  try {
+    const r = await fetch(url, { headers: { apikey: cfg.anon, Authorization: "Bearer " + cfg.anon } });
+    const linhas = r.ok ? await r.json() : [];
+    dado = fc((Array.isArray(linhas) ? linhas : []).filter((e) => e.lat != null && e.lng != null).map((e) => {
+      /* normaliza para o mesmo formato de cartão usado pelo Google (campo "foto" já pronto pra <img>) */
+      const normal = { nome: e.nome, categoria: e.categoria, endereco: e.endereco, bairro: e.bairro, cidade: e.cidade, uf: e.uf,
+        nota: e.nota, avaliacoes: e.avaliacoes, telefone: e.telefone, site: e.site, foto: e.foto_url || null };
+      return { type: "Feature", geometry: { type: "Point", coordinates: [e.lng, e.lat] },
+        properties: { camada: "regiao", nome: e.nome, sub: [e.categoria, (e.cidade || "") + (e.uf ? "/" + e.uf : "")].filter(Boolean).join(" · "), peso: 2, dados: JSON.stringify(normal) } };
+    }));
+  } catch (e) { dado = fc([]); /* sem internet ou banco fora do ar: camada fica vazia, mapa segue normal */ }
+  cacheRegiao.set(chave, dado);
+  return dado;
+}
 function empresasDaCidade(nome, uf) {
   try {
     const lst = window.BabelDemo("reino/empresas", { cidade: nome, estado: uf, limite: 60 });
@@ -217,7 +244,7 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
   const mapa = React.useRef(null);
   const [pronto, setPronto] = React.useState(false);
   const [falha, setFalha] = React.useState(null);
-  const [ligadas, setLigadas] = React.useState({ empresas: true, rede: true, cliques: true, cadastros: true, eventos: true, google: true, territorios: false, calor: false });
+  const [ligadas, setLigadas] = React.useState({ empresas: true, rede: true, cliques: true, cadastros: true, eventos: true, google: true, regiao: true, territorios: false, calor: false });
   const [sel, setSel] = React.useState(null);
   const [busca, setBusca] = React.useState("");
   const [achados, setAchados] = React.useState(null);
@@ -269,14 +296,14 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
   React.useEffect(() => {
     if (!pronto) return;
     const m = mapa.current;
-    const dados = { empresas: camadaEmpresas(uf), rede: camadaRede(), eventos: camadaEventos(), territorios: camadaTerritorios(uf), cliques: fc([]), cadastros: fc([]), google: fc([]) };
+    const dados = { empresas: camadaEmpresas(uf), rede: camadaRede(), eventos: camadaEventos(), territorios: camadaTerritorios(uf), cliques: fc([]), cadastros: fc([]), google: fc([]), regiao: fc([]) };
     dadosRef.current = dados;
     if (!m.getSource("territorios")) {
       m.addSource("territorios", { type: "geojson", data: dados.territorios });
       m.addLayer({ id: "territorios-fill", type: "fill", source: "territorios", paint: { "fill-color": ["get", "cor"], "fill-opacity": 0.16 } });
       m.addLayer({ id: "territorios-linha", type: "line", source: "territorios", paint: { "line-color": ["get", "cor"], "line-width": 0.8, "line-opacity": 0.55 } });
     }
-    ["empresas", "rede", "cliques", "cadastros", "eventos", "google"].forEach((c) => {
+    ["empresas", "rede", "cliques", "cadastros", "eventos", "google", "regiao"].forEach((c) => {
       if (m.getSource(c)) return;
       m.addSource(c, { type: "geojson", data: dados[c], cluster: true, clusterRadius: 44, clusterMaxZoom: 12 });
       m.addLayer({ id: c + "-cluster", type: "circle", source: c, filter: ["has", "point_count"],
@@ -302,6 +329,12 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
       dadosRef.current = { ...dadosRef.current, ...b };
       ["cliques", "cadastros"].forEach((c) => m.getSource(c) && m.getSource(c).setData(b[c]));
       atualizarCalor();
+    });
+    /* empresas reais do Supabase — não entram no calor nem em nenhuma conta do Reino */
+    camadaRegiao(uf).then((r) => {
+      if (!mapa.current) return;
+      dadosRef.current = { ...dadosRef.current, regiao: r };
+      m.getSource("regiao") && m.getSource("regiao").setData(r);
     });
     atualizarCalor();
   }, [pronto, uf, cidade]);
@@ -343,7 +376,7 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
   React.useEffect(() => {
     const m = mapa.current; if (!pronto || !m) return;
     const ver = (id, v) => m.getLayer(id) && m.setLayoutProperty(id, "visibility", v ? "visible" : "none");
-    ["empresas", "rede", "cliques", "cadastros", "eventos", "google"].forEach((c) => { ver(c + "-cluster", ligadas[c]); ver(c + "-num", ligadas[c]); ver(c + "-pt", ligadas[c]); });
+    ["empresas", "rede", "cliques", "cadastros", "eventos", "google", "regiao"].forEach((c) => { ver(c + "-cluster", ligadas[c]); ver(c + "-num", ligadas[c]); ver(c + "-pt", ligadas[c]); });
     ver("territorios-fill", ligadas.territorios); ver("territorios-linha", ligadas.territorios); ver("calor-camada", ligadas.calor);
   }, [ligadas, pronto]);
 
@@ -352,12 +385,14 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
     const clique = (e) => {
       if (modo === "rota") { setRota((r) => (r.length >= 2 ? [[e.lngLat.lng, e.lngLat.lat]] : [...r, [e.lngLat.lng, e.lngLat.lat]])); return; }
       if (modo === "area") { setArea((a) => [...a, [e.lngLat.lng, e.lngLat.lat]]); return; }
-      const camadas = ["google-pt", "empresas-pt", "rede-pt", "cliques-pt", "cadastros-pt", "eventos-pt", "territorios-fill"].filter((c) => m.getLayer(c));
+      const camadas = ["google-pt", "regiao-pt", "empresas-pt", "rede-pt", "cliques-pt", "cadastros-pt", "eventos-pt", "territorios-fill"].filter((c) => m.getLayer(c));
       const f = m.queryRenderedFeatures(e.point, { layers: camadas })[0];
       if (f) {
         setSel({ ...f.properties });
         if (f.properties.camada === "google" && f.properties.dados) {
           try { setCartoes({ titulo: f.properties.nome, origem: "google", lista: [JSON.parse(f.properties.dados)] }); } catch (err) {}
+        } else if (f.properties.camada === "regiao" && f.properties.dados) {
+          try { setCartoes({ titulo: f.properties.nome, origem: "regiao", lista: [JSON.parse(f.properties.dados)] }); } catch (err) {}
         } else if (f.properties.camada === "empresas" && f.properties.nome) {
           const u = String(f.properties.sub || "").split(" · ")[0];
           setCartoes({ titulo: f.properties.nome + (u ? " · " + u : ""), origem: "reino", lista: empresasDaCidade(f.properties.nome, u) });
@@ -392,7 +427,7 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
     const anel = [...area, area[0]];
     m.getSource("area").setData(fc([{ type: "Feature", geometry: { type: "Polygon", coordinates: [anel] }, properties: {} }]));
     const d = dadosRef.current, conta = {};
-    ["empresas", "rede", "cliques", "cadastros", "eventos", "google"].forEach((c) => { conta[c] = (d[c] ? d[c].features : []).filter((f) => dentro(f.geometry.coordinates, anel)).length; });
+    ["empresas", "rede", "cliques", "cadastros", "eventos", "google", "regiao"].forEach((c) => { conta[c] = (d[c] ? d[c].features : []).filter((f) => dentro(f.geometry.coordinates, anel)).length; });
     setDentroArea(conta);
   }, [area, pronto]);
 
@@ -470,7 +505,7 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
 
       <div style={{ position: "absolute", bottom: "3.1rem", left: ".7rem", display: "flex", flexDirection: "column", gap: ".4rem", alignItems: "flex-start", maxWidth: "min(430px, calc(100% - 1.4rem))" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: ".3rem" }}>
-          {["google", "empresas", "rede", "cliques", "cadastros", "eventos"].map((k) => chip(k, COR[k]))}
+          {["google", "regiao", "empresas", "rede", "cliques", "cadastros", "eventos"].map((k) => chip(k, COR[k]))}
           {chip("territorios", "#ffd97a")}{chip("calor", "#ff7ba9")}
         </div>
         <div style={{ display: "flex", gap: ".35rem", flexWrap: "wrap" }}>
@@ -491,7 +526,7 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
         <div style={{ position: "absolute", top: "calc(" + topoLivre + " + 2.7rem)", right: ".7rem", bottom: "7.4rem", width: "min(340px, calc(100% - 1.4rem))", display: "flex", flexDirection: "column", borderRadius: 14, background: "rgba(7,12,22,.95)", border: "1px solid rgba(199,154,60,.35)", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: ".5rem", padding: ".65rem .8rem", borderBottom: "1px solid rgba(255,255,255,.1)" }}>
             <div>
-              <span style={{ display: "block", fontSize: ".64rem", textTransform: "uppercase", letterSpacing: ".08em", color: cartoes.origem === "google" ? COR.google : COR.empresas }}>{cartoes.origem === "google" ? "Google Maps" : "Empresas do Reino"}</span>
+              <span style={{ display: "block", fontSize: ".64rem", textTransform: "uppercase", letterSpacing: ".08em", color: cartoes.origem === "google" ? COR.google : cartoes.origem === "regiao" ? COR.regiao : COR.empresas }}>{cartoes.origem === "google" ? "Google Maps" : cartoes.origem === "regiao" ? "Empresas da região" : "Empresas do Reino"}</span>
               <strong style={{ fontSize: ".92rem", color: "#eaf3ff" }}>{cartoes.titulo}</strong>
               <span style={{ display: "block", fontSize: ".7rem", color: "rgba(234,243,255,.5)" }}>{cartoes.lista.length} resultado(s)</span>
             </div>
@@ -500,7 +535,7 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
           <div style={{ overflowY: "auto", padding: ".55rem", display: "grid", gap: ".5rem" }}>
             {!cartoes.lista.length ? <p style={{ color: "rgba(234,243,255,.6)", fontSize: ".8rem", padding: ".5rem" }}>Nenhuma empresa aqui.</p> : cartoes.lista.map((e, i) => (
               <article key={e.id || e.nome + i} style={{ borderRadius: 11, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", overflow: "hidden" }}>
-                {e.foto ? <img src={fotoUrl(e.foto)} alt="" loading="lazy" style={{ width: "100%", height: 96, objectFit: "cover", display: "block" }} /> : null}
+                {e.foto ? <img src={cartoes.origem === "google" ? fotoUrl(e.foto) : e.foto} alt="" loading="lazy" style={{ width: "100%", height: 96, objectFit: "cover", display: "block" }} /> : null}
                 <div style={{ padding: ".55rem .65rem" }}>
                   <strong style={{ display: "block", fontSize: ".85rem", color: "#eaf3ff", lineHeight: 1.25 }}>{e.nome}</strong>
                   <span style={{ display: "block", fontSize: ".72rem", color: "rgba(234,243,255,.6)", marginTop: ".1rem" }}>{[e.categoria || e.nicho, e.preco, e.abrangencia].filter(Boolean).join(" · ")}</span>
@@ -519,6 +554,7 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
                       {e.site ? <a href={e.site} target="_blank" rel="noopener noreferrer" style={{ fontSize: ".72rem", color: "#5ad8ff", textDecoration: "none" }}>site</a> : null}
                     </div>
                   ) : null}
+                  {cartoes.origem === "regiao" ? <span style={{ display: "block", fontSize: ".68rem", color: "rgba(234,243,255,.42)", marginTop: ".4rem", fontStyle: "italic" }}>Fonte: Google Maps · não é membro do Reino</span> : null}
                 </div>
               </article>
             ))}
