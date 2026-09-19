@@ -75,4 +75,14 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 ## K — Achado do Ourives: `_ds_bundle.js` sobrescrevia `contas.js`/`fotos.js`/`afiliados.js` (19/09)
 - [x] K1 Corrigido pela ordem dos scripts em `ui_kits/babel-os/index.html` (os três carregam depois do bundle); em produção `ReinoContas.token` era `undefined` → painel admin e importação da Academy não funcionavam
 - [ ] K2 Regenerar o `_ds_bundle.js` sem embutir esses três arquivos (correção de raiz; depende da ferramenta que gera o bundle)
-- [ ] K3 **Confirmar com o fundador:** o Ourives relatou pedidos que não passaram pela Vyra — portal de Notícias (Google News13 + News Briefs), wft-geo-db no mapa e spotify23. Código de Notícias guardado fora do repositório, não publicado; APIs testadas responderam "not subscribed"
+- [x] K3 Confirmado pelo fundador em L ("pode criar tudo"): o Ourives relatou pedidos que não passaram pela Vyra — portal de Notícias (Google News13 + News Briefs), wft-geo-db no mapa, spotify23 e Robomatic AI (chatbot). Código de Notícias guardado fora do repositório, não publicado; APIs testadas responderam "not subscribed"
+
+## L — "pode criar tudo, o que eu não gostar eu tiro" (sobre K3: Notícias, wft-geo-db no mapa, spotify23, Robomatic AI) (19/09)
+- [x] L1 Conferido: News13, GeoDB e Spotify23 "not subscribed"; Robomatic assinada mas fornecedor fora do ar (502). Usadas fontes gratuitas: Google News RSS, IBGE, Deezer, base própria
+- [x] L2 Edge Function `reino-apis` publicada (rotas fixas: noticias, cidade, musica, assistente; sem chave)
+- [x] L3 Notícias do Reino (tela guardada + rotas news13/briefs)
+- [x] L4 GeoDB: dados da cidade (população, etc.) no painel do mapa
+- [x] L5 Música (spotify23): tela de busca/trilha sonora
+- [x] L6 Assistente do Reino (Robomatic AI) com filtro das proibições jurídicas
+- [ ] L7 Ligar as APIs da RapidAPI quando assinadas (News13, GeoDB, Spotify23) e Robomatic quando o fornecedor voltar
+- [ ] L8 População no globo fica atrás do mapa 2D quando ele abre (MapaPanel troca para ReinoMapa ao sair da Terra) — decidir onde mostrar

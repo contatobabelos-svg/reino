@@ -23,6 +23,24 @@
   const contem = (feat, lon, lat) =>
     lon >= feat.b[0] && lon <= feat.b[2] && lat >= feat.b[1] && lat <= feat.b[3] && feat.g.some((anel) => pontoNoAnel(lon, lat, anel));
 
+  /* [UI kit] população da cidade (Edge Function reino-apis, rota "cidade" → IBGE Censo
+     2022). Cache em memória por "UF|cidade": dura a sessão da aba, sem duplicar buscas
+     ao entrar e sair da mesma cidade. Falhou → cachePopulacao guarda null e a linha
+     simplesmente não aparece (nada de erro visível no painel). */
+  const cachePopulacao = {};
+  function populacaoCidade(uf, cidade) {
+    const chave = uf + "|" + cidade;
+    if (chave in cachePopulacao) return cachePopulacao[chave];
+    const cfg = window.REINO_SUPABASE;
+    const promessa = (!cfg || !cfg.anon) ? Promise.resolve(null) : fetch("https://fxlansnepokjxdikxocb.supabase.co/functions/v1/reino-apis", {
+      method: "POST",
+      headers: { apikey: cfg.anon, Authorization: "Bearer " + cfg.anon, "Content-Type": "application/json" },
+      body: JSON.stringify({ rota: "cidade", uf, cidade }),
+    }).then((r) => (r.ok ? r.json() : null)).then((j) => (j && typeof j.populacao === "number" ? j.populacao : null)).catch(() => null);
+    cachePopulacao[chave] = promessa;
+    return promessa;
+  }
+
   function criar(raiz, opts) {
     const { buscar, esc, num, estrelas, iniciais, clima, empresasGoogle, imersivo } = opts;
     const reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -284,7 +302,9 @@
       voarPara(cidade.b, 0.7);
       dados.bairros = [];
       dados.google = []; dados.googleEstado = null;
+      dados.populacao = null;
       atualizarUI();
+      populacaoCidade(st.uf, cidade.nome).then((p) => { if (st.cidade === cidade) { dados.populacao = p; renderPainel(); } });
       dados.bairros = lista(await buscar("reino/bairros", { cidade: cidade.nome, estado: st.uf }));
       sujo = true;
       renderPainel();
@@ -467,7 +487,9 @@
           + `<ul class="hg-globo-lista" data-cidades></ul>`;
       } else if (st.nivel === "cidade") {
         const qtd = dados.cidades[norm(st.cidade.nome)] || 0;
+        const linhaPop = dados.populacao ? `<p class="hg-globo-sub">População: <b>${num(dados.populacao)}</b> (IBGE · Censo 2022)</p>` : "";
         h = cabecalho(`Cidade · ${st.uf}`, st.cidade.nome, `<b>${num(qtd)}</b> empresas · <b>${num(dados.bairros.length)}</b> bairros com empresários`)
+          + linhaPop
           + (dados.bairros.length
             ? `<ul class="hg-globo-lista">${dados.bairros.map((b, i) => `<li><button data-bairro="${i}" class="is-ativo"><span class="uf">${esc(iniciais(b.nome))}</span>${esc(b.nome)}<b>${num(b.empresarios ?? b.empresas ?? 0)}</b></button></li>`).join("")}</ul>`
             : aviso(semApi() ? "Conecte a API para ver os bairros." : "Nenhum bairro com empresários do Reino nesta cidade ainda."));

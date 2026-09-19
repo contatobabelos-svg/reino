@@ -22,6 +22,9 @@ const TELAS = {
   "niveis.html": NiveisScreen,
   "academy.html": AcademyScreen,
   "eventos.html": EventosScreen,
+  "noticias.html": NoticiasScreen,
+  "musica.html": MusicaScreen,
+  "assistente.html": AssistenteScreen,
 };
 const PAGINA = { "index.html": "inicio", "bolsa.html": "bolsa" };
 const USUARIO = { ...(window.BABEL_DEMO ? window.BABEL_DEMO.perfil : {}), uf: "SP", cidade: "Campinas", bairro: "Cambuí" };
@@ -52,6 +55,10 @@ function App() {
     const novo = base.slice();
     const por = (h) => novo.findIndex(([x]) => x === h);
     const antes = (item) => { const i = por("configuracoes.html"); novo.splice(i < 0 ? novo.length : i, 0, item); };
+    // três telas novas que consomem a Edge Function reino-apis (dados públicos, sem login)
+    if (por("noticias.html") < 0) antes(["noticias.html", "noticias", "Notícias do Reino"]);
+    if (por("musica.html") < 0) antes(["musica.html", "grafico", "Música do Reino"]);
+    if (por("assistente.html") < 0) antes(["assistente.html", "buscaIA", "Assistente do Reino"]);
     if (por("perfil.html") < 0) antes(["perfil.html", "tecnicos", "Minha conta"]);
     if (por("admin.html") < 0) antes(["admin.html", "clientes", "Contas no banco"]);
     return novo;
