@@ -4,64 +4,153 @@
     {
       "id": "banco",
       "nome": "Supabase: dados, login e regras de acesso",
-      "caminhos": ["supabase/**", "ui_kits/babel-os/contas.js", "ui_kits/babel-os/afiliados.js", "ui_kits/babel-os/fotos.js", "ui_kits/babel-os/AdminScreen.jsx", "**/*.sql"],
-      "conteudo": ["/rest/v1/", "/auth/v1/", "create policy", "row level security", "REINO_SUPABASE"],
-      "instaladas": ["systematic-debugging", "verification-before-completion"],
+      "caminhos": [
+        "supabase/**",
+        "ui_kits/babel-os/contas.js",
+        "ui_kits/babel-os/afiliados.js",
+        "ui_kits/babel-os/fotos.js",
+        "ui_kits/babel-os/AdminScreen.jsx",
+        "**/*.sql"
+      ],
+      "conteudo": [
+        "/rest/v1/",
+        "/auth/v1/",
+        "create policy",
+        "row level security",
+        "REINO_SUPABASE"
+      ],
+      "instaladas": [
+        "systematic-debugging",
+        "verification-before-completion"
+      ],
       "mercado": [
-        {"skill": "supabase (agent-skills)", "repo": "supabase/agent-skills", "instalar": "npx skills add supabase/agent-skills", "por_que": "guia oficial do Supabase para RLS, auth e migrações; recomendado pelo próprio MCP do Supabase"}
+        {
+          "skill": "supabase (agent-skills)",
+          "repo": "supabase/agent-skills",
+          "instalar": "npx skills add supabase/agent-skills",
+          "por_que": "guia oficial do Supabase para RLS, auth e migrações; recomendado pelo próprio MCP do Supabase"
+        }
       ],
       "lembrete": "Mudança de esquema vira arquivo novo em supabase/ e passa pelo verificador de segurança (get_advisors)."
     },
     {
       "id": "app",
       "nome": "Telas e lógica do app (JSX/JS)",
-      "caminhos": ["ui_kits/babel-os/*.jsx", "ui_kits/babel-os/*.js", "components/**/*.jsx"],
-      "instaladas": ["frontend-design", "systematic-debugging", "webapp-testing", "verification-before-completion"],
+      "caminhos": [
+        "ui_kits/babel-os/*.jsx",
+        "ui_kits/babel-os/*.js",
+        "components/**/*.jsx",
+        "ui_kits/babel-os/*.html"
+      ],
+      "instaladas": [
+        "frontend-design",
+        "systematic-debugging",
+        "webapp-testing",
+        "verification-before-completion"
+      ],
       "mercado": [
-        {"skill": "test-driven-development", "repo": "obra/superpowers", "caminho": "skills/test-driven-development", "por_que": "escrever o teste antes da correção evita regressão"},
-        {"skill": "requesting-code-review", "repo": "obra/superpowers", "caminho": "skills/requesting-code-review", "por_que": "revisão antes de subir mudança grande"}
+        {
+          "skill": "test-driven-development",
+          "repo": "obra/superpowers",
+          "caminho": "skills/test-driven-development",
+          "por_que": "escrever o teste antes da correção evita regressão"
+        },
+        {
+          "skill": "requesting-code-review",
+          "repo": "obra/superpowers",
+          "caminho": "skills/requesting-code-review",
+          "por_que": "revisão antes de subir mudança grande"
+        }
       ]
     },
     {
       "id": "estilo",
       "nome": "CSS, tokens e identidade visual",
-      "caminhos": ["**/*.css", "tokens/**", "guidelines/**"],
-      "instaladas": ["frontend-design", "theme-factory"],
+      "caminhos": [
+        "**/*.css",
+        "tokens/**",
+        "guidelines/**"
+      ],
+      "instaladas": [
+        "frontend-design",
+        "theme-factory"
+      ],
       "mercado": [],
       "lembrete": "Só tokens e classes hg-*; fontes Exo 2 e Inter. A identidade do CLAUDE.md vence qualquer skill."
     },
     {
       "id": "arte",
       "nome": "Insígnias, SVG e imagens",
-      "caminhos": ["**/*.svg", "assets/**"],
-      "instaladas": ["canvas-design"],
+      "caminhos": [
+        "**/*.svg",
+        "assets/**"
+      ],
+      "instaladas": [
+        "canvas-design"
+      ],
       "mercado": [
-        {"skill": "algorithmic-art", "repo": "anthropics/skills", "caminho": "skills/algorithmic-art", "por_que": "arte generativa, só se a direção de motion pedir"}
+        {
+          "skill": "algorithmic-art",
+          "repo": "anthropics/skills",
+          "caminho": "skills/algorithmic-art",
+          "por_que": "arte generativa, só se a direção de motion pedir"
+        }
       ]
     },
     {
       "id": "deploy",
       "nome": "Build e publicação na Vercel",
-      "caminhos": ["vercel.json", "vercel.ts", "montar-site.sh", ".mcp.json"],
-      "instaladas": ["verification-before-completion"],
+      "caminhos": [
+        "vercel.json",
+        "vercel.ts",
+        "montar-site.sh",
+        ".mcp.json"
+      ],
+      "instaladas": [
+        "verification-before-completion"
+      ],
       "mercado": [
-        {"skill": "vercel:deployments-cicd", "repo": "plugin vercel (já ativo nesta máquina)", "por_que": "deploy, promoção e rollback"}
+        {
+          "skill": "vercel:deployments-cicd",
+          "repo": "plugin vercel (já ativo nesta máquina)",
+          "por_que": "deploy, promoção e rollback"
+        }
       ]
     },
     {
       "id": "claude",
       "nome": "Configuração do Claude Code (hooks, agentes, skills)",
-      "caminhos": [".claude/**", "CLAUDE.md"],
-      "instaladas": ["skill-creator", "dominic-skill-creator"],
+      "caminhos": [
+        ".claude/**",
+        "CLAUDE.md"
+      ],
+      "instaladas": [
+        "skill-creator",
+        "dominic-skill-creator"
+      ],
       "mercado": [
-        {"skill": "writing-skills", "repo": "obra/superpowers", "caminho": "skills/writing-skills", "por_que": "testar a skill antes de colocar em uso"}
+        {
+          "skill": "writing-skills",
+          "repo": "obra/superpowers",
+          "caminho": "skills/writing-skills",
+          "por_que": "testar a skill antes de colocar em uso"
+        }
       ]
     },
     {
       "id": "docs",
       "nome": "Aulas, READMEs, TODO e logs",
-      "caminhos": ["06-aulas/**", "00-comando/**", "**/README.md", "readme.md", "01-contexto/**"],
-      "instaladas": ["doc-coauthoring", "writing-plans"],
+      "caminhos": [
+        "06-aulas/**",
+        "00-comando/**",
+        "**/README.md",
+        "readme.md",
+        "01-contexto/**"
+      ],
+      "instaladas": [
+        "doc-coauthoring",
+        "writing-plans"
+      ],
       "mercado": []
     }
   ]

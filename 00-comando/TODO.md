@@ -71,3 +71,8 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 ## J — "essa para o botão que mostra a minha localização" (API ip-to-location4 na RapidAPI; chave omitida) (19/09)
 - [x] J1 Testada: assinatura existe (plano 500 mil), mas o fornecedor responde 401 "Invalid API key" nas duas formas — API quebrada do lado deles; não usada
 - [x] J2 Botão "minha localização" no globo: GPS do aparelho (com permissão) → OpenStreetMap (bairro/cidade/UF); sem GPS → cidade por IP (ipwho.is); por último, endereço do perfil
+
+## K — Achado do Ourives: `_ds_bundle.js` sobrescrevia `contas.js`/`fotos.js`/`afiliados.js` (19/09)
+- [x] K1 Corrigido pela ordem dos scripts em `ui_kits/babel-os/index.html` (os três carregam depois do bundle); em produção `ReinoContas.token` era `undefined` → painel admin e importação da Academy não funcionavam
+- [ ] K2 Regenerar o `_ds_bundle.js` sem embutir esses três arquivos (correção de raiz; depende da ferramenta que gera o bundle)
+- [ ] K3 **Confirmar com o fundador:** o Ourives relatou pedidos que não passaram pela Vyra — portal de Notícias (Google News13 + News Briefs), wft-geo-db no mapa e spotify23. Código de Notícias guardado fora do repositório, não publicado; APIs testadas responderam "not subscribed"
