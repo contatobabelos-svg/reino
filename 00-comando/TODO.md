@@ -86,3 +86,8 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] L6 Assistente do Reino (Robomatic AI) com filtro das proibições jurídicas
 - [ ] L7 Ligar as APIs da RapidAPI quando assinadas (News13, GeoDB, Spotify23) e Robomatic quando o fornecedor voltar
 - [ ] L8 População no globo fica atrás do mapa 2D quando ele abre (MapaPanel troca para ReinoMapa ao sair da Terra) — decidir onde mostrar
+
+## M — "deixe mais cara de site de noticias o app de noticias e deixe um bloco tambem no dasboard, com a musica e o assistente com um rosto em pixels vivos que mexe a boca quando responde" (19/09)
+- [x] M1 Notícias com cara de portal (manchete principal, editorias, colunas)
+- [x] M2 Blocos no Dashboard: Notícias, Música e Assistente
+- [x] M3 Assistente com rosto em pixel art vivo (pisca, respira) que mexe a boca enquanto responde — na tela e no bloco

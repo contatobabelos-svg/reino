@@ -125,6 +125,54 @@ body[data-page="bolsa"] .hg-kpis .hg-glow-num { font-size: 1.4rem !important; }
 body[data-page="bolsa"] .hg-bolsa-aviso { padding: .35rem .8rem; font-size: .74rem; }
 body[data-page="bolsa"] .hg-panel.hg-encher > .hg-head { margin-bottom: .5rem; }
 
+/* ---------- Notícias do Reino (cara de jornal) ---------- */
+/* Sem foto (o RSS não traz imagem): a hierarquia sai da tipografia, dos
+   filetes e da faixa ciano do padrão do Reino. Uma coluna só no celular. */
+.hg-jornal-cabecalho { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-bottom: .8rem; border-bottom: 2px solid var(--line-2); }
+.hg-jornal-cabecalho h1 { margin: 0; font: 700 1.85rem/1.1 var(--font-d); color: #fff; letter-spacing: .01em; }
+.hg-jornal-atualizado { font-size: .74rem; color: var(--text-2); white-space: nowrap; }
+.hg-jornal-editorias { display: flex; gap: 1.2rem; flex-wrap: wrap; padding-bottom: .55rem; border-bottom: 1px solid var(--border-soft); }
+.hg-jornal-editorias button { padding: .1rem 0; border: 0; background: none; color: var(--text-2); font: 600 .78rem var(--font-d); letter-spacing: .02em; cursor: pointer; position: relative; }
+.hg-jornal-editorias button:hover { color: #fff; }
+.hg-jornal-editorias button[aria-selected="true"] { color: #fff; }
+.hg-jornal-editorias button[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -.62rem; height: 2px; background: var(--cyan); box-shadow: var(--neon-cyan); }
+.hg-jornal-kicker { display: block; margin-bottom: .35rem; color: var(--cyan); font: 700 .68rem var(--font-d); letter-spacing: .09em; text-transform: uppercase; }
+.hg-jornal-corpo { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 1.6rem; padding-bottom: 1.1rem; border-bottom: 1px solid var(--border-soft); }
+.hg-jornal-manchete h2 { margin: 0 0 .5rem; font: 700 clamp(1.5rem, 1.1rem + 1.4vw, 2.3rem)/1.18 var(--font-d); text-wrap: balance; }
+.hg-jornal-data { font: 600 .95rem var(--font-d); color: var(--text); }
+.hg-jornal-principal { display: grid; gap: 1.1rem; align-content: start; }
+.hg-jornal-secundarias { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; }
+.hg-jornal-secundarias article { padding-top: .65rem; border-top: 2px solid var(--border-soft); }
+.hg-jornal-secundarias h3 { margin: 0 0 .3rem; font: 600 1.02rem/1.3 var(--font-d); }
+.hg-jornal-secundarias h3 a { color: var(--text); }
+.hg-jornal-secundarias h3 a:hover, .hg-jornal-secundarias h3 a:focus-visible { color: var(--cyan); }
+.hg-jornal-secundarias time { color: var(--text-2); font-size: .72rem; }
+.hg-jornal-manchete h2 a { color: #fff; }
+.hg-jornal-manchete h2 a:hover, .hg-jornal-manchete h2 a:focus-visible { color: var(--cyan); }
+.hg-jornal-manchete time { color: var(--text-2); font-size: .78rem; }
+.hg-jornal-maislidas { border-left: 1px solid var(--border-soft); padding-left: 1.3rem; }
+.hg-jornal-maislidas h3 { margin: 0 0 .8rem; color: var(--text-2); font: 700 .74rem var(--font-d); letter-spacing: .07em; text-transform: uppercase; }
+.hg-jornal-maislidas ol { list-style: none; counter-reset: maislidas; margin: 0; padding: 0; display: grid; gap: .7rem; }
+.hg-jornal-maislidas li { counter-increment: maislidas; display: flex; gap: .6rem; }
+.hg-jornal-maislidas li::before { content: counter(maislidas); flex: none; width: 1.3rem; font: 700 1.05rem var(--font-d); color: var(--cyan); }
+.hg-jornal-maislidas a { color: var(--text); font-size: .82rem; line-height: 1.35; }
+.hg-jornal-maislidas a:hover, .hg-jornal-maislidas a:focus-visible { color: var(--cyan); }
+.hg-jornal-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.2rem 1.5rem; }
+.hg-jornal-grade article { padding-top: .65rem; border-top: 2px solid var(--border-soft); }
+.hg-jornal-grade h3 { margin: 0 0 .3rem; font: 600 .92rem/1.32 var(--font-d); }
+.hg-jornal-grade h3 a { color: var(--text); }
+.hg-jornal-grade h3 a:hover, .hg-jornal-grade h3 a:focus-visible { color: var(--cyan); }
+.hg-jornal-grade time { color: var(--text-2); font-size: .72rem; }
+@media (max-width: 900px) {
+  .hg-jornal-corpo { grid-template-columns: minmax(0, 1fr); }
+  .hg-jornal-secundarias { grid-template-columns: minmax(0, 1fr); }
+  .hg-jornal-maislidas { border-left: 0; border-top: 1px solid var(--border-soft); padding-left: 0; padding-top: 1rem; }
+}
+@media (max-width: 1100px) {
+  .hg-jornal-cabecalho h1 { font-size: 1.3rem; }
+  .hg-jornal-manchete h2 { font-size: 1.15rem; }
+}
+
 /* ---------- Pré-cadastro (sem menu lateral) ---------- */
 body[data-page="pre-cadastro"] { display: flex; flex-direction: column; height: 100dvh; }
 body[data-page="pre-cadastro"] .hg-top { flex: none; position: relative; }

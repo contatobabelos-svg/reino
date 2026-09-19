@@ -1125,6 +1125,15 @@
 .hg-chat-aviso { display: flex; align-items: center; gap: .4rem; padding: .5rem .7rem; border-radius: var(--r-10); background: rgba(255, 181, 71, .1); border: 1px solid rgba(255, 181, 71, .3); color: var(--amber); font-size: var(--fs-meta); }
 .hg-chat-aviso svg { width: 15px; height: 15px; flex: none; }
 
+/* Rosto em pixel art vivo (RostoPixel.jsx) — só transform/opacity animam,
+   e a regra global de prefers-reduced-motion (acima) já desliga tudo. */
+.hg-rosto { position: relative; display: inline-block; image-rendering: pixelated; animation: hg-rosto-respirar 3.6s var(--ease) infinite; filter: drop-shadow(0 0 10px rgba(63, 227, 255, .35)); }
+.hg-rosto-svg { width: 100%; height: 100%; image-rendering: pixelated; overflow: visible; }
+@keyframes hg-rosto-respirar { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-1.5%) scale(1.015); } }
+.hg-rosto-reticencias { position: absolute; left: 50%; bottom: -.35rem; transform: translateX(-50%); display: flex; gap: .2rem; }
+.hg-rosto-reticencias i { width: 5px; height: 5px; border-radius: 50%; background: var(--cyan); opacity: .35; animation: hg-rosto-pensa 1.1s ease-in-out infinite; animation-delay: calc(var(--i, 0) * .15s); }
+@keyframes hg-rosto-pensa { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+
 .hg-rep-resumo { display: flex; gap: 1.2rem; margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--border-table); }
 .hg-rep-resumo > div { display: grid; gap: .15rem; }
 .hg-rep-resumo b { color: #fff; font: 700 var(--fs-title) var(--font-d); font-variant-numeric: tabular-nums; }

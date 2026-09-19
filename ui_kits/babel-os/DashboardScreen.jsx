@@ -1,4 +1,4 @@
-const { PageHead, Panel, Button, KpiCard, ProgressRing, MetricRow, ListRow, Pill, Icon,
+const { PageHead, Panel, Button, Input, KpiCard, ProgressRing, MetricRow, ListRow, Pill, Icon,
   FeedPost, AffiliateLink, AffiliateLevel, DonutChart, LineChart, BarMetric, Stars, Tabs } = window.BabelOSDesignSystem_5ad360;
 
 /* Widgets do Dashboard. Cada um pode ser ocultado no ✕ e volta pelo botão
@@ -7,10 +7,167 @@ const { PageHead, Panel, Button, KpiCard, ProgressRing, MetricRow, ListRow, Pill
 const WIDGETS = {
   "kpi-afiliados": "Afiliados ativos", "kpi-bonus": "Bônus acumulado", "kpi-negocios": "Negócios fechados", "kpi-cidades": "Cidades ativas",
   social: "Rede social", mapa: "Mapa Reino", noticias: "Notícias", chat: "Bate Papo",
+  musica: "Música", assistente: "Assistente",
   conquistas: "Conquistas", match: "Match e alertas",
   reputacao: "Score de reputação", bolsa: "Bolsa de Valores", vendas: "Vendas", afiliado: "Link de afiliado",
 };
 const CHAVE = "reino.widgets.ocultos";
+
+/* Os três blocos abaixo (Notícias, Música, Assistente) falam com a mesma
+   Edge Function pública reino-apis que já alimenta as telas cheias — cada
+   widget busca só o essencial (5 manchetes, 3 faixas, 1 resposta) e tem um
+   botão para "ver tudo" na tela completa. */
+const FUNC_URL_APIS = "https://fxlansnepokjxdikxocb.supabase.co/functions/v1/reino-apis";
+const cabecalhosApi = () => ({ apikey: window.REINO_SUPABASE.anon, Authorization: "Bearer " + window.REINO_SUPABASE.anon, "Content-Type": "application/json" });
+function chamarReinoApis(corpo) {
+  return fetch(FUNC_URL_APIS, { method: "POST", headers: cabecalhosApi(), body: JSON.stringify(corpo) })
+    .then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.erro || "Indisponível agora."); return j; });
+}
+
+function IconPausar() { return <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ width: 14, height: 14 }}><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>; }
+
+/* Bloco Notícias: 5 manchetes reais, sem dado fictício. */
+function NoticiasWidget({ onClose, ir }) {
+  const [itens, setItens] = React.useState(null); // null = carregando
+  const [erro, setErro] = React.useState(null);
+  React.useEffect(() => {
+    let vivo = true;
+    chamarReinoApis({ rota: "noticias" })
+      .then((j) => { if (vivo) setItens((j.itens || []).slice(0, 5)); })
+      .catch((e) => { if (vivo) { setErro(e.message); setItens([]); } });
+    return () => { vivo = false; };
+  }, []);
+  return (
+    <Panel title="Notícias do Reino" subtitle="Manchetes reais, agora" headingLevel={3} onClose={onClose}>
+      {itens === null ? <p className="hg-sub">Buscando manchetes…</p>
+        : erro ? <p className="hg-sub">{erro}</p>
+        : !itens.length ? <p className="hg-sub">Nenhuma manchete agora.</p>
+        : (
+          <ul className="hg-noticias">
+            {itens.map((n, i) => (
+              <li key={n.link || i}>
+                <a href={n.link} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none", display: "grid", gap: ".1rem" }}>
+                  <strong>{n.titulo}</strong>
+                  <span><em>{n.fonte || "Reino"}</em></span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      <Button variant="ghost" block onClick={() => ir("noticias.html")}>Ver todas</Button>
+    </Panel>
+  );
+}
+
+const SUGESTOES_MUSICA_MINI = ["samba", "lo-fi para trabalhar", "sertanejo"];
+/* Bloco Música: mini player com um único <audio> — some quando o Dashboard
+   desmonta (troca de tela) ou quando o bloco é fechado. */
+function MusicaWidget({ onClose, ir }) {
+  const [busca, setBusca] = React.useState(SUGESTOES_MUSICA_MINI[0]);
+  const [faixas, setFaixas] = React.useState(null);
+  const [tocandoId, setTocandoId] = React.useState(null);
+  const audioRef = React.useRef(null);
+  if (!audioRef.current && typeof Audio !== "undefined") audioRef.current = new Audio();
+
+  React.useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const aoTerminar = () => setTocandoId(null);
+    a.addEventListener("ended", aoTerminar);
+    return () => a.removeEventListener("ended", aoTerminar);
+  }, []);
+  React.useEffect(() => () => { if (audioRef.current) audioRef.current.pause(); }, []); // sai do Dashboard = para o som
+
+  React.useEffect(() => {
+    let vivo = true;
+    setFaixas(null);
+    chamarReinoApis({ rota: "musica", q: busca })
+      .then((j) => { if (vivo) setFaixas((j.itens || []).slice(0, 3)); })
+      .catch(() => { if (vivo) setFaixas([]); });
+    return () => { vivo = false; };
+  }, [busca]);
+
+  const tocar = (f) => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (tocandoId === f.link) { a.pause(); setTocandoId(null); return; }
+    a.pause(); a.src = f.previa; a.play().catch(() => {}); setTocandoId(f.link);
+  };
+
+  return (
+    <Panel title="Música do Reino" subtitle="Prévias de 30 s" headingLevel={3} onClose={onClose}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: ".35rem", marginBottom: ".6rem" }}>
+        {SUGESTOES_MUSICA_MINI.map((s) => (
+          <button key={s} type="button" className="hg-pill" onClick={() => setBusca(s)}
+            style={busca === s ? { color: "var(--cyan)", borderColor: "var(--cyan)" } : undefined}>{s}</button>
+        ))}
+      </div>
+      {faixas === null ? <p className="hg-sub">Buscando faixas…</p>
+        : !faixas.length ? <p className="hg-sub">Nada encontrado.</p>
+        : (
+          <ul className="hg-list">
+            {faixas.map((f) => (
+              <ListRow key={f.link} title={f.titulo} subtitle={f.artista}
+                right={
+                  <button type="button" className="hg-icon-btn" aria-label={tocandoId === f.link ? "Pausar prévia" : "Tocar prévia"} onClick={() => tocar(f)}
+                    style={{ width: 32, height: 32, borderRadius: "50%" }}>
+                    {tocandoId === f.link ? <IconPausar /> : <Icon name="play" size={14} />}
+                  </button>
+                } />
+            ))}
+          </ul>
+        )}
+      <Button variant="ghost" block onClick={() => ir("musica.html")}>Abrir Música</Button>
+    </Panel>
+  );
+}
+
+/* Bloco Assistente: o rosto em pixel art + a última resposta, com atalho
+   para a tela quando a resposta aponta para um lugar do app. */
+function AssistenteWidget({ onClose, ir }) {
+  const [campo, setCampo] = React.useState("");
+  const [resposta, setResposta] = React.useState(null); // { texto, ir }
+  const [estadoRosto, setEstadoRosto] = React.useState("repouso");
+  const [enviando, setEnviando] = React.useState(false);
+
+  const perguntar = (e) => {
+    e.preventDefault();
+    const pergunta = campo.trim();
+    if (!pergunta || enviando) return;
+    setEnviando(true);
+    setEstadoRosto("pensando");
+    chamarReinoApis({ rota: "assistente", pergunta })
+      .then((j) => { setResposta({ texto: j.resposta, ir: j.ir || null }); setEstadoRosto("falando"); setTimeout(() => setEstadoRosto("repouso"), 900); })
+      .catch((err) => { setResposta({ texto: err.message || "Não consegui responder agora.", ir: null }); setEstadoRosto("repouso"); })
+      .finally(() => setEnviando(false));
+    setCampo("");
+  };
+
+  const nome = resposta && resposta.ir ? nomeDaTelaMenu(resposta.ir) : null;
+
+  return (
+    <Panel title="Assistente do Reino" subtitle="Pergunte sobre o app" headingLevel={3} onClose={onClose}>
+      <div style={{ display: "flex", alignItems: "center", gap: ".7rem", marginBottom: ".6rem" }}>
+        <RostoPixel estado={estadoRosto} tamanho={48} />
+        <p className="hg-sub" style={{ margin: 0 }} aria-live="polite">
+          {resposta ? resposta.texto : "Oi! Pergunte sobre o mapa, as guildas, o match ou qualquer outra tela do app."}
+        </p>
+      </div>
+      {nome ? <Button variant="cyan" block style={{ marginBottom: ".6rem" }} onClick={() => ir(resposta.ir)}>Abrir {nome}</Button> : null}
+      <form onSubmit={perguntar} style={{ display: "flex", gap: ".4rem" }}>
+        <label className="sr-only" htmlFor="assistente-widget-campo">Sua pergunta</label>
+        <Input id="assistente-widget-campo" value={campo} onChange={(e) => setCampo(e.target.value)} placeholder="Pergunte algo…" style={{ flex: 1, minWidth: 0 }} disabled={enviando} />
+        <Button type="submit" variant="cyan" disabled={enviando || !campo.trim()}>Ir</Button>
+      </form>
+      <Button variant="ghost" block style={{ marginTop: ".5rem" }} onClick={() => ir("assistente.html")}>Abrir Assistente</Button>
+    </Panel>
+  );
+}
+function nomeDaTelaMenu(href) {
+  const menu = window.BabelOSDesignSystem_5ad360.MENU_BABEL || [];
+  const item = menu.find(([h]) => h === href);
+  return item ? item[2] : null;
+}
 
 function useWidgets() {
   const [ocultos, setOcultos] = React.useState(() => {
@@ -55,7 +212,7 @@ function DashboardScreen({ ir, usuario }) {
 
   /* colunas de operação: só as que têm algum widget visível entram na grade */
   const colEsq = w.ve("social");
-  const colCentro = w.ve("mapa") || w.ve("noticias") || w.ve("chat");
+  const colCentro = w.ve("mapa") || w.ve("noticias") || w.ve("chat") || w.ve("musica") || w.ve("assistente");
   const colDir = w.ve("conquistas") || w.ve("match");
   const colunas = [colEsq && "esquerda", colCentro && "centro", colDir && "direita"].filter(Boolean).join(" ");
   const kpis = ["kpi-afiliados", "kpi-bonus", "kpi-negocios", "kpi-cidades"].filter(w.ve);
@@ -120,15 +277,7 @@ function DashboardScreen({ ir, usuario }) {
           {colCentro ? (
             <div className="hg-col" data-zona="centro">
               {w.ve("mapa") ? <MapaPanel usuario={usuario} subtitle={"Seu título mostra: " + alcance + ". Desça até o bairro para ver a rede de empresas."} onClose={() => w.esconder("mapa")} /> : null}
-              {w.ve("noticias") ? (
-                <Panel title="Notícias de afiliados e finanças" subtitle="Atualizado agora" headingLevel={3} onClose={() => w.esconder("noticias")}>
-                  <ul className="hg-noticias">
-                    {d.noticias.slice(0, 3).map((n) => (
-                      <li key={n.titulo}><strong>{n.titulo}</strong><span><em>{n.tag}</em>{n.fonte} · {n.quando}</span></li>
-                    ))}
-                  </ul>
-                </Panel>
-              ) : null}
+              {w.ve("noticias") ? <NoticiasWidget ir={ir} onClose={() => w.esconder("noticias")} /> : null}
               {w.ve("chat") ? (
                 <Panel title="Bate Papo do Reino" subtitle="Só Marquês para cima envia mensagem" headingLevel={3} onClose={() => w.esconder("chat")}>
                   <ul className="hg-list">
@@ -140,6 +289,8 @@ function DashboardScreen({ ir, usuario }) {
                   <Button variant="ghost" block onClick={() => ir("chat.html")}>Abrir o Bate Papo</Button>
                 </Panel>
               ) : null}
+              {w.ve("musica") ? <MusicaWidget ir={ir} onClose={() => w.esconder("musica")} /> : null}
+              {w.ve("assistente") ? <AssistenteWidget ir={ir} onClose={() => w.esconder("assistente")} /> : null}
             </div>
           ) : null}
 
