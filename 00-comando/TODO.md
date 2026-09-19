@@ -38,3 +38,6 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
       (Visconde → Imperador), sem Barão
 - [ ] D6 **Conflito para decidir:** a aula usa a paleta heráldica v2 e EB Garamond (site e insígnias);
       o app usa Exo 2 + Inter e o visual holograma. Confirmar que são superfícies diferentes
+
+## F — "pode privar o github" (19/09)
+- [x] F1 Repositório `contatobabelos-svg/reino` privado
