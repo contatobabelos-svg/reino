@@ -1,5 +1,7 @@
 {
-  "rewrites": [
-    { "source": "/r/:codigo", "destination": "/index.html" }
+  "buildCommand": "sh montar-site.sh",
+  "outputDirectory": "site",
+  "redirects": [
+    { "source": "/r/:codigo", "destination": "/?ref=:codigo", "permanent": false }
   ]
 }

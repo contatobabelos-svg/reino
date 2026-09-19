@@ -71,8 +71,10 @@
 
   async function sb(metodo, corpo, query) {
     const c = CFG(); if (!c) return null;
+    /* logado, a foto fica em nome da conta (só ela ou um admin troca depois) */
+    const tk = (window.ReinoContas && window.ReinoContas.token && (await window.ReinoContas.token())) || c.anon;
     const r = await fetch(c.url.replace(/\/$/, "") + "/rest/v1/fotos" + (query ? "?" + query : ""), {
-      method: metodo, headers: { apikey: c.anon, Authorization: "Bearer " + c.anon, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" },
+      method: metodo, headers: { apikey: c.anon, Authorization: "Bearer " + tk, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" },
       body: corpo ? JSON.stringify(corpo) : undefined,
     });
     if (!r.ok) throw new Error("fotos " + r.status);

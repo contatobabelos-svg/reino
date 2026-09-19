@@ -10,9 +10,6 @@ function LoginScreen({ onEntrar }) {
   const refUrl = React.useMemo(() => (window.ReinoAfiliados ? window.ReinoAfiliados.codigoDaUrl() : "") || sessionStorage.getItem("reino.ref") || new URLSearchParams(location.search).get("ref") || "", []);
   const codigoRef = (v) => { const s = String(v || ""); const m = s.match(/[?&]ref=([^&#\s]+)/) || s.match(/\/r\/([A-Za-z0-9_-]+)/); return (m ? decodeURIComponent(m[1]) : s.trim()).toLowerCase(); };
   const codigo = codigoRef(f.afiliado) || refUrl;
-  // link de administrador: ?adm=reino-adm-2026 → a conta nasce liberada como admin
-  const adm = React.useMemo(() => new URLSearchParams(location.search).get("adm") === "reino-adm-2026", []);
-  React.useEffect(() => { if (adm) setAba("cadastro"); }, [adm]);
   const colar = async () => { try { const t = await navigator.clipboard.readText(); if (t) setF((v) => ({ ...v, afiliado: t })); } catch (e) { /* sem permissão: o usuário cola manualmente */ } };
   const [erro, setErro] = React.useState("");
   const [indo, setIndo] = React.useState(false);
@@ -27,7 +24,7 @@ function LoginScreen({ onEntrar }) {
     if (C) {
       try {
         if (aba === "entrar") await C.entrar(f.usuario.trim(), f.senha);
-        else await C.cadastrar({ nome: f.nome.trim(), email: f.email.trim(), senha: f.senha, titulo: localStorage.getItem("reino.tituloEscolhido") || undefined, indicadoPor: codigoRef(f.afiliado) || refUrl || undefined, situacao: adm ? "admin" : undefined });
+        else await C.cadastrar({ nome: f.nome.trim(), email: f.email.trim(), senha: f.senha, titulo: localStorage.getItem("reino.tituloEscolhido") || undefined, indicadoPor: codigoRef(f.afiliado) || refUrl || undefined });
       } catch (err) {
         // demonstração: qualquer usuário e senha entram. O banco só é usado quando confere.
         if (aba === "entrar") { try { C.entrarLocal(f.usuario.trim()); } catch (e) {} }
@@ -42,7 +39,7 @@ function LoginScreen({ onEntrar }) {
       window.ReinoAfiliados.registrarCadastro({ nome: f.nome.trim(), email: f.email.trim(), titulo: localStorage.getItem("reino.tituloEscolhido") || (perfil && perfil.titulo) });
     }
     // conta nova entra como pré-cadastro; quem já tem conta entra liberado
-    try { localStorage.setItem("reino.situacao", adm ? "admin" : aba === "cadastro" ? "aguardando" : "membro"); } catch (e) {}
+    try { localStorage.setItem("reino.situacao", aba === "cadastro" ? "aguardando" : "membro"); } catch (e) {}
     if (aba === "cadastro" && window.ReinoFotos) {
       const provisoria = window.ReinoFotos.obter("novo-cadastro");
       if (provisoria && f.nome.trim()) { window.ReinoFotos.definir(f.nome.trim(), provisoria); window.ReinoFotos.remover("novo-cadastro"); }

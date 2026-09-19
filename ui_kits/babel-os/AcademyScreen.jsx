@@ -10,7 +10,7 @@ const gravarAulas = (lst) => { try { localStorage.setItem(CHAVE, JSON.stringify(
 function ehAdmin() {
   try {
     const s = (window.ReinoContas && window.ReinoContas.sessao && window.ReinoContas.sessao()) || {};
-    return s.situacao === "admin" || localStorage.getItem("reino.situacao") === "admin";
+    return !!s.token && s.situacao === "admin";
   } catch (e) { return false; }
 }
 

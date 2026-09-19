@@ -42,11 +42,11 @@
   async function sb(tabela, metodo, corpo, query) {
     const c = CFG(); if (!c) return null;
     const r = await fetch(c.url.replace(/\/$/, "") + "/rest/v1/" + tabela + (query ? "?" + query : ""), {
-      method: metodo, headers: { apikey: c.anon, Authorization: "Bearer " + c.anon, "Content-Type": "application/json", Prefer: metodo === "POST" ? "return=representation" : "" },
+      method: metodo, headers: { apikey: c.anon, Authorization: "Bearer " + c.anon, "Content-Type": "application/json", Prefer: "return=minimal" },
       body: corpo ? JSON.stringify(corpo) : undefined,
     });
     if (!r.ok) throw new Error("Supabase " + r.status + " " + (await r.text()));
-    return metodo === "GET" || metodo === "POST" ? r.json() : null;
+    return metodo === "GET" ? r.json() : null; /* gravações não pedem a linha de volta: o e-mail de cadastros não é legível para o público */
   }
 
   /* ---------- localização real (cidade/UF por IP) ----------
@@ -119,7 +119,7 @@
     try {
       if (CFG()) {
         cliques = await sb("cliques", "GET", null, "codigo=eq." + encodeURIComponent(codigo) + "&order=criado_em.desc&limit=500");
-        cadastros = await sb("cadastros", "GET", null, "codigo=eq." + encodeURIComponent(codigo) + "&order=criado_em.desc&limit=500");
+        cadastros = await sb("cadastros", "GET", null, "select=id,codigo,nome,titulo,cidade,uf,criado_em&codigo=eq." + encodeURIComponent(codigo) + "&order=criado_em.desc&limit=500");
         ranking = await sb("ranking_afiliados", "GET", null, "order=cadastros.desc&limit=10");
       }
     } catch (e) { console.warn("[afiliados] leitura falhou:", e.message); }

@@ -26,12 +26,20 @@ function AdminScreen() {
   const [mexendo, setMexendo] = React.useState(null);
 
   const base = online ? cfg.url.replace(/\/$/, "") + "/rest/v1/" : "";
-  const cab = online ? { apikey: cfg.anon, Authorization: "Bearer " + cfg.anon } : null;
+  /* o banco só entrega estas tabelas a uma conta admin logada: usa o token do login, não a chave pública */
+  const C = window.ReinoContas;
+  const cab = async () => {
+    const tk = C && C.token ? await C.token() : null;
+    if (!tk) throw new Error("login");
+    return { apikey: cfg.anon, Authorization: "Bearer " + tk };
+  };
 
   React.useEffect(() => {
     if (!online) return;
     let vivo = true;
-    const pega = (q) => fetch(base + q, { headers: cab }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const pega = (q) => cab().then((h) => fetch(base + q, { headers: h })).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const s = C && C.sessao ? C.sessao() : null;
+    if (!s || !s.token || s.situacao !== "admin") { setErro("Entre com uma conta de administrador para ver as contas."); return; }
     Promise.all([
       pega("perfis?select=*&order=criado_em.desc"),
       pega("codigos?select=codigo,user_id,nome"),
@@ -50,7 +58,7 @@ function AdminScreen() {
   const decidir = async (p, nova) => {
     setMexendo(p.id);
     try {
-      const r = await fetch(base + "perfis?id=eq." + p.id, { method: "PATCH", headers: { ...cab, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify({ situacao: nova }) });
+      const r = await fetch(base + "perfis?id=eq." + p.id, { method: "PATCH", headers: { ...(await cab()), "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify({ situacao: nova }) });
       if (!r.ok) throw new Error(await r.text());
       setDados((d) => ({ ...d, perfis: d.perfis.map((x) => (x.id === p.id ? { ...x, situacao: nova } : x)) }));
     } catch (e) { setErro("Não foi possível gravar a mudança. " + String(e.message || e).slice(0, 120)); }
@@ -60,7 +68,7 @@ function AdminScreen() {
   const cabeca = <PageHead title="Contas no banco" subtitle="Quem já criou conta de verdade no Reino — lido direto do Supabase." />;
   if (!online) return <>{cabeca}<Panel fill><EmptyState icon="alerta" title="Banco não conectado" description="Cole a URL e a chave publicável do Supabase em window.REINO_SUPABASE para ver as contas reais." /></Panel></>;
   if (!dados) return erro
-    ? <>{cabeca}<Panel fill><EmptyState icon="alerta" title="Leitura bloqueada" description={erro + " Confira as políticas de leitura (RLS) em afiliados.sql."} /></Panel></>
+    ? <>{cabeca}<Panel fill><EmptyState icon="alerta" title="Acesso restrito" description={erro} /></Panel></>
     : <PageHead title="Contas no banco" subtitle="Carregando…" />;
 
   const t = busca.trim().toLowerCase();

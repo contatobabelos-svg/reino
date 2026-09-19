@@ -251,7 +251,10 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
         return [-47.9, -15.8];
       })();
       const m = new ml.Map({ container: caixa.current, style: estiloReino(), center: centro,
-        zoom: bairro ? 15.4 : cidade ? 11.6 : uf ? 6.4 : 4.1, minZoom: 3, maxZoom: 19, attributionControl: false });
+        zoom: bairro ? 15.4 : cidade ? 11.6 : uf ? 6.4 : 4.1, minZoom: 3, maxZoom: 19, attributionControl: false,
+        /* fora da tela cheia do mapa, a roda e o dedo rolam a página; zoom pede Ctrl/⌘ + roda ou dois dedos */
+        cooperativeGestures: !document.body.classList.contains("is-imersivo"),
+        locale: { "CooperativeGesturesHandler.WindowsHelpText": "Use Ctrl + roda do mouse para dar zoom no mapa", "CooperativeGesturesHandler.MacHelpText": "Use ⌘ + roda do mouse para dar zoom no mapa", "CooperativeGesturesHandler.MobileHelpText": "Use dois dedos para mover o mapa" } });
       m.addControl(new ml.NavigationControl({ showCompass: false }), "bottom-right");
       m.addControl(new ml.AttributionControl({ compact: true, customAttribution: "Cartografia do Reino" }), "bottom-left");
       m.on("error", () => {});

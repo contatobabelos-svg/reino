@@ -1,4 +1,5 @@
 -- Reino · Afiliados — rode no SQL Editor do Supabase (Project → SQL → New query).
+-- ATENÇÃO: as políticas abertas abaixo foram substituídas por supabase/2026-09-19_seguranca_rls_por_dono.sql. Não rode este arquivo de novo.
 -- Depois, em Settings → API, copie a URL do projeto e a chave "anon public" e cole
 -- em ui_kits/babel-os/index.html:  window.REINO_SUPABASE = { url: "...", anon: "..." };
 

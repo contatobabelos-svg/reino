@@ -46,7 +46,7 @@
       </div>
       <div class="hg-globo-clima" role="status" hidden></div>
       <div class="hg-globo-tip" role="status" hidden></div>
-      <p class="hg-globo-dica">Arraste para girar · role ou pinça para aproximar · toque no Brasil</p>
+      <p class="hg-globo-dica">Arraste para girar · ${imersivo ? "role" : "Ctrl + roda"} ou pinça para aproximar · toque no Brasil</p>
       <aside class="hg-globo-painel" aria-live="polite"></aside>
       <p class="hg-globo-credito" hidden>Ruas: Esri · © OpenStreetMap</p>`;
 
@@ -54,6 +54,13 @@
     const ctx = cv.getContext("2d");
     const tip = raiz.querySelector(".hg-globo-tip");
     const painel = raiz.querySelector(".hg-globo-painel");
+    /* aviso rápido quando a roda passa pelo globo sem Ctrl: a página rola e o zoom fica a um atalho */
+    const avisoZoom = document.createElement("div");
+    avisoZoom.className = "hg-globo-aviso"; avisoZoom.setAttribute("role", "status"); avisoZoom.hidden = true;
+    avisoZoom.textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? "Use ⌘ + roda para dar zoom" : "Use Ctrl + roda para dar zoom";
+    raiz.appendChild(avisoZoom);
+    let avisoT = 0;
+    const avisarZoom = () => { avisoZoom.hidden = false; clearTimeout(avisoT); avisoT = setTimeout(() => { avisoZoom.hidden = true; }, 1400); };
     const trilha = raiz.querySelector(".hg-globo-trilha");
     const dica = raiz.querySelector(".hg-globo-dica");
     const chipClima = raiz.querySelector(".hg-globo-clima");
@@ -609,6 +616,8 @@
     cv.addEventListener("pointercancel", soltar);
     cv.addEventListener("pointerleave", () => { if (!arr) { tip.hidden = true; if (st.hover) { st.hover = null; sujo = true; } } });
     cv.addEventListener("wheel", (e) => {
+      /* fora da tela cheia a roda rola a página; zoom no globo pede Ctrl/⌘ + roda */
+      if (!imersivo && !e.ctrlKey && !e.metaKey) { avisarZoom(); return; }
       e.preventDefault();
       if (raiz.__acordar) raiz.__acordar();
       giro = false; anim = null; ultimaInteracao = performance.now(); seqVoo++;

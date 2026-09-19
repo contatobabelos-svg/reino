@@ -30,11 +30,28 @@
     return j;
   }
 
+  /* ---------- token do login ----------
+     O Supabase emite o token por 1h. Antes de cada uso, se estiver perto de
+     vencer, renova com o refresh_token; sem isso o painel e o perfil param de
+     gravar uma hora depois do login. */
+  const venceEm = (t) => { try { return JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).exp * 1000; } catch (e) { return 0; } };
+  async function token() {
+    if (!CFG() || !sessao || !sessao.token) return null;
+    if (venceEm(sessao.token) - Date.now() > 60000) return sessao.token;
+    if (!sessao.refresh) return null;
+    try {
+      const j = await auth("token?grant_type=refresh_token", { refresh_token: sessao.refresh });
+      sessao = { ...sessao, token: j.access_token, refresh: j.refresh_token };
+      gravarSessao(sessao);
+      return sessao.token;
+    } catch (e) { return null; }
+  }
+
   /* ---------- tabelas ---------- */
   async function rest(tabela, metodo, corpo, query, headers) {
     const r = await fetch(base() + "/rest/v1/" + tabela + (query ? "?" + query : ""), {
       method: metodo,
-      headers: cab({ Authorization: "Bearer " + ((sessao && sessao.token) || CFG().anon), Prefer: metodo === "POST" ? "return=representation,resolution=merge-duplicates" : "return=representation", ...(headers || {}) }),
+      headers: cab({ Authorization: "Bearer " + ((await token()) || CFG().anon), Prefer: metodo === "POST" ? "return=representation,resolution=merge-duplicates" : "return=representation", ...(headers || {}) }),
       body: corpo ? JSON.stringify(corpo) : undefined,
     });
     const txt = await r.text();
@@ -68,7 +85,7 @@
   async function salvarPerfil(p) {
     const atual = { ...(sessao || {}), ...p };
     sessao = atual; gravarSessao(atual);
-    if (CFG() && atual.id) { try { await rest("perfis", "POST", [{ id: atual.id, nome: atual.nome || null, email: atual.email || null, titulo: atual.titulo || null, cidade: atual.cidade || null, uf: atual.uf || null, situacao: atual.situacao || null, foto: atual.foto || null }]); } catch (e) {} }
+    if (CFG() && atual.id) { try { await rest("perfis", "POST", [{ id: atual.id, nome: atual.nome || null, email: atual.email || null, titulo: atual.titulo || null, cidade: atual.cidade || null, uf: atual.uf || null, foto: atual.foto || null }]); } catch (e) {} }
     return atual;
   }
 
@@ -76,7 +93,7 @@
   async function entrar(email, senha) {
     if (!CFG()) { sessao = { id: "local", email, nome: email.split("@")[0], situacao: "membro", demo: true }; gravarSessao(sessao); return sessao; }
     const j = await auth("token?grant_type=password", { email, password: senha });
-    sessao = { id: j.user && j.user.id, email, token: j.access_token, refresh: j.refresh_token, nome: (j.user && j.user.user_metadata && j.user.user_metadata.nome) || email.split("@")[0], situacao: (j.user && j.user.user_metadata && j.user.user_metadata.situacao) || "membro" };
+    sessao = { id: j.user && j.user.id, email, token: j.access_token, refresh: j.refresh_token, nome: (j.user && j.user.user_metadata && j.user.user_metadata.nome) || email.split("@")[0], situacao: "aguardando" }; /* a situação real vem do perfil no banco, logo abaixo */
     gravarSessao(sessao);
     try { const p = await rest("perfis", "GET", null, "id=eq." + sessao.id + "&select=*"); if (p && p[0]) { sessao = { ...sessao, ...p[0] }; gravarSessao(sessao); } } catch (e) {}
     return sessao;
@@ -84,9 +101,9 @@
   async function cadastrar({ nome, email, senha, titulo, cidade, uf, indicadoPor, situacao }) {
     const sit = situacao || "aguardando";
     if (!CFG()) { sessao = { id: "local", email, nome, titulo, cidade, uf, situacao: sit, demo: true }; gravarSessao(sessao); return { sessao, confirmar: false }; }
-    const j = await auth("signup", { email, password: senha, data: { nome, situacao: sit, indicado_por: indicadoPor || null } });
+    const j = await auth("signup", { email, password: senha, data: { nome, titulo: titulo || null, cidade: cidade || null, uf: uf || null, indicado_por: indicadoPor || null } });
     const confirmar = !j.access_token;
-    sessao = { id: (j.user && j.user.id) || (j.id), email, nome, token: j.access_token || null, refresh: j.refresh_token || null, titulo, cidade, uf, situacao: sit, confirmar };
+    sessao = { id: (j.user && j.user.id) || (j.id), email, nome, token: j.access_token || null, refresh: j.refresh_token || null, titulo, cidade, uf, situacao: "aguardando", confirmar };
     gravarSessao(sessao);
     await salvarPerfil({});
     return { sessao, confirmar };
@@ -103,7 +120,7 @@
   window.ReinoContas = {
     sessao: () => sessao, entrar, entrarLocal, cadastrar, sair, salvarPerfil,
     codigoLivre, reservarCodigo, limpar,
-    online: () => !!CFG(),
+    online: () => !!CFG(), token,
     trocarSenha: async (nova) => { if (!CFG() || !sessao || !sessao.token) throw new Error("Entre novamente para trocar a senha."); const r = await fetch(base() + "/auth/v1/user", { method: "PUT", headers: cab({ Authorization: "Bearer " + sessao.token }), body: JSON.stringify({ password: nova }) }); if (!r.ok) throw new Error(erroDe(await r.json().catch(() => ({})), r)); return true; },
   };
 })();

@@ -78,7 +78,7 @@ function App() {
   const ehAdm = React.useMemo(() => {
     try {
       const s = (window.ReinoContas && window.ReinoContas.sessao && window.ReinoContas.sessao()) || {};
-      return s.situacao === "admin" || localStorage.getItem("reino.situacao") === "admin";
+      return !!s.token && s.situacao === "admin"; /* situação lida do banco no login */
     } catch (e) { return false; }
   }, []);
   const tituloAtual = ehAdm ? "Imperador" : d.perfil.titulo;
