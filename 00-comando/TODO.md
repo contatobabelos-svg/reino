@@ -41,3 +41,4 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 
 ## F — "pode privar o github" (19/09)
 - [x] F1 Repositório `contatobabelos-svg/reino` privado
+- [x] F2 Voltou a público: no plano Hobby a Vercel bloqueia deploy de repo privado quando o autor do commit (`diegobabel`) não é o dono da conta (`contatobabelos-svg`). Fundador escolheu voltar a público

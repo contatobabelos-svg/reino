@@ -14,3 +14,4 @@ os demais, de `date` no momento do registro. O que não tem horário registrado 
 | D1–D3 | 2026-09-19 02:35 | Vyra | Aula guardada, método e proibições no `CLAUDE.md`, agentes no esqueleto de 5 partes | este arquivo e `TODO.md` |
 | E | 2026-09-19 02:59 | Vyra | Commit e push de `.claude/`, `CLAUDE.md`, `00-comando/` e `06-aulas/` (pedido: "pode subir") | `git log`; deploy de produção conferido |
 | F1 | 2026-09-19 03:06 | Vyra | Repositório GitHub tornado privado | `gh repo view` → PRIVATE; acesso anônimo 404; deploy seguinte conferido |
+| F2 | 2026-09-19 03:17 | Vyra | Deploy do repo privado veio BLOCKED (autor `diegobabel` ≠ dono Hobby); repositório voltou a público por escolha do fundador | API da Vercel: `readyState: BLOCKED`; `gh repo view` → PUBLIC |
