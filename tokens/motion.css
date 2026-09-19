@@ -1,0 +1,18 @@
+/* Babel OS · movimento — durações e curvas em uso */
+:root{
+  --dur-fast:.15s; /* @kind other */
+  --dur:.2s; /* @kind other */        /* hover de cor/borda */
+  --dur-3:.3s; /* @kind other */      /* drawer, toast, halo do painel */
+  --dur-in:.5s; /* @kind other */     /* entrada de linha/card */
+  --dur-entrada:.6s; /* @kind other *//* .hg-content > * */
+  --dur-arco:1.4s; /* @kind other */  /* anel de progresso */
+  --dur-barra:1.2s; /* @kind other */ /* barra de progresso */
+  --dur-tape:40s; /* @kind other */   /* letreiro da bolsa (min 20s) */
+
+  --ease:cubic-bezier(.2,.8,.2,1); /* @kind other */       /* padrão: entra rápido, assenta */
+  --ease-bounce:cubic-bezier(.34,1.56,.64,1); /* @kind other */ /* hover de card/botão-play */
+  --ease-menu:cubic-bezier(.16,1,.3,1); /* @kind other */  /* menu de vidro */
+
+  --press:translateY(1px); /* @kind other */   /* botão pressionado */
+  --press-escala:scale(.94); /* @kind other */ /* controles circulares */
+}

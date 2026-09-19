@@ -1,0 +1,44 @@
+/* Babel OS · raios, brilhos neon, vidro e bordas */
+:root{
+  --r:20px; /* @kind radius */        /* painel */
+  --r-lg:18px; /* @kind radius */     /* globo */
+  --r-16:16px; /* @kind radius */     /* mapa, brasão, estado vazio, linha da bolsa */
+  --r-14:14px; /* @kind radius */     /* linha de lista, drawer, toast */
+  --r-sm:12px; /* @kind radius */     /* botão, ícone-botão, abas */
+  --r-10:10px; /* @kind radius */     /* campo, item de lista */
+  --r-8:8px; /* @kind radius */       /* logo de ativo */
+  --r-pill:999px; /* @kind radius */
+
+  --neon-cyan:0 0 6px rgba(63,227,255,.8),0 0 18px rgba(63,227,255,.45),0 0 40px rgba(63,227,255,.2); /* @kind shadow */
+  --neon-blue:0 0 6px rgba(59,130,255,.8),0 0 20px rgba(59,130,255,.45); /* @kind shadow */
+  --neon-violet:0 0 6px rgba(139,92,255,.85),0 0 20px rgba(139,92,255,.45); /* @kind shadow */
+  --neon-gold:0 0 6px var(--gold),0 0 20px rgba(245,199,106,.55); /* @kind shadow */
+  --neon-green:0 0 6px var(--green),0 0 20px rgba(52,230,166,.55); /* @kind shadow */
+  --neon-red:0 0 6px var(--red),0 0 18px rgba(255,77,122,.5); /* @kind shadow */
+  --neon-magenta:0 0 6px var(--magenta),0 0 20px rgba(224,75,255,.5); /* @kind shadow */
+
+  /* halo do painel: repouso e hover */
+  --glow:0 0 1px rgba(255,255,255,.5),0 0 22px rgba(0,132,255,.22),inset 0 0 24px rgba(50,90,255,.07); /* @kind shadow */
+  --glow-2:0 0 1px rgba(255,255,255,.7),0 0 34px rgba(0,150,255,.4),inset 0 0 28px rgba(80,120,255,.12); /* @kind shadow */
+  --glow-btn:0 0 18px rgba(120,90,255,.45); /* @kind shadow */
+  --glow-btn-hover:0 0 30px rgba(130,100,255,.75); /* @kind shadow */
+
+  /* texto que acende */
+  --text-glow:0 0 10px rgba(120,180,255,.6),0 0 30px rgba(80,130,255,.35); /* @kind shadow */
+  --text-glow-num:0 0 10px rgba(130,185,255,.95),0 0 26px rgba(80,130,255,.6),0 0 50px rgba(139,92,255,.35); /* @kind shadow */
+  --text-glow-cyan:0 0 8px rgba(63,227,255,.55); /* @kind shadow */
+  --text-glow-gold:0 0 10px rgba(245,199,106,.95),0 0 28px rgba(224,163,60,.6); /* @kind shadow */
+
+  /* borda-gradiente do painel (mask xor sobre ::before) */
+  --borda-painel:linear-gradient(135deg,rgba(63,227,255,.85),rgba(59,130,255,.12) 30%,rgba(139,92,255,.1) 70%,rgba(224,75,255,.75)); /* @kind color */
+
+  /* vidro */
+  --blur-top:blur(16px); /* @kind other */
+  --blur-vidro:blur(18px) saturate(160%); /* @kind other */
+  --blur-menu:blur(26px) saturate(170%); /* @kind other */
+  --vidro-linha:linear-gradient(100deg,rgba(255,255,255,.09),rgba(255,255,255,.02) 40%,rgba(120,170,255,.06)); /* @kind color */
+  --vidro-sombra:inset 0 1px 0 rgba(255,255,255,.12),0 8px 24px rgba(0,0,0,.25); /* @kind shadow */
+  --vidro-reflexo:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.1) 45%,transparent 60%); /* @kind color */
+
+  --focus-ring:0 0 0 3px rgba(63,227,255,.15); /* @kind shadow */
+}

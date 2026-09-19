@@ -1,0 +1,60 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Data" subtitle="Indicadores, anel, rosca, linha, barras, métricas, estrelas e tabela" -->
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<style>body{margin:0;padding:18px 20px}body::after{display:none}.linha{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}.rot{color:var(--text-3);font-size:.62rem;margin:.1rem 0 .35rem}.duo{display:grid;grid-template-columns:230px minmax(0,1fr);gap:1rem;align-items:center}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { KpiCard, ProgressRing, MetricRow, Stars, ListRow, Table, Sparkline, Pill, Panel, DonutChart, LineChart, BarMetric } = window.BabelOSDesignSystem_5ad360;
+function Demo() {
+  return (
+    <div style={{ display: "grid", gap: ".9rem" }}>
+      <section className="hg-kpis">
+        <KpiCard label="Empresas no Reino" value="2.041" trend={12} foot="nesta semana" />
+        <KpiCard label="Avaliações" value="8.317" trend={8} foot="nesta semana" />
+        <KpiCard label="Cidades ativas" value="346" trend={4} foot="nesta semana" />
+        <KpiCard label="Nota média" value="4,6" suffix="★" trend={0.1} foot="nesta semana" />
+      </section>
+      <Panel tone="reputacao" title="Score de Reputação" subtitle="Média das estrelas recebidas" headingLevel={3}>
+        <div className="duo">
+          <ProgressRing value={92} label="de 5 estrelas" small />
+          <div>
+            <MetricRow name="Avaliações feitas" label="14 / 25" value={56} />
+            <MetricRow name="Empresas cadastradas" label="3 / 5" value={60} />
+            <ul className="hg-list">
+              <ListRow title="Conta Certa Contabilidade" subtitle="Contabilidade · Campinas" avatarGradient="match" right={<Pill>96%</Pill>} />
+              <ListRow title="Clínica Vida Plena" subtitle="Saúde · Campinas" right={<Stars value={4.6} showValue />} />
+            </ul>
+          </div>
+        </div>
+      </Panel>
+      <div className="cols" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <Panel title="Distribuição" headingLevel={3}>
+          <DonutChart label="negócios" total="100" segments={[
+            { name: "Em negociação", value: 45 }, { name: "Fechados", value: 32 },
+            { name: "Agendados", value: 18 }, { name: "Em espera", value: 5 },
+          ]} />
+        </Panel>
+        <Panel title="Negócios na semana" headingLevel={3}>
+          <LineChart points={[180, 214, 196, 258, 241, 302, 342]} labels={["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]} highlight="342" />
+        </Panel>
+      </div>
+      <Panel tone="afiliado" title="Vendas" headingLevel={3}>
+        <BarMetric items={[
+          { name: "Faturamento total", value: "R$ 128.400", percent: 100 },
+          { name: "Faturamento mensal", value: "R$ 32.100", percent: 45 },
+          { name: "CPL (custo por lead)", value: "R$ 18,90", percent: 26 },
+          { name: "CVR (conversão)", value: "3,4%", percent: 14 },
+        ]} />
+      </Panel>
+      <Table columns={["Empresa", "Nicho", "Cidade", "Nota"]} rows={[
+        ["Ribeiro & Associados Advocacia", "Advocacia", "São Paulo", "4,8"],
+        ["Nuvem Azul Tecnologia", "Tecnologia", "São Paulo", "4,5"],
+      ]} />
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script></body></html>

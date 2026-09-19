@@ -1,0 +1,44 @@
+<!-- @dsCard group="Babel OS" viewport="1440x900" name="Reino · Mapa Reino" subtitle="Globo do produto: Terra, torre Babel na Lua, Brasil, estados, cidades e bairros" -->
+<!-- @startingPoint section="Babel OS" subtitle="Globo imersivo do Reino, navegável" viewport="1440x900" -->
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mapa Reino · Reino · UI kit</title>
+<link rel="stylesheet" href="../../styles.css">
+<link rel="stylesheet" href="app-shell.css">
+<link rel="stylesheet" href="app-layout.css">
+<script src="app-layout.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="geo-mundo.js"></script>
+<script src="geo-brasil.js"></script>
+<script src="municipios-tudo.js"></script>
+<script src="globo.js"></script>
+<script src="demo-brasil.js"></script>
+<script src="demo-municipios.js"></script>
+<script src="dados-demo.js"></script>
+</head>
+<body data-page="mapa" class="is-imersivo">
+<div id="root"></div>
+<script type="text/babel" src="NetworkMapLocal.jsx"></script>
+<script type="text/babel" src="MapaPanel.jsx"></script>
+<script type="text/babel" src="MapaScreen.jsx"></script>
+<script type="text/babel" data-presets="react">
+const { Sidebar, TopBar, TabBar, DemoBadge } = window.BabelOSDesignSystem_5ad360;
+function Tela() {
+  return (
+    <>
+      <div className="hg-app">
+        <Sidebar current="mapa.html" />
+        <div className="hg-main">
+          <TopBar user="Marcelo" notifications messages actions={<DemoBadge inline href="#">Dados fictícios</DemoBadge>} />
+          <main className="hg-content"><MapaScreen usuario={{ ...window.BABEL_DEMO.perfil, uf: "SP", cidade: "Campinas", bairro: "Cambuí" }} /></main>
+        </div>
+      </div>
+      <TabBar current="mapa.html" />
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Tela />);
+</script>
+</body></html>

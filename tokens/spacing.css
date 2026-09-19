@@ -1,0 +1,39 @@
+/* Babel OS · espaçamento e layout — valores em uso no produto */
+:root{
+  --sp-1:.2rem; /* @kind spacing */
+  --sp-2:.35rem; /* @kind spacing */
+  --sp-3:.5rem; /* @kind spacing */
+  --sp-4:.6rem; /* @kind spacing */
+  --sp-5:.7rem; /* @kind spacing */
+  --sp-6:.8rem; /* @kind spacing */
+  --sp-7:.9rem; /* @kind spacing */
+  --sp-8:1rem; /* @kind spacing */
+  --sp-9:1.1rem; /* @kind spacing */
+  --sp-10:1.2rem; /* @kind spacing */
+  --sp-12:1.6rem; /* @kind spacing */
+
+  --gap-grade:1.1rem; /* @kind spacing */      /* grades de painéis (desktop folgado) */
+  --gap-grade-compacto:.8rem; /* @kind spacing */ /* modo sem rolagem */
+  --gap-lista:.6rem; /* @kind spacing */
+
+  --pad-panel:1.1rem 1.2rem; /* @kind spacing */
+  --pad-row:.6rem .7rem; /* @kind spacing */
+  --pad-btn:.58rem 1.05rem; /* @kind spacing */
+  --pad-field:.5rem .8rem; /* @kind spacing */
+  --pad-th:.75rem 1rem; /* @kind spacing */
+  --pad-top:.85rem 1.6rem; /* @kind spacing */
+  --pad-content:1.5rem 1.6rem 2rem; /* @kind spacing */
+
+  --side:248px; /* @kind other */            /* menu lateral fixo */
+  --side-vidro:264px; /* @kind other */      /* menu de vidro que desliza (desktop) */
+  --tabbar:62px; /* @kind other */           /* barra inferior mobile */
+  --drawer:360px; /* @kind other */
+  --drawer-bolsa:420px; /* @kind other */
+  --painel-globo:300px; /* @kind other */
+  --pre-max:1280px; /* @kind other */
+
+  --bp-sm:575.98px; /* @kind other */
+  --bp-md:991.98px; /* @kind other */
+  --bp-app:1100px; /* @kind other */
+  --bp-lg:1399.98px; /* @kind other */
+}

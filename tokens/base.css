@@ -1,0 +1,23 @@
+/* Babel OS · base global — copiado de app/css/app.css (reset + fundo + foco) */
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{
+  min-height:100vh;
+  font:var(--fs-body)/var(--lh-body) var(--font);
+  color:var(--text);
+  background:var(--bg-app);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+}
+/* varredura de linhas de holograma sobre toda a tela */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:1000;background:var(--scanlines)}
+a{color:var(--link);text-decoration:none}
+a:hover{color:var(--link-hover)}
+button,input,select,textarea{font:inherit;color:inherit}
+svg{flex:none}
+::selection{background:rgba(139,92,255,.6);color:#fff}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--blue),var(--violet));border-radius:8px}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}}

@@ -1,9 +1,4 @@
-# segredos
-.env
-.env.*
-!.env.example
-
-# sistema / editor
-node_modules/
-.DS_Store
-*.log
+.vercel
+.claude/settings.local.json
+.env*
+node_modules

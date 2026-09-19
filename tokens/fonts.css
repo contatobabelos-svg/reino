@@ -1,0 +1,3 @@
+/* Webfonts. O produto carrega Exo 2 e Inter do Google Fonts nos mesmos pesos
+   usados em app/*.html — nenhum arquivo de fonte acompanha o repositório de origem. */
+@import url("https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700&family=Inter:wght@400;500;600&display=swap");

@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/r/:codigo", "destination": "/index.html" }
+  ]
+}

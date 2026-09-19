@@ -1,0 +1,73 @@
+<!-- @dsCard group="Babel OS" viewport="1440x900" name="Reino · app" subtitle="Dashboard, guildas, rede social, conquistas e bolsa — clicável" -->
+<!-- @startingPoint section="Babel OS" subtitle="App do Reino com menu, cabeçalho e cinco telas" viewport="1440x900" -->
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reino · UI kit</title>
+<link rel="stylesheet" href="../../styles.css">
+<link rel="stylesheet" href="app-shell.css">
+<link rel="stylesheet" href="app-layout.css">
+<link rel="stylesheet" href="login.css">
+<script src="app-layout.js"></script>
+<script>
+/* Afiliados reais — cole aqui a URL e a chave anon do seu projeto Supabase (veja afiliados.sql).
+   Enquanto vazio, os registros ficam só no navegador. */
+window.REINO_SUPABASE = {
+  url: "https://fxlansnepokjxdikxocb.supabase.co", /* projeto do cliente */
+  anon: "sb_publishable_qrjZtFZVvByCqBHeTT5ktQ_1RdSulmM" /* chave publicável (Settings → API) — pública por natureza */
+};
+window.REINO_DOMINIO = "https://reino-app-5ad36097-0474-4506-8d85-2.vercel.app"; /* domínio fixo dos links de afiliado */
+window.REINO_GOOGLE = "AIzaSyClc0RGBDX7iUhhm_sMs7iukIOX4SP-Zhk"; /* Places (New) + Geocoding */
+window.REINO_ROTA_R = false; /* true só quando o servidor reescreve /r/* para o app (vercel.json) */
+</script>
+<script src="afiliados.js?v=2"></script>
+<script>window.onProfile = undefined; /* compatibilidade: versões antigas do pacote citavam esta variável */</script>
+<script src="contas.js"></script>
+<script src="fotos.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="data.js"></script>
+<script src="geo-mundo.js"></script>
+<script src="geo-brasil.js"></script>
+<script src="municipios-tudo.js"></script>
+<script src="globo.js"></script>
+<script src="demo-brasil.js"></script>
+<script src="demo-municipios.js"></script>
+<script src="dados-demo.js"></script>
+</head>
+<body data-page="inicio">
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="bt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3fe3ff"/><stop offset="1" stop-color="#8b5cff"/></linearGradient></defs><rect width="120" height="120" fill="#030817"/><path d="M60 30 84 44v28L60 86 36 72V44z" fill="none" stroke="url(#bt)" stroke-width="5"/><path d="M48 51 60 45l12 6v18l-12 6-12-6z" fill="url(#bt)"/></svg></template>
+<div id="root"></div>
+<script type="text/babel" src="NetworkMapLocal.jsx"></script>
+<script type="text/babel" src="ReinoMapa.jsx"></script>
+<script type="text/babel" src="MapaPanel.jsx"></script>
+<script type="text/babel" src="MapaScreen.jsx"></script>
+<script type="text/babel" src="FotoAvatar.jsx"></script>
+<script type="text/babel" src="Stories.jsx"></script>
+<script type="text/babel" src="RedeSocialScreen.jsx"></script>
+<script type="text/babel" src="DashboardScreen.jsx"></script>
+<script type="text/babel" src="GuildasScreen.jsx"></script>
+<script type="text/babel" src="ConquistasScreen.jsx"></script>
+<script type="text/babel" src="BolsaScreen.jsx"></script>
+<script type="text/babel" src="MatchScreen.jsx"></script>
+<script type="text/babel" src="RevistaScreen.jsx"></script>
+<script type="text/babel" src="VitrineScreen.jsx"></script>
+<script type="text/babel" src="HierarquiaScreen.jsx"></script>
+<script type="text/babel" src="PesquisaScreen.jsx"></script>
+<script type="text/babel" src="ConfiguracoesScreen.jsx"></script>
+<script type="text/babel" src="PerfilScreen.jsx"></script>
+<script type="text/babel" src="ClubeScreen.jsx"></script>
+<script type="text/babel" src="RedeCompletaScreen.jsx"></script>
+<script type="text/babel" src="AcessosScreen.jsx"></script>
+<script type="text/babel" src="AdminScreen.jsx"></script>
+<script type="text/babel" src="ChatScreen.jsx"></script>
+<script type="text/babel" src="NiveisScreen.jsx"></script>
+<script type="text/babel" src="AcademyScreen.jsx"></script>
+<script type="text/babel" src="EventosScreen.jsx"></script>
+<script type="text/babel" src="PreCadastroScreen.jsx"></script>
+<script type="text/babel" src="LoginScreen.jsx"></script>
+<script type="text/babel" src="App.jsx"></script>
+<script type="text/babel" data-presets="react">
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body></html>

@@ -1,0 +1,371 @@
+/* Babel OS · shell de aplicação — copiado de app/css/app.css.
+   Só as telas de produto (UI kit) carregam este arquivo: ele fixa a página em
+   100dvh sem rolagem, ajusta cada página e monta a barra inferior do celular. */
+/* ==========================================================================
+   APP SEM ROLAGEM · PC, Android e iOS
+   A página inteira cabe na tela (100dvh). Só listas rolam, dentro do painel.
+   ========================================================================== */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+.hg-app { height: 100vh; height: 100dvh; min-height: 0; }
+.hg-main { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+.hg-top { flex: none; padding-top: max(.7rem, env(safe-area-inset-top)); padding-bottom: .7rem; padding-inline: max(1.4rem, env(safe-area-inset-left)) max(1.4rem, env(safe-area-inset-right)); }
+.hg-content {
+  flex: 1 1 0; min-height: 0; overflow: hidden auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: rgba(90, 150, 255, .45) transparent; -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column; gap: .8rem;
+  padding: .9rem max(1.4rem, env(safe-area-inset-right)) max(.9rem, env(safe-area-inset-bottom)) max(1.4rem, env(safe-area-inset-left));
+}
+.hg-content > * { flex: none; min-height: 0; }
+/* [UI kit] Rolagem em todas as telas: a página rola inteira e cada painel
+   "encher" tem uma altura mínima útil — a lista interna rola quando o painel
+   está cheio, mas nunca fica esmagada abaixo de 300px. Fora do mapa imersivo. */
+.hg-content > .hg-encher, .hg-encher { flex: 1 1 auto; min-height: 300px; }
+.hg-duas > .hg-panel, .hg-duas-col > * { min-height: 300px; }
+/* Um só scroll por tela: as listas internas crescem com o conteúdo e a roda do
+   mouse sempre rola a página. Só o chat (conversa) mantém rolagem própria. */
+.hg-content .hg-rolar:not(.hg-chat) { overflow: visible; max-height: none !important; flex: none; }
+.hg-duas, .hg-duas-col { align-items: start; grid-auto-rows: auto; flex: none !important; height: auto; }
+.hg-duas > .hg-panel, .hg-duas-col > * { height: auto; }
+.hg-panel.hg-encher { flex: none; height: auto; }
+.hg-panel.hg-encher > .hg-rolar, .hg-content .hg-panel.hg-encher > .hg-rolar:not(.hg-chat) { flex: none; height: auto; max-height: none; }
+body.is-imersivo .hg-content { overflow: hidden; }
+body.is-imersivo .hg-encher { flex: 1 1 0; min-height: 0; }
+.hg-panel.hg-encher { display: flex; flex-direction: column; }
+.hg-panel.hg-encher > .hg-head { flex: none; }
+.hg-rolar { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(90, 150, 255, .45) transparent; -webkit-overflow-scrolling: touch; }
+.hg-panel.hg-encher > .hg-rolar { flex: 1 1 0; }
+.hg-rolar::-webkit-scrollbar { width: 6px; height: 6px; }
+.hg-page-head h1 { font-size: 1.4rem; }
+.hg-page-head p { font-size: .8rem; margin-top: .15rem; }
+.hg-duas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; }
+.hg-duas-col { display: grid; grid-template-columns: var(--col1, 320px) minmax(0, 1fr); gap: .9rem; }
+/* [UI kit] Barra inferior em toda largura (decisão do cliente): no desktop ela
+   convive com o menu lateral; a altura é reservada em .hg-main em qualquer tela. */
+:root { --tabbar: 62px; }
+.hg-main, body.is-imersivo .hg-main { height: calc(100dvh - var(--tabbar) - env(safe-area-inset-bottom)); }
+.hg-tabbar {
+  display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 130;
+  height: calc(var(--tabbar) + env(safe-area-inset-bottom)); padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  background: linear-gradient(180deg, rgba(12, 22, 52, .78), rgba(4, 8, 24, .92));
+  backdrop-filter: blur(22px) saturate(170%); -webkit-backdrop-filter: blur(22px) saturate(170%);
+  box-shadow: inset 0 1px 0 rgba(160, 200, 255, .18), 0 -10px 30px rgba(0, 0, 0, .4);
+}
+.hg-tabbar a { flex: 1; display: grid; place-items: center; align-content: center; gap: .15rem; color: #8aa6d8; font-size: .66rem; font-weight: 600; transition: color .2s, transform .2s; }
+.hg-tabbar a svg { width: 22px; height: 22px; }
+.hg-tabbar a:active { transform: scale(.92); }
+.hg-tabbar a[aria-current="page"] { color: var(--cyan); text-shadow: 0 0 8px rgba(63, 227, 255, .7); }
+.hg-tabbar a[aria-current="page"] svg { filter: drop-shadow(0 0 6px var(--cyan)); }
+.hg-selo-demo { bottom: calc(var(--tabbar) + env(safe-area-inset-bottom) + 6px); }
+.hg-drawer { bottom: calc(var(--tabbar) + env(safe-area-inset-bottom)); }
+@media (min-width: 1100.02px) {
+  /* no desktop o menu lateral é um vidro que desliza por cima, então a barra
+     ocupa a largura toda e centraliza os cinco destinos */
+  .hg-tabbar { justify-content: center; }
+  .hg-tabbar a { flex: 0 1 150px; }
+  .hg-side { bottom: calc(var(--tabbar) + env(safe-area-inset-bottom)); height: auto; }
+}
+.hg-dock { display: none; }
+/* [UI kit] A faixa-gatilho do menu de vidro continua sensível ao mouse, mas o
+   traço ciano→violeta que ficava sempre aceso na borda esquerda foi removido
+   (pedido do cliente): o menu abre pelo ☰ ou encostando o mouse na borda. */
+.hg-side-gatilho::after { display: none !important; }
+
+/* ---------- Dashboard ---------- */
+body[data-page="inicio"] .hg-page-head { gap: .8rem; flex-wrap: nowrap; }
+body[data-page="inicio"] .hg-topo { max-width: 620px; }
+.hg-afiliado { padding: .5rem .8rem; }
+.hg-afiliado .hg-head { margin-bottom: .3rem; }
+.hg-afiliado-meta { margin-top: .25rem; }
+body[data-page="inicio"] .hg-kpis { gap: .8rem; }
+body[data-page="inicio"] .hg-kpi { min-height: 0; padding: .55rem .9rem; }
+body[data-page="inicio"] .hg-kpi .hg-head { margin-bottom: .1rem; }
+body[data-page="inicio"] .hg-kpi .hg-glow-num { font-size: 1.75rem; }
+body[data-page="inicio"] .hg-kpi-foot { padding-top: .15rem; }
+body[data-page="inicio"] .hg-ops { display: grid; grid-template-columns: 290px minmax(0, 1fr) 310px; gap: .8rem; align-items: stretch; }
+body[data-page="inicio"] .hg-ops > .hg-col { min-height: 0; overflow: visible; align-content: start; gap: .8rem; padding-right: 2px; }
+body[data-page="inicio"] .hg-ops > .hg-col[data-zona="centro"] { overflow: visible; display: flex; flex-direction: column; }
+body[data-page="inicio"] .hg-ops > .hg-col[data-zona="centro"] > .hg-panel:not(.hg-globo-panel) { flex: none; }
+/* O globo nunca encolhe abaixo de 460px: com Notícias e Bate Papo na mesma
+   coluna, é a coluna que rola, não o globo que some. */
+.hg-globo-panel { flex: 1 0 auto; min-height: 460px; display: flex; flex-direction: column; padding: .7rem .8rem; }
+.hg-globo-panel > .hg-head { margin-bottom: .5rem; }
+.hg-globo-panel .hg-globo { flex: 1 1 0; height: auto; min-height: 380px; }
+.hg-globo-panel .hg-map-dock { position: absolute; left: 50%; bottom: 1.3rem; transform: translateX(-50%); margin: 0; z-index: 5; backdrop-filter: blur(12px); }
+.hg-globo-panel .hg-map-dock a[data-rotulo]::after { display: none; }
+body[data-page="inicio"] .hg-ring { width: 120px; height: 120px; margin: 0 auto .6rem; }
+body[data-page="inicio"] .hg-ring-val .hg-glow-num { font-size: 1.6rem; }
+@media (max-width: 1399.98px) {
+  body[data-page="inicio"] .hg-ops { grid-template-columns: 260px minmax(0, 1fr) 280px; }
+  body[data-page="inicio"] .hg-ops > .hg-col:last-child { grid-column: auto; grid-template-columns: none; display: grid; }
+}
+/* globo estreito: painel vira folha sobre o globo, sem empurrar a altura */
+@container (max-width: 760px) {
+  .hg-globo { height: 100% !important; display: block; }
+  .hg-globo-canvas { position: absolute; height: 100%; }
+  .hg-globo-zoom { top: auto; bottom: 12px; }
+  .hg-globo-dica { top: auto; bottom: 64px; }
+  .hg-globo-painel { position: absolute; left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; max-height: 42%; margin: 0; padding: .7rem .8rem; }
+  .hg-globo-zoom { bottom: calc(42% + 18px); }
+}
+/* telas baixas (notebooks 768px): esconde subtítulos */
+@media (max-height: 820px) {
+  .hg-page-head p, .hg-panel > .hg-head .hg-sub { display: none; }
+  body[data-page="inicio"] .hg-afiliado-meta { display: none; }
+  body[data-page="inicio"] .hg-kpi-foot { display: none; }
+}
+
+/* ---------- Bolsa ---------- */
+body[data-page="bolsa"] .hg-tape { position: relative; top: auto; margin: -.9rem calc(-1 * max(1.4rem, env(safe-area-inset-right))) 0; }
+body[data-page="bolsa"] .hg-bolsa-hero img { max-height: 24vh; aspect-ratio: auto; height: 24vh; object-position: center 36%; }
+body[data-page="bolsa"] .hg-bolsa-hero-info { padding: .55rem 1rem; }
+body[data-page="bolsa"] .hg-bolsa-hero-info h1 { font-size: 1.25rem; }
+body[data-page="bolsa"] .hg-kpis .hg-kpi { min-height: 0; padding: .5rem .9rem; }
+body[data-page="bolsa"] .hg-kpis .hg-glow-num { font-size: 1.4rem !important; }
+body[data-page="bolsa"] .hg-bolsa-aviso { padding: .35rem .8rem; font-size: .74rem; }
+body[data-page="bolsa"] .hg-panel.hg-encher > .hg-head { margin-bottom: .5rem; }
+
+/* ---------- Pré-cadastro (sem menu lateral) ---------- */
+body[data-page="pre-cadastro"] { display: flex; flex-direction: column; height: 100dvh; }
+body[data-page="pre-cadastro"] .hg-top { flex: none; position: relative; }
+body[data-page="pre-cadastro"] .hg-content.hg-pre { max-width: 1280px; width: 100%; }
+body[data-page="pre-cadastro"] .hg-titulos-nivel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+body[data-page="pre-cadastro"] .hg-titulo-chip { flex: 0 0 auto; min-width: 150px; scroll-snap-align: start; padding: .5rem .8rem; }
+body[data-page="pre-cadastro"] .hg-pre-mapa > [data-painel="mapa"] { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+body[data-page="pre-cadastro"] .hg-br-wrap { flex: 1 1 0; height: auto; min-height: 0; }
+body[data-page="pre-cadastro"] .hg-pre-mapa > [data-painel]:not([hidden]) { flex: 1 1 0; }
+body[data-page="pre-cadastro"] .hg-pre-mapa .hg-map-dock { margin-top: .5rem; }
+body[data-page="pre-cadastro"] .hg-resumo { padding: .5rem 1rem; }
+
+/* ==========================================================================
+   MAPA REINO · espaço sideral imersivo, sem bordas (só para olhar e analisar)
+   ========================================================================== */
+body.is-imersivo {
+  background:
+    radial-gradient(ellipse 60% 45% at 18% 20%, rgba(139, 92, 255, .22), transparent 70%),
+    radial-gradient(ellipse 55% 50% at 85% 75%, rgba(63, 140, 255, .18), transparent 70%),
+    radial-gradient(ellipse 35% 30% at 70% 15%, rgba(224, 75, 255, .12), transparent 70%),
+    #01020a;
+}
+body.is-imersivo::after { background: none; }
+body.is-imersivo .hg-main { position: relative; }
+body.is-imersivo .hg-top { position: absolute; left: 0; right: 0; top: 0; z-index: 20; background: linear-gradient(180deg, rgba(1, 2, 10, .75), transparent); border: 0; backdrop-filter: none; }
+body.is-imersivo .hg-content { padding: 0; }
+body.is-imersivo .hg-globo {
+  height: 100% !important; border-radius: 0; box-shadow: none; background: transparent;
+}
+body.is-imersivo .hg-globo-hud { top: max(78px, calc(env(safe-area-inset-top) + 66px)); left: max(18px, env(safe-area-inset-left)); }
+body.is-imersivo .hg-globo-clima { top: max(126px, calc(env(safe-area-inset-top) + 114px)); left: max(18px, env(safe-area-inset-left)); }
+body.is-imersivo .hg-globo-painel {
+  top: max(78px, calc(env(safe-area-inset-top) + 66px)); right: max(18px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom));
+  background: linear-gradient(160deg, rgba(20, 30, 70, .35), rgba(4, 8, 24, .45));
+  border: 0; box-shadow: inset 0 0 0 1px rgba(160, 200, 255, .12), 0 0 40px rgba(0, 60, 160, .2);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+body.is-imersivo .hg-globo-zoom { left: max(18px, env(safe-area-inset-left)); bottom: max(18px, env(safe-area-inset-bottom)); }
+body.is-imersivo .hg-globo-dica { bottom: max(22px, env(safe-area-inset-bottom)); }
+
+/* ==========================================================================
+   TABLET E CELULAR (Android · iOS)
+   ========================================================================== */
+@media (max-width: 1100px) {
+  .hg-app { grid-template-columns: minmax(0, 1fr); }
+  .hg-side-gatilho { display: none !important; }
+  .hg-side { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-105%); opacity: 1; transition: transform .35s cubic-bezier(.16, 1, .3, 1); }
+  .hg-app.is-menu .hg-side { transform: none; }
+  .hg-burger, .hg-icon-btn.hg-burger { display: grid !important; }
+  .hg-top { gap: .6rem; padding-top: max(.55rem, env(safe-area-inset-top)); padding-bottom: .55rem; }
+  .hg-search { display: none; }
+  .hg-user div { display: none; }
+  .hg-content { gap: .6rem; padding: .6rem max(.75rem, env(safe-area-inset-right)) .6rem max(.75rem, env(safe-area-inset-left)); }
+  .hg-page-head h1 { font-size: 1.15rem; }
+  .hg-page-head p { display: none; }
+  .hg-page-head { flex-wrap: nowrap; align-items: center; }
+  .hg-page-head .hg-btn { padding: .45rem .7rem; font-size: .76rem; }
+
+  .hg-selo-demo { font-size: .62rem; }
+
+  .hg-duas, .hg-duas-col { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-auto-rows: auto; }
+
+  /* Dashboard: KPIs deslizam na horizontal; globo e widgets viram telas deslizantes */
+  body[data-page="inicio"] .hg-topo { display: none; }
+  body[data-page="inicio"] [data-hg-widgets] { display: none; }
+  body[data-page="inicio"] .hg-kpis { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: .5rem; }
+  body[data-page="inicio"] .hg-kpis::-webkit-scrollbar { display: none; }
+  body[data-page="inicio"] .hg-kpi { flex: 0 0 44%; scroll-snap-align: start; }
+  body[data-page="inicio"] .hg-kpi .hg-glow-num { font-size: 1.35rem; }
+  body[data-page="inicio"] .hg-kpi .hg-x, body[data-page="inicio"] .hg-kpi-foot { display: none; }
+  body[data-page="inicio"] .hg-ops { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: .7rem; }
+  body[data-page="inicio"] .hg-ops::-webkit-scrollbar { display: none; }
+  body[data-page="inicio"] .hg-ops > .hg-col { display: contents; }
+  body[data-page="inicio"] .hg-ops .hg-panel { flex: 0 0 88%; scroll-snap-align: center; overflow: auto; overscroll-behavior: contain; }
+  /* [UI kit] O carrossel tem de vencer a regra de desktop do centro
+     (.hg-col[data-zona="centro"] > .hg-panel:not(.hg-globo-panel){flex:0 0 auto}),
+     que é mais específica; por isso o seletor abaixo repete a zona. */
+  body[data-page="inicio"] .hg-ops > .hg-col[data-zona] > .hg-panel:not(.hg-globo-panel) { flex: 0 0 88%; }
+  body[data-page="inicio"] .hg-ops .hg-globo-panel { flex-basis: 100%; overflow: hidden; order: -1; }
+  .hg-paginas { display: flex; justify-content: center; gap: .4rem; flex: none; }
+  .hg-paginas button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 99px; background: rgba(140, 180, 255, .35); transition: width .25s, background .25s; }
+  .hg-paginas button[aria-current="true"] { width: 22px; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+
+  body[data-page="bolsa"] .hg-bolsa-hero img { height: 16vh; }
+  body[data-page="bolsa"] #destaques { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: .5rem; }
+  body[data-page="bolsa"] #destaques > * { flex: 0 0 60%; scroll-snap-align: start; }
+  body[data-page="bolsa"] .hg-panel.hg-encher > .hg-head .hg-toolbar { width: 100%; }
+  body[data-page="bolsa"] #novo-ticker { min-width: 0 !important; flex: 1; }
+  body[data-page="bolsa"] #restaurar { display: none; }
+
+  body.is-imersivo .hg-globo-painel { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; max-height: 38%; }
+  body.is-imersivo .hg-globo-zoom { bottom: calc(38% + 20px); }
+  body.is-imersivo .hg-globo-dica { display: none; }
+
+  body[data-page="pre-cadastro"] { height: 100dvh; }
+  body[data-page="pre-cadastro"] .hg-page-head .hg-topo { display: none; }
+  body[data-page="pre-cadastro"] .hg-pre-filtros { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  body[data-page="pre-cadastro"] .hg-resumo { flex-wrap: nowrap; gap: .6rem; }
+  body[data-page="pre-cadastro"] .hg-resumo .hg-btn { width: auto; margin-left: auto; white-space: nowrap; }
+  body[data-page="pre-cadastro"] #resumo-dica { display: none; }
+}
+@media (max-width: 575.98px) {
+  /* [UI kit] O seletor do produto (.hg-cursos > li > span) também pegava o ícone; ele fica na coluna 1 */
+  .hg-cursos > li > .hg-cursos-ico, .hg-eventos > li > .hg-eventos-data { grid-column: 1; grid-row: 1; }
+  .hg-cursos > li > div, .hg-eventos > li > div { grid-column: 2; grid-row: 1; }
+  body[data-page="inicio"] .hg-kpi { flex-basis: 46%; }
+  .hg-page-head .hg-btn svg { display: none; }
+}
+
+.hg-paginas { display: none; }
+.hg-globo-credito { position: absolute; right: 10px; bottom: 6px; z-index: 3; margin: 0; font-size: .6rem; color: rgba(190, 210, 240, .6); pointer-events: none; }
+.hg-globo-credito[hidden] { display: none; }
+body.is-imersivo .hg-globo-credito { right: max(330px, env(safe-area-inset-right)); }
+
+/* Correções da verificação visual */
+.hg-bolsa-lista { grid-auto-rows: max-content; align-content: start; }
+.hg-bolsa-linha { min-height: max-content; }
+.hg-selo-demo.is-cabecalho { position: static; transform: none; padding: .25rem .6rem; font-size: .66rem; white-space: nowrap; }
+.hg-globo-panel .hg-map-dock { top: .6rem; bottom: auto; left: auto; right: 1rem; transform: none; padding: .3rem .4rem; }
+.hg-globo-panel .hg-map-dock .hg-icon-btn { width: 32px; height: 32px; }
+.hg-globo-panel > .hg-head { padding-right: 190px; }
+@media (max-height: 820px) {
+  body[data-page="bolsa"] .hg-bolsa-hero img { height: 17vh; }
+  body[data-page="bolsa"] .hg-bolsa-hero-info p { display: none; }
+  body[data-page="bolsa"] .hg-bolsa-aviso { display: none; }
+  body[data-page="bolsa"] .hg-kpis .hg-kpi-foot { display: none; }
+  body[data-page="bolsa"] .hg-bolsa-sentimento { margin: .1rem 0 .3rem; }
+}
+
+/* Correções do celular (verificação visual) */
+@media (max-width: 1100px) {
+  body[data-page="inicio"] .hg-ops > .hg-col[data-zona] { display: contents; }
+  body[data-page="inicio"] .hg-ops .hg-panel, .hg-rolar { scrollbar-width: none; }
+  body[data-page="inicio"] .hg-ops .hg-panel::-webkit-scrollbar, .hg-rolar::-webkit-scrollbar { display: none; }
+  body[data-page="inicio"] .hg-ops .hg-globo-panel > .hg-head { padding-right: 0; }
+  body[data-page="inicio"] .hg-ops .hg-globo-panel > .hg-head .hg-sub,
+  body[data-page="inicio"] .hg-ops .hg-globo-panel .hg-map-dock { display: none; }
+
+  body[data-page="bolsa"] .hg-bolsa-hero-info p, body[data-page="bolsa"] .hg-bolsa-aviso { display: none; }
+  body[data-page="bolsa"] .hg-bolsa-hero-info { padding: .45rem .8rem; }
+  body[data-page="bolsa"] .hg-bolsa-hero-info h1 { font-size: 1.05rem; }
+  body[data-page="bolsa"] .hg-bolsa-pregao { padding: .2rem .55rem; font-size: .68rem; }
+  body[data-page="bolsa"] #destaques .hg-kpi { padding: .4rem .7rem; }
+  body[data-page="bolsa"] #destaques .hg-kpi-foot { display: none; }
+  body[data-page="bolsa"] .hg-panel.hg-encher > .hg-head .hg-sub { display: none; }
+  body[data-page="bolsa"] .hg-panel.hg-encher > .hg-head { gap: .4rem; }
+  body[data-page="bolsa"] #form-ticker { flex-wrap: nowrap; }
+  body[data-page="bolsa"] #ordem { max-width: 42%; }
+  body[data-page="bolsa"] .hg-credito { display: none; }
+
+  body[data-page="pesquisa"] #form-pesquisa { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-bottom: .5rem !important; }
+  body[data-page="pesquisa"] #form-pesquisa > * { flex: 0 0 auto; }
+  body[data-page="pesquisa"] #form-pesquisa input { width: 58vw; min-width: 0; max-width: none; }
+  body[data-page="pesquisa"] .hg-panel > .hg-head .hg-sub { display: none; }
+}
+.hg-globo-lista, .hg-globo-google, .hg-globo-empresarios { scrollbar-width: thin; scrollbar-color: rgba(90, 150, 255, .45) transparent; }
+.hg-globo-lista::-webkit-scrollbar, .hg-globo-google::-webkit-scrollbar, .hg-globo-empresarios::-webkit-scrollbar { width: 5px; }
+.hg-globo-lista::-webkit-scrollbar-thumb, .hg-globo-google::-webkit-scrollbar-thumb, .hg-globo-empresarios::-webkit-scrollbar-thumb { background: rgba(90, 150, 255, .45); border-radius: 5px; }
+
+/* ==========================================================================
+   Modo espacial: tela cheia + música
+   ========================================================================== */
+.hg-som {
+  position: absolute; z-index: 25; left: 50%; bottom: max(18px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: .55rem;
+  padding: .4rem .5rem; border-radius: 99px;
+  background: linear-gradient(135deg, rgba(20, 30, 70, .55), rgba(4, 8, 24, .6));
+  box-shadow: inset 0 0 0 1px rgba(170, 200, 255, .18), 0 0 30px rgba(80, 90, 255, .25);
+  backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
+  transition: opacity .4s, transform .4s;
+}
+.hg-som button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border: 0; cursor: pointer; color: #fff; font: 600 .78rem var(--font); }
+.hg-som svg { width: 18px; height: 18px; }
+.hg-som-cheia { height: 40px; padding: 0 .95rem; border-radius: 99px; background: rgba(255, 255, 255, .08); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); transition: background .2s, box-shadow .2s, transform .2s; }
+.hg-som-cheia:hover { background: rgba(63, 227, 255, .18); box-shadow: inset 0 0 0 1px rgba(63, 227, 255, .5), 0 0 18px rgba(63, 227, 255, .35); }
+.hg-som-play {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: linear-gradient(135deg, #3b82ff, #8b5cff);
+  box-shadow: 0 0 0 1px rgba(200, 190, 255, .5), 0 0 22px rgba(139, 92, 255, .6);
+  transition: transform .25s cubic-bezier(.34, 1.56, .64, 1), box-shadow .25s;
+}
+.hg-som-play:hover { transform: scale(1.08); }
+.hg-som-play:active { transform: scale(.94); }
+.hg-som.is-tocando .hg-som-play { animation: hg-play-pulso 2s ease-in-out infinite; }
+@keyframes hg-play-pulso { 50% { box-shadow: 0 0 0 1px rgba(200, 190, 255, .7), 0 0 34px rgba(139, 92, 255, .9); } }
+.hg-som-info { display: grid; line-height: 1.1; padding-right: .2rem; }
+.hg-som-info b { color: #fff; font: 700 .8rem var(--font-d); letter-spacing: .04em; }
+.hg-som-info small { color: var(--text-2); font-size: .66rem; }
+.hg-som-eq { display: flex; align-items: flex-end; gap: 3px; height: 22px; padding-right: .6rem; }
+.hg-som-eq i { width: 3px; height: 100%; border-radius: 2px; background: linear-gradient(var(--cyan), var(--violet)); transform-origin: bottom; transform: scaleY(.15); opacity: .5; transition: transform .08s linear; }
+.hg-som.is-tocando .hg-som-eq i { opacity: 1; transform: scaleY(var(--h, .4)); box-shadow: 0 0 6px rgba(63, 227, 255, .6); }
+body.is-imersivo .hg-globo-dica { bottom: max(84px, calc(env(safe-area-inset-bottom) + 72px)); }
+
+/* Tela cheia / modo cinema: só o espaço, o globo e os controles */
+body.is-tela-cheia .hg-top, body.is-tela-cheia .hg-side, body.is-tela-cheia .hg-side-gatilho,
+body.is-tela-cheia .hg-tabbar, body.is-tela-cheia .hg-selo-demo, body.is-tela-cheia .hg-globo-dica { display: none !important; }
+body.is-tela-cheia .hg-main { height: 100vh !important; height: 100dvh !important; }
+body.is-tela-cheia .hg-app { grid-template-columns: minmax(0, 1fr); }
+body.is-tela-cheia .hg-globo-hud { top: max(18px, env(safe-area-inset-top)); }
+body.is-tela-cheia .hg-globo-clima { top: max(66px, calc(env(safe-area-inset-top) + 48px)); }
+body.is-tela-cheia .hg-globo-painel { top: max(18px, env(safe-area-inset-top)); }
+body.is-tela-cheia.is-imersivo { background-size: calc(100% + var(--batida, 0) * 6%) auto; }
+@media (max-width: 1100px) {
+  body.is-imersivo .hg-som { bottom: calc(38% + 22px); }
+  body.is-imersivo .hg-som-info { display: none; }
+  body.is-tela-cheia .hg-main { height: 100dvh !important; }
+}
+@media (prefers-reduced-motion: reduce) { .hg-som.is-tocando .hg-som-play { animation: none; } }
+
+body[data-page="inicio"] .hg-ops { min-height: 520px; }
+
+/* [UI kit] Grades que se refazem quando um widget é ocultado: as faixas usam
+   auto-fit, e a área de operação muda a receita de colunas conforme quais
+   zonas ainda existem (data-colunas). Sem buraco, sem sobreposição. */
+body[data-page="inicio"] .hg-kpis { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+body[data-page="inicio"] .hg-analytics { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+@media (min-width: 1100.02px) {
+  body[data-page="inicio"] .hg-ops[data-colunas="esquerda centro direita"] { grid-template-columns: 290px minmax(0, 1fr) 310px; }
+  body[data-page="inicio"] .hg-ops[data-colunas="esquerda centro"] { grid-template-columns: 320px minmax(0, 1fr); }
+  body[data-page="inicio"] .hg-ops[data-colunas="centro direita"] { grid-template-columns: minmax(0, 1fr) 340px; }
+  body[data-page="inicio"] .hg-ops[data-colunas="esquerda direita"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body[data-page="inicio"] .hg-ops[data-colunas="esquerda"],
+  body[data-page="inicio"] .hg-ops[data-colunas="centro"],
+  body[data-page="inicio"] .hg-ops[data-colunas="direita"] { grid-template-columns: minmax(0, 1fr); }
+  body[data-page="inicio"] .hg-ops[data-colunas="esquerda direita"] > .hg-col,
+  body[data-page="inicio"] .hg-ops[data-colunas="esquerda"] > .hg-col,
+  body[data-page="inicio"] .hg-ops[data-colunas="direita"] > .hg-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-content: start; }
+}
+.hg-widgets-barra { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; white-space: nowrap; padding: .6rem .8rem; border-radius: var(--r-14); background: var(--surface-chip); border: 1px dashed var(--line); }
+.hg-widget-chip { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; padding: .3rem .7rem; border-radius: var(--r-pill); background: rgba(10, 22, 52, .7); border: 1px solid var(--line); color: var(--text); font: 500 var(--fs-row) var(--font); cursor: pointer; transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+.hg-widget-chip:hover { border-color: var(--line-2); color: #fff; }
+.hg-widget-chip svg { width: 13px; height: 13px; color: var(--cyan); }
+
+/* Bate Papo: a tela é o mensageiro inteiro, sem rolagem de página */
+body[data-page="chat"] .hg-content { overflow: hidden; }
+body[data-page="chat"] .hg-zap { flex: 1 1 0; min-height: 0; }
+.hg-zap { position: relative; }
+
+/* Selo de Imperador — conta de administrador, destacado e pulsante */
+.hg-selo-imperador { display: inline-flex; align-items: center; gap: .35rem; padding: .26rem .62rem .26rem .5rem; border-radius: 999px; font: 700 .7rem/1 var(--font-d, inherit); letter-spacing: .08em; text-transform: uppercase; color: #2a1c00; background: linear-gradient(180deg, #ffe49a, #f0b53d); border: 1px solid rgba(255, 236, 180, .9); box-shadow: 0 0 0 0 rgba(240, 181, 61, .6); animation: hg-imperador-pulso 2.2s ease-out infinite; white-space: nowrap; }
+.hg-selo-imperador svg { width: 13px; height: 13px; }
+@keyframes hg-imperador-pulso { 0% { box-shadow: 0 0 0 0 rgba(240, 181, 61, .65), 0 0 12px rgba(240, 181, 61, .35); } 70% { box-shadow: 0 0 0 9px rgba(240, 181, 61, 0), 0 0 22px rgba(255, 213, 120, .55); } 100% { box-shadow: 0 0 0 0 rgba(240, 181, 61, 0), 0 0 12px rgba(240, 181, 61, .35); } }
+@media (prefers-reduced-motion: reduce) { .hg-selo-imperador { animation: none; } }

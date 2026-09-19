@@ -1,0 +1,287 @@
+/* Babel OS · modo de layout (pedido do cliente)
+   1) Desktop (≥1100px): menu lateral é uma coluna fixa de 248px, sempre visível —
+      substitui o vidro escondido que só aparecia com o mouse na borda.
+   2) Palco travado em 1920px: acima disso o app escala proporcionalmente (zoom),
+      nada estica nem some.
+   3) Celular/tablet (<1100px): toda tela em 1 coluna, alvos de toque ≥ 44px,
+      grades viram pilha, tabelas rolam na horizontal dentro do painel.
+   Carregar DEPOIS de app-shell.css. */
+
+/* ---------- 1. Menu lateral fixo no desktop ---------- */
+@media (min-width: 1100.02px) {
+  .hg-app { grid-template-columns: var(--side) minmax(0, 1fr) !important; }
+  .hg-main { grid-column: 2 !important; }
+  .hg-side {
+    position: sticky !important; top: 0; bottom: auto !important; height: calc(100dvh - var(--tabbar)) !important; width: var(--side) !important;
+    transform: none !important; opacity: 1 !important; z-index: 20;
+    border-radius: 0 !important; padding: 1.1rem .9rem;
+    background: linear-gradient(180deg, rgba(10, 20, 48, .92), rgba(6, 12, 32, .96)) !important;
+    border-right: 1px solid var(--line) !important;
+    box-shadow: inset -1px 0 0 rgba(120, 170, 255, .08) !important;
+    overflow: auto; scrollbar-width: none; transition: none !important;
+  }
+  .hg-side::-webkit-scrollbar { display: none; }
+  .hg-side::before { display: none; }
+  .hg-side-gatilho { display: none !important; }
+  .hg-burger, .hg-icon-btn.hg-burger { display: none !important; }
+  /* a barra inferior começa depois do menu */
+  .hg-tabbar { left: var(--side); }
+  /* opções compactas para caber 19 itens sem rolar em 1080p */
+  .hg-nav { gap: .15rem; }
+  .hg-nav a { padding: .5rem .7rem; font-size: .8rem; }
+  .hg-nav a svg { width: 17px; height: 17px; }
+  .hg-nav a:hover, .hg-nav a:focus-visible { transform: none; }
+  .hg-brand { padding-bottom: .8rem; }
+  .hg-side-foot { font-size: .68rem; padding: .55rem .7rem; }
+}
+
+/* ---------- 2. Palco de 1920px ---------- */
+/* Acima de 1920px o app não estica: o palco fica em 1920 e é escalado por
+   zoom (definido em app-layout.js, que mede a janela). Os elementos fixos
+   (barra inferior, gaveta, selo, aviso) ficam dentro do palco. */
+html.is-palco { background: var(--bg-app); background-attachment: fixed; }
+html.is-palco body { width: 1920px; margin: 0 auto; zoom: var(--palco-zoom, 1); }
+html.is-palco .hg-tabbar { left: calc((100vw / var(--palco-zoom, 1) - 1920px) / 2 + var(--side)); right: calc((100vw / var(--palco-zoom, 1) - 1920px) / 2); }
+html.is-palco .hg-selo-demo:not(.is-cabecalho) { left: 50%; }
+
+/* ---------- 3. Celular e tablet: 1 coluna, toque ---------- */
+@media (max-width: 1100px) {
+  :root { --toque: 44px; }
+  .hg-content { padding: .7rem .75rem calc(.9rem + env(safe-area-inset-bottom)); gap: .7rem; }
+  .hg-page-head { flex-wrap: wrap; gap: .5rem; }
+  .hg-page-head h1 { font-size: 1.25rem; }
+  .hg-page-head p { display: none; }
+    .hg-page-head { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: .6rem !important; }
+    .hg-page-head > div:first-child { min-width: 0; }
+    .hg-page-head .hg-head-acoes { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    .hg-page-head .hg-head-acoes > * { flex: none; min-width: 0; }
+    .hg-page-head .hg-btn { justify-content: center; }
+
+  /* todas as grades viram pilha */
+  .hg-duas, .hg-duas-col, .hg-grid-3, .hg-analytics,
+  body[data-page="inicio"] .hg-ops, .hg-ops { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: none !important; gap: .7rem !important; }
+  .hg-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  body[data-page="inicio"] .hg-ops > .hg-col, body[data-page="inicio"] .hg-ops > .hg-col[data-zona] { display: contents !important; }
+  body[data-page="inicio"] .hg-ops .hg-panel { flex: none !important; width: auto !important; scroll-snap-align: none; overflow: visible; }
+  body[data-page="inicio"] .hg-ops .hg-globo-panel { order: -1; min-height: 420px; }
+  .hg-paginas { display: none !important; }
+  .hg-panel, .hg-panel.hg-encher, .hg-duas > .hg-panel, .hg-duas-col > * { min-height: 0 !important; height: auto !important; }
+  .hg-panel { padding: .9rem .9rem; }
+  .hg-head .hg-title { overflow-wrap: anywhere; }
+  .hg-head .hg-x { flex: none; }
+    .hg-head { flex-wrap: wrap; align-items: center; row-gap: .5rem; }
+    .hg-head > div:first-child { flex: 1 1 calc(100% - 56px); min-width: 0; order: 0; }
+    .hg-head .hg-x { order: 1; }
+    .hg-head .hg-tabs,   .hg-head .hg-toolbar,   .hg-head .hg-select { order: 2; flex: 1 1 100%; }
+    .hg-head .hg-tabs { display: flex; flex-wrap: wrap; }
+    .hg-head .hg-tabs button { flex: 1 1 auto; }
+    .hg-head .hg-pill,   .hg-head .hg-chip { order: 1; }
+
+  /* KPIs: duas por linha, sem carrossel */
+  .hg-content .hg-kpis, body[data-page="inicio"] .hg-kpis { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; overflow: visible !important; gap: .6rem !important; }
+  .hg-kpi, body[data-page="inicio"] .hg-kpi { flex: none !important; width: auto !important; }
+  .hg-kpi .hg-glow-num, body[data-page="inicio"] .hg-kpi .hg-glow-num { font-size: 1.45rem !important; }
+
+  /* alvos de toque */
+  .hg-btn, .hg-icon-btn, .hg-select, .hg-input, .hg-tabs button, .hg-nav a, .hg-row, .hg-switch, .hg-titulo-chip, .hg-map-dock .hg-icon-btn { min-height: var(--toque); }
+  .hg-btn { padding: .7rem 1rem; font-size: .9rem; }
+  .hg-x { width: var(--toque); height: var(--toque); }
+  .hg-toolbar { flex-wrap: wrap; }
+  .hg-toolbar > * { flex: 1 1 100%; max-width: none !important; width: auto !important; }
+  body[data-page="pesquisa"] #form-pesquisa { flex-wrap: wrap; overflow: visible; }
+  body[data-page="pesquisa"] #form-pesquisa > * { flex: 1 1 100%; }
+  body[data-page="pesquisa"] #form-pesquisa input { width: 100%; }
+
+  /* tabelas rolam na horizontal dentro do painel */
+  .hg-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-inline: -.9rem; padding-inline: .9rem; }
+  .hg-table { min-width: 620px; }
+
+  /* bolsa: linha vira cartão de 2 colunas */
+  .hg-bolsa-cab { display: none !important; }
+  .hg-bolsa-linha { grid-template-columns: minmax(0, 1fr) auto !important; grid-template-areas: "ativo preco" "sessao sessao" "mm vol" !important; row-gap: .5rem; }
+  .hg-bolsa-linha .hg-bolsa-ativo { grid-area: ativo; }
+  .hg-bolsa-linha .hg-bolsa-preco { grid-area: preco; text-align: right; }
+  .hg-bolsa-linha .hg-bolsa-pill { grid-area: preco; align-self: end; justify-self: end; margin-top: 2.2rem; }
+  .hg-bolsa-linha .hg-bolsa-sessao { grid-area: sessao; }
+  .hg-bolsa-linha .hg-bolsa-mm { grid-area: mm; }
+  .hg-bolsa-linha .hg-bolsa-vol { grid-area: vol; text-align: right; }
+  .hg-bolsa-linha > .hg-x { position: absolute; top: .4rem; right: .4rem; }
+  .hg-bolsa-hero img { height: 22vh !important; max-height: 180px; }
+  body[data-page="bolsa"] .hg-tape { margin: -.7rem -.75rem 0 !important; }
+
+  /* mapa: painel do globo como folha inferior, com respiro para a barra */
+  body.is-imersivo .hg-globo-painel { max-height: 42%; }
+  /* gaveta ocupa a tela */
+  .hg-drawer { width: 100%; max-width: none; }
+  /* rede social / listas */
+  .hg-row { padding: .7rem .8rem; }
+  .hg-post { padding: .8rem; }
+  /* configurações */
+  .hg-form [style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }
+}
+@media (max-width: 575.98px) {
+  .hg-grid-3 { grid-template-columns: minmax(0, 1fr) !important; }
+  .hg-content .hg-kpis, body[data-page="inicio"] .hg-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+
+/* ---------- 3b. Modo App forçado no PC: as mesmas regras de celular, sem @media ---------- */
+html.is-modo-app { --toque: 44px; }
+
+  html.is-modo-app .hg-content { padding: .7rem .75rem calc(.9rem + env(safe-area-inset-bottom)); gap: .7rem; }
+  html.is-modo-app .hg-page-head { flex-wrap: wrap; gap: .5rem; }
+  html.is-modo-app .hg-page-head h1 { font-size: 1.25rem; }
+  html.is-modo-app .hg-page-head p { display: none; }
+  html.is-modo-app .hg-page-head { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: .6rem !important; }
+  html.is-modo-app .hg-page-head > div:first-child { min-width: 0; }
+  html.is-modo-app .hg-page-head .hg-head-acoes { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  html.is-modo-app .hg-page-head .hg-head-acoes > * { flex: none; min-width: 0; }
+  html.is-modo-app .hg-page-head .hg-btn { justify-content: center; }
+
+  /* todas as grades viram pilha */
+  html.is-modo-app .hg-duas, html.is-modo-app .hg-duas-col, html.is-modo-app .hg-grid-3, html.is-modo-app .hg-analytics,
+  html.is-modo-app body[data-page="inicio"] .hg-ops, html.is-modo-app .hg-ops { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: none !important; gap: .7rem !important; }
+  html.is-modo-app .hg-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  html.is-modo-app body[data-page="inicio"] .hg-ops > .hg-col, html.is-modo-app body[data-page="inicio"] .hg-ops > .hg-col[data-zona] { display: contents !important; }
+  html.is-modo-app body[data-page="inicio"] .hg-ops .hg-panel { flex: none !important; width: auto !important; scroll-snap-align: none; overflow: visible; }
+  html.is-modo-app body[data-page="inicio"] .hg-ops .hg-globo-panel { order: -1; min-height: 420px; }
+  html.is-modo-app .hg-paginas { display: none !important; }
+  html.is-modo-app .hg-panel, html.is-modo-app .hg-panel.hg-encher, html.is-modo-app .hg-duas > .hg-panel, html.is-modo-app .hg-duas-col > * { min-height: 0 !important; height: auto !important; }
+  html.is-modo-app .hg-panel { padding: .9rem .9rem; }
+  html.is-modo-app .hg-head .hg-title { overflow-wrap: anywhere; }
+  html.is-modo-app .hg-head .hg-x { flex: none; }
+  html.is-modo-app .hg-head { flex-wrap: wrap; align-items: center; row-gap: .5rem; }
+  html.is-modo-app .hg-head > div:first-child { flex: 1 1 calc(100% - 56px); min-width: 0; order: 0; }
+  html.is-modo-app .hg-head .hg-x { order: 1; }
+  html.is-modo-app .hg-head .hg-tabs, html.is-modo-app .hg-head .hg-toolbar, html.is-modo-app .hg-head .hg-select { order: 2; flex: 1 1 100%; }
+  html.is-modo-app .hg-head .hg-tabs { display: flex; flex-wrap: wrap; }
+  html.is-modo-app .hg-head .hg-tabs button { flex: 1 1 auto; }
+  html.is-modo-app .hg-head .hg-pill, html.is-modo-app .hg-head .hg-chip { order: 1; }
+  html.is-modo-app .hg-content { overflow-x: hidden; }
+
+  /* KPIs: duas por linha, sem carrossel */
+  html.is-modo-app .hg-content .hg-kpis, html.is-modo-app body[data-page="inicio"] .hg-kpis { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; overflow: visible !important; gap: .6rem !important; }
+  html.is-modo-app .hg-kpi, html.is-modo-app body[data-page="inicio"] .hg-kpi { flex: none !important; width: auto !important; }
+  html.is-modo-app .hg-kpi .hg-glow-num, html.is-modo-app body[data-page="inicio"] .hg-kpi .hg-glow-num { font-size: 1.45rem !important; }
+
+  /* alvos de toque */
+  html.is-modo-app .hg-btn, html.is-modo-app .hg-icon-btn, html.is-modo-app .hg-select, html.is-modo-app .hg-input, html.is-modo-app .hg-tabs button, html.is-modo-app .hg-nav a, html.is-modo-app .hg-row, html.is-modo-app .hg-switch, html.is-modo-app .hg-titulo-chip, html.is-modo-app .hg-map-dock .hg-icon-btn { min-height: var(--toque); }
+  html.is-modo-app .hg-btn { padding: .7rem 1rem; font-size: .9rem; }
+  html.is-modo-app .hg-x { width: var(--toque); height: var(--toque); }
+  html.is-modo-app .hg-toolbar { flex-wrap: wrap; }
+  html.is-modo-app .hg-toolbar > * { flex: 1 1 100%; max-width: none !important; width: auto !important; }
+  html.is-modo-app body[data-page="pesquisa"] #form-pesquisa { flex-wrap: wrap; overflow: visible; }
+  html.is-modo-app body[data-page="pesquisa"] #form-pesquisa > * { flex: 1 1 100%; }
+  html.is-modo-app body[data-page="pesquisa"] #form-pesquisa input { width: 100%; }
+
+  /* tabelas rolam na horizontal dentro do painel */
+  html.is-modo-app .hg-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-inline: -.9rem; padding-inline: .9rem; }
+  html.is-modo-app .hg-table { min-width: 620px; }
+
+  /* bolsa: linha vira cartão de 2 colunas */
+  html.is-modo-app .hg-bolsa-cab { display: none !important; }
+  html.is-modo-app .hg-bolsa-linha { grid-template-columns: minmax(0, 1fr) auto !important; grid-template-areas: "ativo preco" "sessao sessao" "mm vol" !important; row-gap: .5rem; }
+  html.is-modo-app .hg-bolsa-linha .hg-bolsa-ativo { grid-area: ativo; }
+  html.is-modo-app .hg-bolsa-linha .hg-bolsa-preco { grid-area: preco; text-align: right; }
+  html.is-modo-app .hg-bolsa-linha .hg-bolsa-pill { grid-area: preco; align-self: end; justify-self: end; margin-top: 2.2rem; }
+  html.is-modo-app .hg-bolsa-linha .hg-bolsa-sessao { grid-area: sessao; }
+  html.is-modo-app .hg-bolsa-linha .hg-bolsa-mm { grid-area: mm; }
+  html.is-modo-app .hg-bolsa-linha .hg-bolsa-vol { grid-area: vol; text-align: right; }
+  html.is-modo-app .hg-bolsa-linha > .hg-x { position: absolute; top: .4rem; right: .4rem; }
+  html.is-modo-app .hg-bolsa-hero img { height: 22vh !important; max-height: 180px; }
+  html.is-modo-app body[data-page="bolsa"] .hg-tape { margin: -.7rem -.75rem 0 !important; }
+
+  /* mapa: painel do globo como folha inferior, com respiro para a barra */
+  html.is-modo-app body.is-imersivo .hg-globo-painel { max-height: 42%; }
+  /* gaveta ocupa a tela */
+  html.is-modo-app .hg-drawer { width: 100%; max-width: none; }
+  /* rede social / listas */
+  html.is-modo-app .hg-row { padding: .7rem .8rem; }
+  html.is-modo-app .hg-post { padding: .8rem; }
+  /* configurações */
+  html.is-modo-app .hg-form [style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }
+
+  html.is-modo-app .hg-grid-3 { grid-template-columns: minmax(0, 1fr) !important; }
+  html.is-modo-app .hg-content .hg-kpis, html.is-modo-app body[data-page="inicio"] .hg-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+/* menu vira gaveta, como no celular */
+html.is-modo-app .hg-app { grid-template-columns: minmax(0, 1fr) !important; }
+html.is-modo-app .hg-main { grid-column: 1 !important; }
+html.is-modo-app .hg-side { position: absolute !important; left: 0; top: 0; bottom: 0; height: auto !important; width: var(--side) !important; transform: translateX(-105%) !important; transition: transform .35s cubic-bezier(.16, 1, .3, 1) !important; z-index: 140; opacity: 1 !important; }
+html.is-modo-app .hg-app.is-menu .hg-side { transform: none !important; }
+html.is-modo-app .hg-burger, html.is-modo-app .hg-icon-btn.hg-burger { display: grid !important; }
+html.is-modo-app .hg-search { display: none; }
+html.is-modo-app .hg-user div { display: none; }
+html.is-modo-app .hg-top { gap: .6rem; padding: .55rem .75rem; }
+html.is-modo-app .hg-main { height: calc(100dvh - var(--tabbar)) !important; }
+html.is-modo-app .hg-tabbar a { flex: 1; }
+
+/* ---------- 4. Menu recolhível (seta) ---------- */
+@media (min-width: 1100.02px) {
+  .hg-side { transition: width .3s cubic-bezier(.2,.8,.2,1) !important; }
+  .hg-app { position: relative; }
+  .hg-side-seta {
+    position: fixed; top: 50%; left: calc(var(--side) - 13px); transform: translateY(-50%); z-index: 30;
+    width: 26px; height: 46px; padding: 0; border-radius: 10px; cursor: pointer;
+    display: grid; place-items: center; color: var(--cyan);
+    background: linear-gradient(180deg, rgba(14, 30, 64, .96), rgba(8, 15, 40, .96));
+    border: 1px solid var(--line-2); box-shadow: 0 0 14px rgba(63, 227, 255, .25);
+    transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .2s;
+  }
+  .hg-side-seta:hover { box-shadow: var(--neon-cyan); }
+  .hg-side-seta svg { width: 16px; height: 16px; transition: transform .3s; }
+  .hg-app.is-recolhido { grid-template-columns: 72px minmax(0, 1fr) !important; }
+  .hg-app.is-recolhido .hg-side { width: 72px !important; padding-inline: .6rem; overflow: visible; }
+  .hg-app.is-recolhido .hg-side-seta { left: calc(72px - 13px); }
+  .hg-app.is-recolhido .hg-side-seta svg { transform: rotate(180deg); }
+  html.is-palco .hg-side-seta { left: calc((100vw / var(--palco-zoom, 1) - 1920px) / 2 + var(--side) - 13px); }
+  html.is-palco .hg-app.is-recolhido .hg-side-seta { left: calc((100vw / var(--palco-zoom, 1) - 1920px) / 2 + 72px - 13px); }
+  /* tooltip dos itens quando recolhido — o Sidebar do bundle ainda não tem data-rotulo, então usa o texto do próprio span */
+  .hg-app.is-recolhido .hg-nav a span { display: block; position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); padding: .35rem .6rem; border-radius: 8px; white-space: nowrap; font-size: .76rem; color: #fff; background: rgba(8, 15, 40, .96); border: 1px solid var(--line-2); box-shadow: var(--glow); opacity: 0; pointer-events: none; transition: opacity .15s; }
+  .hg-app.is-recolhido .hg-nav a:hover span { opacity: 1; }
+  .hg-app.is-recolhido .hg-brand span, .hg-app.is-recolhido .hg-side-foot { display: none; }
+  .hg-app.is-recolhido .hg-brand { justify-content: center; padding-inline: 0; }
+  .hg-app.is-recolhido .hg-nav a { justify-content: center; padding: .6rem 0; }
+  .hg-app.is-recolhido .hg-nav a svg { width: 21px; height: 21px; }
+  .hg-app.is-recolhido .hg-nav a { position: relative; }
+  .hg-app.is-recolhido ~ .hg-tabbar { left: 72px; }
+  html.is-palco .hg-app.is-recolhido ~ .hg-tabbar { left: calc((100vw / var(--palco-zoom, 1) - 1920px) / 2 + 72px); }
+}
+@media (max-width: 1100px) { .hg-side-seta { display: none; } }
+
+/* ---------- 5. Alternador PC / App ---------- */
+.hg-modo { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-chip); border: 1px solid var(--line); gap: 2px; flex: none; }
+.hg-modo button { min-height: 0 !important; height: 30px; padding: 0 .7rem; border: 0; border-radius: 999px; background: transparent; color: var(--text-2); font: 600 .72rem var(--font-d); letter-spacing: .04em; cursor: pointer; display: inline-flex; align-items: center; gap: .3rem; transition: background .2s, color .2s; }
+.hg-modo button svg { width: 14px; height: 14px; }
+.hg-modo button[aria-pressed="true"] { background: linear-gradient(90deg, #2f6fe6, #3b82ff); color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .35); box-shadow: 0 0 12px rgba(59, 130, 255, .45); }
+.hg-modo button:not([aria-pressed="true"]) { color: #dbe6fb; }
+/* Modo App forçado no PC: o app roda numa moldura de celular (430px) centrada,
+   e todas as regras de celular valem porque o palco fica com essa largura. */
+html.is-modo-app body { display: grid; place-items: start center; background: var(--bg-app); background-attachment: fixed; }
+html.is-modo-app .hg-moldura { width: min(430px, 100vw); height: 100dvh; position: relative; overflow: hidden; container-type: inline-size; box-shadow: 0 0 0 1px var(--line), 0 0 80px rgba(59, 130, 255, .18); }
+html.is-modo-app .hg-moldura .hg-tabbar, html.is-modo-app .hg-moldura .hg-drawer, html.is-modo-app .hg-moldura .hg-selo-demo, html.is-modo-app .hg-moldura .hg-toast, html.is-modo-app .hg-moldura .hg-side { position: absolute; }
+html.is-modo-app .hg-moldura .hg-tabbar { left: 0 !important; right: 0 !important; }
+html.is-modo-app .hg-side-seta { display: none; }
+
+html.is-modo-app .hg-moldura-login .hg-login-globo .hg-globo-canvas { transform: none; }
+
+/* ---------- 6. Rede social no modo App (moldura de 430px, sem @media) ---------- */
+html.is-modo-app .hg-social { grid-template-columns: minmax(0, 1fr) !important; justify-content: stretch; }
+html.is-modo-app .hg-social-nav, html.is-modo-app .hg-social-lado { display: none !important; }
+html.is-modo-app .hg-social-feed { border: 0; min-width: 0; }
+html.is-modo-app .hg-tweet-acoes { max-width: none; }
+html.is-modo-app .hg-social-topo { top: 0; }
+
+/* ---------- 7. Bate Papo no modo App ---------- */
+.hg-zap-acoes { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+.hg-zap-acoes .hg-btn { white-space: nowrap; flex: none; }
+html.is-modo-app .hg-zap { grid-template-columns: minmax(0, 1fr) !important; min-height: 0; height: calc(100dvh - var(--tabbar) - 130px); border-radius: var(--r-14); }
+html.is-modo-app .hg-zap-lista { display: none; }
+html.is-modo-app .hg-zap.is-lista .hg-zap-lista { display: flex; }
+html.is-modo-app .hg-zap.is-lista .hg-zap-conversa { display: none; }
+html.is-modo-app .hg-zap-voltar, html.is-modo-app .hg-zap-sino.is-cab { display: grid; }
+html.is-modo-app .hg-zap-bolha { max-width: 86%; }
+html.is-modo-app .hg-zap-notif { left: .8rem; right: .8rem; width: auto; top: 64px; }
+
+/* ---------- 8. Rede Completa ---------- */
+@media (max-width: 575.98px) { .hg-rc-linha { grid-template-columns: minmax(0, 1fr); } .hg-rc-fatos { grid-template-columns: 1fr 1fr; } }
+html.is-modo-app .hg-rc-linha { grid-template-columns: minmax(0, 1fr); }

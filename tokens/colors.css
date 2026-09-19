@@ -1,0 +1,70 @@
+/* Babel OS · cores — valores copiados de app/css/app.css (:root) */
+:root{
+  /* base */
+  --bg:#030817; /* @kind other */
+  --panel-a:rgba(14,30,64,.8); /* @kind other */
+  --panel-b:rgba(8,15,40,.72); /* @kind other */
+  --cyan:#3fe3ff; /* @kind other */
+  --blue:#3b82ff; /* @kind other */
+  --violet:#8b5cff; /* @kind other */
+  --magenta:#e04bff; /* @kind other */
+  --green:#34e6a6; /* @kind other */
+  --amber:#ffb547; /* @kind other */
+  --red:#ff4d7a; /* @kind other */
+  --gold:#f5c76a; /* @kind other */
+  --gold-2:#e0a33c; /* @kind other */
+  --text:#e6efff; /* @kind other */
+  --text-2:rgba(186,204,240,.7); /* @kind other */
+  --text-3:rgba(150,175,225,.45); /* @kind other */
+  --line:rgba(80,140,255,.26); /* @kind other */
+  --line-2:rgba(120,180,255,.55); /* @kind other */
+
+  /* aliases semânticos */
+  --text-body:var(--text); /* @kind other */
+  --text-strong:#fff; /* @kind other */
+  --text-muted:var(--text-2); /* @kind other */
+  --text-faint:var(--text-3); /* @kind other */
+  --link:#8fc2ff; /* @kind other */
+  --link-hover:var(--cyan); /* @kind other */
+  --accent:var(--cyan); /* @kind other */
+  --accent-2:var(--violet); /* @kind other */
+
+  --surface-app:var(--bg); /* @kind color */
+  --surface-panel:linear-gradient(145deg,var(--panel-a),var(--panel-b)); /* @kind color */
+  --surface-sunken:rgba(8,18,45,.5); /* @kind color */
+  --surface-field:rgba(8,18,45,.75); /* @kind color */
+  --surface-chip:rgba(10,22,52,.7); /* @kind color */
+  --surface-row:linear-gradient(90deg,rgba(59,130,255,.14),rgba(14,30,64,.3)); /* @kind color */
+  --surface-glass:rgba(6,14,36,.72); /* @kind color */
+
+  --border-panel:var(--line); /* @kind other */
+  --border-panel-hover:var(--line-2); /* @kind other */
+  --border-soft:rgba(80,140,255,.18); /* @kind other */
+  --border-table:rgba(80,140,255,.1); /* @kind other */
+
+  --status-up:var(--green); /* @kind other */
+  --status-down:var(--red); /* @kind other */
+  --status-warn:var(--amber); /* @kind other */
+  --status-live:var(--magenta); /* @kind other */
+  --rank:var(--gold); /* @kind other */
+
+  /* gradientes de marca */
+  --grad-brand:linear-gradient(135deg,var(--cyan),var(--violet)); /* @kind color */
+  --grad-btn:linear-gradient(90deg,rgba(80,90,255,.85),rgba(139,92,255,.85)); /* @kind color */
+  --grad-btn-cyan:linear-gradient(90deg,#35b4ff,#3fe3ff); /* @kind color */
+  --grad-btn-green:linear-gradient(90deg,#27dc9a,#34e6a6); /* @kind color */
+  --grad-gold:linear-gradient(135deg,var(--gold),var(--gold-2)); /* @kind color */
+  --grad-avatar:linear-gradient(135deg,var(--blue),var(--violet)); /* @kind color */
+  --grad-nav-atual:linear-gradient(90deg,rgba(59,130,255,.9),rgba(63,180,255,.5)); /* @kind color */
+
+  /* fundo da aplicação (3 halos + cor de base) */
+  --bg-app:
+    radial-gradient(ellipse 70% 50% at 50% -10%,rgba(59,130,255,.22),transparent 70%),
+    radial-gradient(ellipse 45% 40% at 100% 60%,rgba(139,92,255,.15),transparent 70%),
+    radial-gradient(ellipse 45% 40% at 0% 95%,rgba(63,227,255,.09),transparent 70%),
+    var(--bg); /* @kind color */
+  --bg-mapa:radial-gradient(ellipse at 50% 40%,rgba(40,80,180,.35),transparent 70%),#040a1e; /* @kind color */
+  --scanlines:repeating-linear-gradient(180deg,rgba(120,180,255,.022) 0 1px,transparent 1px 4px); /* @kind other */
+
+  color-scheme:dark;
+}

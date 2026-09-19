@@ -1,0 +1,46 @@
+/* Babel OS · tipografia — Exo 2 (display) + Inter (texto) */
+:root{
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; /* @kind font */
+  --font-d:"Exo 2","Inter",system-ui,sans-serif; /* @kind font */
+  --font-mono:ui-monospace,"SFMono-Regular",Menlo,monospace; /* @kind font */
+
+  --font-body:var(--font); /* @kind font */
+  --font-display:var(--font-d); /* @kind font */
+
+  /* escala em uso (rem sobre base 14px do body) */
+  --fs-num-xl:2.5rem; /* @kind font */   /* .hg-glow-num */
+  --fs-h1:1.75rem; /* @kind font */      /* .hg-page-head h1 (1.4rem no modo sem rolagem) */
+  --fs-h1-compacto:1.4rem; /* @kind font */
+  --fs-num:1.75rem; /* @kind font */     /* KPI no dashboard */
+  --fs-preco:1.55rem; /* @kind font */   /* .hg-bolsa-valor */
+  --fs-titulo-globo:1.45rem; /* @kind font */
+  --fs-title:1.02rem; /* @kind font */   /* .hg-title */
+  --fs-preco-linha:1.15rem; /* @kind font */
+  --fs-body:.875rem; /* @kind font */    /* 14px */
+  --fs-label:.86rem; /* @kind font */    /* .hg-kpi-label */
+  --fs-btn:.84rem; /* @kind font */
+  --fs-row:.82rem; /* @kind font */
+  --fs-select:.82rem; /* @kind font */
+  --fs-sub:.78rem; /* @kind font */      /* .hg-sub */
+  --fs-th:.74rem; /* @kind font */
+  --fs-meta:.72rem; /* @kind font */
+  --fs-micro:.7rem; /* @kind font */
+  --fs-eyebrow:.66rem; /* @kind font */
+  --fs-nano:.64rem; /* @kind font */
+
+  --lh-body:1.5; /* @kind font */
+  --lh-tight:1.2; /* @kind font */
+  --lh-num:1; /* @kind font */
+
+  --fw-regular:400; /* @kind font */
+  --fw-medium:500; /* @kind font */
+  --fw-semibold:600; /* @kind font */
+  --fw-bold:700; /* @kind font */
+
+  --ls-eyebrow:.14em; /* @kind font */  /* .hg-globo-sobre */
+  --ls-th:.06em; /* @kind font */       /* cabeçalho de tabela / rótulos de dia */
+  --ls-cab:.12em; /* @kind font */      /* .hg-bolsa-cab */
+  --ls-brand:.01em; /* @kind font */
+
+  --num-tabular:tabular-nums; /* @kind font */
+}

@@ -1,0 +1,84 @@
+/* Babel OS · tela de entrada (login / cadastro) — vidro azul-claro sobre o globo */
+.hg-login { position: absolute; inset: 0; display: grid; place-items: center; padding: 1rem; overflow: hidden; background: var(--bg-mapa); }
+.hg-moldura { position: relative; min-height: 100dvh; }
+html.is-modo-app .hg-login { padding: 1rem .75rem; }
+/* o globo fica centrado atrás do cartão (o produto o desloca 160px à esquerda em
+   telas largas; aqui compensamos para o planeta ficar no centro) */
+.hg-login-globo .hg-globo-canvas { transform: translateX(160px); }
+@media (max-width: 760px) { .hg-login-globo .hg-globo-canvas { transform: none; } }
+.hg-login-globo { position: absolute; inset: 0; }
+.hg-login-globo .hg-globo { height: 100% !important; border-radius: 0; box-shadow: none; background: transparent; }
+.hg-login-globo .hg-globo-painel, .hg-login-globo .hg-globo-dica, .hg-login-globo .hg-globo-zoom, .hg-login-globo .hg-globo-tip,
+.hg-login-globo .hg-globo-clima, .hg-login-globo .hg-globo-credito, .hg-login-globo .hg-map-dock, .hg-login-globo .hg-globo-torre-info, .hg-login-globo .hg-globo-hud, .hg-login-globo .hg-rede-host { display: none !important; }
+.hg-login-globo .hg-globo-canvas { pointer-events: none; }
+.hg-login-veu { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(3, 8, 23, .1), rgba(3, 8, 23, .55) 100%); pointer-events: none; }
+
+.hg-login-cartao {
+  position: relative; z-index: 2; width: min(420px, 100%); display: grid; gap: .9rem;
+  padding: 1.6rem 1.5rem 1.3rem; border-radius: 24px;
+  background: transparent;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, .5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 0 0 1px rgba(120, 190, 255, .18), 0 30px 80px rgba(0, 20, 60, .35), 0 0 60px rgba(63, 180, 255, .22);
+  animation: hg-login-in .6s cubic-bezier(.2, .8, .2, 1) both;
+}
+@keyframes hg-login-in { from { opacity: 0; transform: translateY(18px) scale(.98); } }
+.hg-login.is-indo .hg-login-cartao { transition: opacity .5s, transform .6s cubic-bezier(.2, .8, .2, 1); opacity: 0; transform: translateY(-14px) scale(1.03); }
+.hg-login.is-indo .hg-login-veu { transition: opacity .6s; opacity: 0; }
+
+.hg-login-marca { display: flex; align-items: center; justify-content: center; gap: .55rem; color: #fff; font: 700 1.5rem var(--font-d); letter-spacing: .01em; }
+.hg-login-marca b { color: var(--cyan); text-shadow: var(--neon-cyan); }
+.hg-login-marca .hg-brand-coroa { width: 36px; height: 36px; }
+
+.hg-login-abas { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 999px; background: transparent; border: 1px solid rgba(255, 255, 255, .45); }
+.hg-login-abas button { min-height: 38px; border: 0; border-radius: 999px; background: transparent; color: rgba(255, 255, 255, .8); font: 600 .84rem var(--font-d); letter-spacing: .03em; cursor: pointer; transition: background .2s, color .2s; }
+.hg-login-abas button[aria-selected="true"] { background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, .85); box-shadow: 0 0 14px rgba(63, 227, 255, .45); }
+
+.hg-login-campo { display: grid; gap: .3rem; }
+.hg-login-campo span { color: rgba(255, 255, 255, .9); font: 600 .72rem var(--font-d); letter-spacing: .08em; text-transform: uppercase; }
+.hg-login-campo input {
+  width: 100%; min-height: 46px; padding: .6rem .9rem; border-radius: 12px;
+  color: #fff; caret-color: var(--cyan); font: 500 .95rem var(--font);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, .7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25);
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.hg-login-campo input::placeholder { color: rgba(255, 255, 255, .55); }
+.hg-login-campo input:focus { outline: 0; border-color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 0 0 3px rgba(255, 255, 255, .2), 0 0 20px rgba(63, 227, 255, .45); background: rgba(255, 255, 255, .06); }
+.hg-login-campo input:-webkit-autofill { -webkit-text-fill-color: #fff; -webkit-box-shadow: 0 0 0 1000px rgba(8, 24, 70, .95) inset; }
+
+.hg-login-erro { margin: -.3rem 0 0; color: #fff; font-size: .8rem; padding: .45rem .7rem; border-radius: 10px; background: transparent; border: 1px solid rgba(255, 77, 122, .8); }
+.hg-login-btn {
+  min-height: 48px; margin-top: .2rem; border: 1px solid rgba(255, 255, 255, .8); border-radius: 14px; cursor: pointer;
+  color: #04122e; font: 700 .95rem var(--font-d); letter-spacing: .04em;
+  background: linear-gradient(90deg, #bfeeff, #fff 50%, #cfe6ff);
+  box-shadow: 0 0 24px rgba(191, 238, 255, .55), inset 0 1px 0 #fff;
+  transition: transform .15s, box-shadow .2s, filter .2s;
+}
+.hg-login-btn:hover { filter: brightness(1.05); box-shadow: 0 0 36px rgba(191, 238, 255, .8), inset 0 1px 0 #fff; }
+.hg-login-btn:active { transform: translateY(1px); }
+.hg-login-btn:disabled { opacity: .7; cursor: default; }
+.hg-login-nota { margin: 0; text-align: center; color: rgba(255, 255, 255, .8); font-size: .74rem; }
+
+@media (max-width: 575.98px) {
+  .hg-login { padding: .75rem; align-items: center; }
+  .hg-login-cartao { padding: 1.3rem 1.1rem 1.1rem; border-radius: 22px; }
+}
+
+/* link de afiliado (opcional) */
+.hg-login-afiliado { display: grid; gap: .3rem; }
+.hg-login-afiliado > button { justify-self: start; min-height: 0; padding: 0; border: 0; background: none; color: rgba(255, 255, 255, .85); font: 600 .74rem var(--font-d); letter-spacing: .04em; cursor: pointer; display: inline-flex; align-items: center; gap: .35rem; }
+.hg-login-afiliado > button svg { width: 14px; height: 14px; color: var(--green); filter: drop-shadow(0 0 4px var(--green)); }
+.hg-login-afiliado > button:hover { color: #fff; text-decoration: underline; }
+.hg-login-afiliado-linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .4rem; }
+.hg-login-afiliado-linha input { font-family: var(--font-mono); font-size: .8rem; }
+.hg-login-afiliado-linha .hg-login-colar { min-height: 46px; padding: 0 .8rem; border-radius: 12px; cursor: pointer; color: #fff; font: 600 .78rem var(--font-d); background: transparent; border: 1px solid rgba(255, 255, 255, .7); }
+.hg-login-afiliado-linha .hg-login-colar:hover { border-color: #fff; box-shadow: 0 0 14px rgba(52, 230, 166, .45); }
+.hg-login-afiliado-ok { margin: 0; color: #fff; font-size: .76rem; padding: .4rem .7rem; border-radius: 10px; background: transparent; border: 1px solid rgba(52, 230, 166, .7); }
+.hg-login-afiliado-ok b { color: var(--green); text-shadow: 0 0 8px rgba(52, 230, 166, .6); }
+
+/* alternador PC/App também na tela de entrada */
+.hg-modo-login { position: absolute; top: max(.8rem, env(safe-area-inset-top)); right: .8rem; z-index: 3; background: transparent; border-color: rgba(255, 255, 255, .45); }
+.hg-modo-login button { color: rgba(255, 255, 255, .8); }
+.hg-modo-login button[aria-pressed="true"] { background: transparent; border: 1px solid rgba(255, 255, 255, .85); color: #fff; box-shadow: 0 0 12px rgba(63, 227, 255, .45); }

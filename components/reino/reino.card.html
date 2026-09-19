@@ -1,0 +1,70 @@
+<!-- @dsCard group="Components" viewport="700x520" name="Reino" subtitle="Feed, guilda, títulos, afiliado, nível e Bolsa" -->
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<style>body{margin:0;padding:18px 20px}body::after{display:none}.linha{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}.rot{color:var(--text-3);font-size:.62rem;margin:.1rem 0 .35rem}.duo{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start}.hg-tape{position:static;margin:0}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { FeedPost, GuildSummary, TitleChip, RankList, AffiliateLink, AffiliateLevel, MarketStatus, StockRow, TickerTape, Panel, Accordion } = window.BabelOSDesignSystem_5ad360;
+const ATIVOS = [
+  { symbol: "PETR4", value: 48.95, changePercent: 1.28 },
+  { symbol: "VALE3", value: 77.98, changePercent: -0.64 },
+  { symbol: "ITUB4", value: 42.62, changePercent: 0.41 },
+  { symbol: "ABEV3", value: 15.6, changePercent: -1.12 },
+];
+function Demo() {
+  const [titulo, setTitulo] = React.useState("Duque");
+  return (
+    <div style={{ display: "grid", gap: ".9rem" }}>
+      <TickerTape items={ATIVOS} />
+      <div className="hg-bolsa-lista" role="list">
+        <StockRow symbol="PETR4" name="Petrobras" value={48.95} changeValue={0.62} changePercent={1.28}
+          volume={32000000} low={48.1} high={49.3} points={[48.1, 48.4, 48.2, 48.9, 49.1, 48.95]} index={0} force={1} />
+        <StockRow symbol="VALE3" name="Vale" value={77.98} changeValue={-0.5} changePercent={-0.64}
+          volume={18400000} low={77.5} high={78.9} points={[78.6, 78.2, 78.4, 77.9, 77.98]} index={1} force={0.5} />
+      </div>
+      <div className="linha"><MarketStatus open /><MarketStatus /></div>
+      <div className="duo">
+        <Panel tone="social" title="Rede social" subtitle="Últimas publicações do Reino">
+          <ul className="hg-list">
+            <FeedPost autor="Ana Ribeiro" empresa="Pulso Marketing Digital" quando="8 min"
+              texto="Abrimos agenda para diagnósticos gratuitos de presença digital esta semana." curtidas={24} comentarios={6} />
+            <FeedPost autor="Camila Duarte" empresa="Pinheiro Tech Solutions" quando="35 min"
+              texto="Procuramos parceiros de contabilidade em Curitiba para atender startups." curtidas={17} comentarios={9} />
+          </ul>
+        </Panel>
+        <Panel tone="conquistas" title="Minha guilda">
+          <GuildSummaryBloco />
+        </Panel>
+      </div>
+      <AffiliateLink link="https://www.babel-os.com/cadastro?ref=demo1234" indicados={7} comissoes={245.5} onCopy={() => {}} />
+      <div className="linha" style={{ gap: "2rem" }}>
+        <AffiliateLevel level="Prata" indicados={7} proximo="faltam 3 para Ouro" progress={70} />
+        <AffiliateLevel level="Prata" indicados={7} compact />
+      </div>
+      <div className="hg-titulos-nivel" role="radiogroup" aria-label="Título">
+        {[["Duque", "Comanda um estado e suas cidades.", 97], ["Conde", "Destaque em uma cidade.", 67], ["Barão", "Entrada no Reino.", 47]].map(([n, d, m]) => (
+          <TitleChip key={n} nome={n} descricao={d} mensalidade={m} selected={titulo === n} onSelect={() => setTitulo(n)} />
+        ))}
+      </div>
+      <div className="duo">
+        <RankList items={[
+          { nome: "Imperador", descricao: "Comanda o mapa do Brasil inteiro.", mensalidade: 997 },
+          { nome: "Rei", descricao: "Comanda o Brasil dividido por regiões.", mensalidade: 497 },
+          { nome: "Príncipe", descricao: "Comanda uma região e seus estados.", mensalidade: 247 },
+        ]} />
+        <Accordion title="Sudeste" value="812 empresas" open>
+          <ul><li>São Paulo <span>SP</span> <b>402</b></li><li>Belo Horizonte <span>MG</span> <b>118</b></li></ul>
+        </Accordion>
+      </div>
+    </div>
+  );
+}
+function GuildSummaryBloco() {
+  return <GuildSummary nome="Guilda Paulista" lider="Ana Ribeiro" pontos={3840}
+    membros={[{ nome: "Ana Ribeiro", titulo: "Rei" }, { nome: "Bruno Carvalho", titulo: "Duque" }, { nome: "Diego Martins", titulo: "Barão" }]} />;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script></body></html>

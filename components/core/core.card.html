@@ -1,0 +1,43 @@
+<!-- @dsCard group="Components" viewport="700x340" name="Core" subtitle="Painel, botões, cápsulas, avatares e números" -->
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css">
+<style>body{margin:0;padding:18px 20px}body::after{display:none}.linha{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}.rot{color:var(--text-3);font-size:.62rem;margin:.1rem 0 .35rem}.cols{display:grid;grid-template-columns:1fr 1fr;gap:1rem}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { Panel, Button, IconButton, Pill, Avatar, GlowNumber, PageHead } = window.BabelOSDesignSystem_5ad360;
+function Demo() {
+  return (
+    <div style={{ display: "grid", gap: ".8rem" }}>
+      <PageHead title="Guildas" subtitle="Grupos de empresas e membros do Reino que somam pontos juntos.">
+        <Button variant="cyan" icon="mais">Criar guilda</Button>
+      </PageHead>
+      <div className="linha">
+        <Button>Abrir rede social</Button>
+        <Button variant="cyan" icon="mais">Criar guilda</Button>
+        <Button variant="ghost">Ver conquistas</Button>
+        <Button variant="green">Copiar</Button>
+        <Button disabled>Copiar</Button>
+        <IconButton icon="sino" label="Notificações" dot />
+        <IconButton icon="mapa" label="Mapa" active />
+        <Pill>96%</Pill>
+        <Avatar name="Bruno Carvalho" />
+        <Avatar name="Conta Certa" gradient="match" />
+      </div>
+      <div className="cols">
+        <Panel tone="social" title="Rede social" subtitle="Últimas publicações do Reino" onClose={() => {}}>
+          <GlowNumber value="2.041" size="1.75rem" />
+          <div className="hg-kpi-foot"><b>+12%</b> nesta semana</div>
+        </Panel>
+        <Panel tone="conquistas" title="Conquistas" subtitle="Sua evolução no Reino" headingLevel={3}>
+          <GlowNumber value="64%" tone="gold" size="1.75rem" />
+          <div className="hg-kpi-foot">até Príncipe</div>
+        </Panel>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script></body></html>
