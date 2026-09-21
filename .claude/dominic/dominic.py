@@ -203,7 +203,7 @@ def inspecionar(r, adicionadas):
             erros.append(f"parece haver {nome} no arquivo — segredo nunca vai para o código (use variável de ambiente)")
     ext = os.path.splitext(r)[1].lower()
     codigo = ext in (".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".html")
-    app = r.startswith(("ui_kits/", "components/", "tokens/"))
+    app = r.startswith(("app/", "design-system/components/", "design-system/tokens/"))
     conta = lambda rx: sum(1 for l in adicionadas if re.search(rx, l))
     if codigo:
         if conta(r"\bdebugger\b"):

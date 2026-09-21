@@ -6,10 +6,8 @@
       "nome": "Supabase: dados, login e regras de acesso",
       "caminhos": [
         "supabase/**",
-        "ui_kits/babel-os/contas.js",
-        "ui_kits/babel-os/afiliados.js",
-        "ui_kits/babel-os/fotos.js",
-        "ui_kits/babel-os/AdminScreen.jsx",
+        "app/servicos/*.js",
+        "app/telas/AdminScreen.jsx",
         "**/*.sql"
       ],
       "conteudo": [
@@ -37,10 +35,10 @@
       "id": "app",
       "nome": "Telas e lógica do app (JSX/JS)",
       "caminhos": [
-        "ui_kits/babel-os/*.jsx",
-        "ui_kits/babel-os/*.js",
-        "components/**/*.jsx",
-        "ui_kits/babel-os/*.html"
+        "app/*.jsx",
+        "app/*.js",
+        "design-system/components/**/*.jsx",
+        "app/*.html"
       ],
       "instaladas": [
         "frontend-design",
@@ -68,8 +66,8 @@
       "nome": "CSS, tokens e identidade visual",
       "caminhos": [
         "**/*.css",
-        "tokens/**",
-        "guidelines/**"
+        "design-system/tokens/**",
+        "design-system/guidelines/**"
       ],
       "instaladas": [
         "frontend-design",
@@ -141,11 +139,11 @@
       "id": "docs",
       "nome": "Aulas, READMEs, TODO e logs",
       "caminhos": [
-        "06-aulas/**",
+        "docs/**",
         "00-comando/**",
         "**/README.md",
         "readme.md",
-        "01-contexto/**"
+        "scripts/**"
       ],
       "instaladas": [
         "doc-coauthoring",

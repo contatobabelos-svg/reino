@@ -122,3 +122,13 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 ## S — "tarefa, junte os 7 videos em só. apos isso, coloque ele de tela de login no site." (21/09)
 - [x] S1 Juntar 0.mp4…6.mp4 de `~/Vídeos/video login` num vídeo só
 - [x] S2 Esse vídeo como fundo da tela de login no site
+
+## T — "Vamos criar um plano passo a passo para entregar esse projeto de forma profissional. Estou falando de sistema de login funcional, pastas do projeto reino bem organizdas com tudo separado certo, tudo tem uma pasta, sistema suportando 300 pessoas simultaneamente usando o grupo e a rede social do reino e estar tudo legal, o app ser super responsivo a celular, o app ser rapido, o app ser seguro e nunca perder os dados do usuario, somente o stories" (21/09)
+- [x] T1 Plano em `00-comando/PLANO-ENTREGA.md` (fases 0–9 e decisões do fundador)
+
+## U — "arrume essa bagunça antes de prosseguirmos" (sobre as pastas do projeto; Fase 3 do PLANO-ENTREGA, sem a migração para o Vite) (21/09)
+- [x] U1 App sai de `ui_kits/babel-os/` para `app/`, com subpastas por tipo (telas, componentes, serviços, estilos, dados)
+- [x] U2 Design system inteiro em `design-system/`
+- [x] U3 Exports antigos, produto original e dados sem uso em `arquivo/`; contexto, aulas e referências em `docs/`
+- [x] U4 `montar-site.sh`, CLAUDE.md, README, agentes e hook Dominic apontando para os caminhos novos
+- [x] U5 Site montado com os mesmos arquivos de antes (hash) e teste de navegador igual ao de antes

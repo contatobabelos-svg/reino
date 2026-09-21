@@ -8,7 +8,7 @@
    clicar, tocar ou apertar Enter/Espaço/Tab; aí o card sobe, o vídeo pausa no quadro em que
    estiver e o fundo desfoca. Céu em canvas + névoa + letreiro CSS viram reserva. */
 
-/* Vídeos de fundo do login. Para trocar: rode assets/login/preparar-video.sh <v1.mp4> [v2.mp4 ...]
+/* Vídeos de fundo do login. Para trocar: rode scripts/preparar-video.sh <v1.mp4> [v2.mp4 ...]
    e cole aqui a lista que ele imprime (um vídeo só toca em loop; dois ou mais, em sequência). */
 const VIDEO_LOGIN = {
   lista: [

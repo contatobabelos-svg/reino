@@ -36,7 +36,7 @@ A interface é um app único em pt-BR, servido como PWA, que caiba inteiro na te
 | `components/babel-ui.css` | As regras `hg-*` do produto, copiadas de `app/css/app.css`. |
 | `components/<grupo>/` | Componentes React (`.jsx` + `.d.ts` + `.prompt.md`) e o card do grupo. |
 | `guidelines/*.html` | Cards de fundamentos (cor, tipo, espaço, marca). |
-| `ui_kits/babel-os/` | Recriação clicável do app e do pré-cadastro. |
+| `../app/` | Recriação clicável do app e do pré-cadastro. |
 | `assets/` | Logo, ícones, emblema e banner BabelCoin, ícones de PWA. |
 | `produto-original/` | O produto `app/` do repositório, cópia verbatim (56 arquivos): páginas, CSS, JS, municípios do IBGE, imagens e `API.md`. Referência de comparação — não é parte do sistema compilado. |
 | `SKILL.md` | Empacotamento como Agent Skill. |
@@ -124,7 +124,7 @@ Inventário derivado das classes `hg-*` de `app/css/app.css` e da marcação ger
 
 ### Motor do globo
 
-O **globo** não foi reimplementado: o `globo.js` do produto (canvas 2D, projeção ortográfica, sem bibliotecas) roda no kit sem alteração, junto com `geo-mundo.js`, `geo-brasil.js`, `brasil.js` e os municípios do IBGE. Ele cobre Terra → Lua com a torre Babel → Brasil → estado → cidade → bairro, com arrastar, pinça, inércia, tooltip e mosaicos de rua reais. Consumir o globo no React é o componente `Globo` do kit (`ui_kits/babel-os/MapaPanel.jsx`) — não recrie esse desenho à mão.
+O **globo** não foi reimplementado: o `globo.js` do produto (canvas 2D, projeção ortográfica, sem bibliotecas) roda no kit sem alteração, junto com `geo-mundo.js`, `geo-brasil.js`, `brasil.js` e os municípios do IBGE. Ele cobre Terra → Lua com a torre Babel → Brasil → estado → cidade → bairro, com arrastar, pinça, inércia, tooltip e mosaicos de rua reais. Consumir o globo no React é o componente `Globo` do kit (`../app/componentes/MapaPanel.jsx`) — não recrie esse desenho à mão.
 
 ## Escopo ampliado pelo cliente (setembro 2026)
 
@@ -143,13 +143,13 @@ Uma ideia do mapa mental ficou **sem construir** porque não deu para interpreta
 
 ## UI kit
 
-`ui_kits/babel-os/` — recriação clicável, com `app-shell.css` (o shell de 100dvh sem rolagem, copiado do produto) e dados fictícios em `data.js`.
+`../app/` — recriação clicável, com `app-shell.css` (o shell de 100dvh sem rolagem, copiado do produto) e dados fictícios em `data.js`.
 
 - `index.html` — app com menu, cabeçalho, barra inferior e **19 rotas**: Dashboard, Reino Academy, Níveis, Eventos, Guildas por segmento, Mapa Reino, Rede social, Bate Papo do Reino, Match Reino, Conquistas, Clube de Benefícios, Rede Completa, Meus acessos, Bolsa de Valores, Busca Inteligente, Vitrine, Revista, Hierarquia e Configurações.
 - `mapa.html` — Mapa Reino em tela cheia, com o globo navegável.
 - `pre-cadastro.html` — tela pública de escolha de título e território.
 
-O kit carrega os arquivos originais do produto para geografia e dados (`globo.js`, `geo-mundo.js`, `geo-brasil.js`, `brasil.js`, `dados/municipios/*.json`, `dados-demo.js`, `demo-brasil.js`). Detalhes e limites em `ui_kits/babel-os/README.md`.
+O kit carrega os arquivos originais do produto para geografia e dados (`globo.js`, `geo-mundo.js`, `geo-brasil.js`, `brasil.js`, `dados/municipios/*.json`, `dados-demo.js`, `demo-brasil.js`). Detalhes e limites em `../app/README.md`.
 
 ## Fontes: substituição pendente
 

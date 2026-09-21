@@ -46,7 +46,7 @@ A mensagem diz o arquivo, o motivo e o comando para voltar:
    - `anthropics/skills`, `obra/superpowers`;
    - repositórios oficiais do fornecedor da ferramenta (ex.: `supabase/agent-skills`);
    - busca web por `"SKILL.md" <tema>` no GitHub.
-3. **Valide cada candidata em 4 passos** (Módulo 1.4 de `06-aulas/AULA-COMPLETA-13-09.md`):
+3. **Valide cada candidata em 4 passos** (Módulo 1.4 de `docs/aulas/AULA-COMPLETA-13-09.md`):
    1. **Estrelas, licença e dono** pela API:
       `gh api repos/<dono>/<repo> --jq '{stars:.stargazers_count, licenca:.license.spdx_id, atualizado:.pushed_at}'`.
       Sem licença = não instala (todos os direitos reservados).

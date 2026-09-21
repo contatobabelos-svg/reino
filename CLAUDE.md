@@ -19,11 +19,11 @@ visual), Theus (professor). Auxiliares: Escudeiro (QA simples) e Escriba (docs).
   violeta `--violet #8b5cff`; magenta `#e04bff`; verde `#34e6a6`; âmbar `#ffb547`;
   vermelho `#ff4d7a`; ouro `--gold #f5c76a`. Texto `#e6efff`.
 - Visual holograma + neon: painéis de vidro com borda em gradiente e faixa de luz
-  ciano no topo. Use os tokens de `tokens/*.css` e as classes `hg-*`; nunca cor solta.
+  ciano no topo. Use os tokens de `design-system/tokens/*.css` e as classes `hg-*`; nunca cor solta.
 
 **Onde fica o quê.**
-- App: `ui_kits/babel-os/` (JSX via Babel no navegador). O `index.html` da raiz é
-  um pacote exportado antigo — não edite; o site é montado por `montar-site.sh`.
+- App: `app/` (JSX via Babel no navegador), com uma subpasta por tipo de arquivo.
+  O site é montado por `montar-site.sh`; `arquivo/` guarda o que é antigo e nunca vai ao ar.
 - Deploy: push no `main` de `contatobabelos-svg/reino` → Vercel `o-reino`
   (time Babel OS), https://o-reino.vercel.app.
 - Banco: Supabase `fxlansnepokjxdikxocb`. Regras de acesso em `supabase/`.
@@ -34,7 +34,7 @@ visual), Theus (professor). Auxiliares: Escudeiro (QA simples) e Escriba (docs).
 Ctrl/⌘ + roda ou dois dedos, fora da tela cheia do Mapa Reino.
 
 **Proibido publicar** (risco jurídico: pirâmide, CVM, Banco Central — ver
-`06-aulas/AULA-COMPLETA-13-09.md`, Módulo 5): promessa de renda, "% do lucro",
+`docs/aulas/AULA-COMPLETA-13-09.md`, Módulo 5): promessa de renda, "% do lucro",
 fundo, banco ou crédito próprio, escassez ou urgência falsa, contador inflado,
 insígnia inventada, dados de `_privado/`. Preços de mensalidade e percentuais de
 comissão estão **em disputa** entre os sócios: não crie nem altere número novo;
@@ -61,18 +61,30 @@ da API. Sem evidência, diga o que falta verificar.
 
 ## Estrutura
 
-| Caminho | Conteúdo |
-|---------|----------|
-| `ui_kits/babel-os/` | App do Reino: telas `*Screen.jsx`, `App.jsx`, `contas.js`, `afiliados.js`, `fotos.js`, `globo.js`, CSS do shell |
-| `tokens/`, `styles.css` | Tokens de cor, tipo, espaço, efeitos e movimento |
-| `components/` | Componentes React do design system e `babel-ui.css` (`hg-*`) |
-| `_ds_bundle.js` | Design system compilado, carregado pelo app |
-| `supabase/` | Migrações aplicadas e README do banco |
-| `montar-site.sh`, `vercel.json` | Build da Vercel: copia o app para `site/` |
-| `produto-original/` | Cópia do `app/` original do repositório vyzor, só para comparação |
-| `.claude/` | Hooks, agentes e skills do Claude Code (ver `.claude/README.md`) |
-| `00-comando/` | `TODO.md` (pedidos por seção) e `logs/` (`LOG.md`, log de cada agente, contador do hook) |
-| `06-aulas/` | Material de aula; `AULA-COMPLETA-13-09.md` é a origem do método |
+```
+app/                  o app do Reino — é o que vai ao ar
+├─ index.html         shell do app; mapa.html e pre-cadastro.html são as outras páginas
+├─ nucleo/            App.jsx (rotas, sessão) e app-layout.js
+├─ telas/             uma tela por arquivo: *Screen.jsx, PortalLogin.jsx (login atual), LoginScreen.jsx (reserva)
+├─ componentes/       peças reaproveitadas: FotoAvatar, Stories, RostoPixel, MapaPanel, ReinoMapa, NetworkMapLocal, globo.js
+├─ servicos/          acesso ao banco: contas.js, afiliados.js, fotos.js
+├─ estilos/           CSS do shell, do layout e dos logins
+├─ dados/             geo-*, municipios-tudo.js, municipios/*.json, data.js
+│  └─ demo/           dados fictícios (saem quando cada tela ficar real)
+└─ assets/            imagens e o vídeo do login (assets/login/)
+design-system/        tokens/, components/ (babel-ui.css = hg-*), styles.css, _ds_bundle.js, guidelines/, SKILL.md
+supabase/             migrações em ordem de data, functions/ e README do banco
+scripts/              preparar-video.sh (vídeo do login → app/assets/login)
+docs/                 contexto/ (pesquisa de design), aulas/ (origem do método), referencias/ (prints e fotos)
+00-comando/           TODO.md, PLANO-ENTREGA.md, MAPA-TELAS-BOTOES.md e logs/
+arquivo/              fora do ar: produto-original/, index exportado antigo, exports com login demo
+.claude/              hooks, agentes e skills do Claude Code (ver .claude/README.md)
+montar-site.sh        build da Vercel: copia app/ e o necessário do design-system/ para site/
+```
+
+Script ou CSS novo entra na subpasta certa de `app/` e é listado no `app/index.html`
+(e em `mapa.html`/`pre-cadastro.html`, se usado lá). O app referencia o design system
+por `../design-system/`, que o `montar-site.sh` copia para `site/design-system/`.
 
 ## Testar localmente
 

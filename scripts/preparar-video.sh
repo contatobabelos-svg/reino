@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Prepara os vídeos de fundo do login (PortalLogin) a partir de um ou mais .mp4 brutos.
 # Uso: bash preparar-video.sh <entrada1.mp4> [entrada2.mp4 ...]
-#      SAIDA=/outra/pasta bash preparar-video.sh ...   (padrão: a pasta deste script)
+#      SAIDA=/outra/pasta bash preparar-video.sh ...   (padrão: app/assets/login)
 # Arquivos repetidos (mesmo sha256) entram uma vez só. Gera, na pasta de saída:
 #   1 vídeo único  → fundo-login.mp4 / fundo-login.webm
 #   2 ou mais      → fundo-login-1.mp4 / -1.webm, fundo-login-2.mp4 / -2.webm, ...
@@ -26,7 +26,7 @@ CRF_VP9=42
 
 [ "$#" -ge 1 ] || { echo "Uso: bash preparar-video.sh <entrada1.mp4> [entrada2.mp4 ...]" >&2; exit 1; }
 command -v ffmpeg >/dev/null || { echo "Precisa do ffmpeg instalado." >&2; exit 1; }
-SAIDA="${SAIDA:-$(cd "$(dirname "$0")" && pwd)}"
+SAIDA="${SAIDA:-$(cd "$(dirname "$0")/../app/assets/login" && pwd)}"
 mkdir -p "$SAIDA"
 
 # tira os duplicados pelo conteúdo (sha256), mantendo a ordem de entrada

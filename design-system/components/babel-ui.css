@@ -2,7 +2,7 @@
    Babel OS · regras de componente (hg-*)
    Copiado de app/css/app.css do produto. Tokens e reset globais vivem em
    tokens/*.css; o shell de aplicação (100dvh sem rolagem, ajustes por página,
-   responsivo de app) vive em ui_kits/babel-os/app-shell.css.
+   responsivo de app) vive em app/estilos/app-shell.css.
    ========================================================================== */
 /* ---------- Estrutura ---------- */
 .hg-app { display: grid; grid-template-columns: var(--side) minmax(0, 1fr); min-height: 100vh; }

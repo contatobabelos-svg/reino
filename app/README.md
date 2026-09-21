@@ -2,6 +2,8 @@
 
 Recriação clicável do app do Reino, montada com os componentes deste sistema. O globo, os contornos geográficos e os dados de demonstração são os arquivos originais do produto, carregados sem alteração.
 
+Os arquivos ficam em subpastas: `telas/`, `componentes/`, `servicos/`, `estilos/`, `nucleo/`, `dados/` (e `dados/demo/`). A tabela cita só o nome do arquivo.
+
 | Arquivo | Tela |
 | --- | --- |
 | `index.html` | Shell do app (menu, cabeçalho, barra inferior) com as 12 rotas do produto |
