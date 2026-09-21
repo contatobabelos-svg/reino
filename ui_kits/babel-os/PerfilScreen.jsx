@@ -48,7 +48,7 @@ function PerfilScreen({ ir }) {
     if (senha.length < 6) { dizer("A senha precisa de 6 caracteres."); return; }
     try { await C.trocarSenha(senha); setSenha(""); dizer("Senha trocada."); } catch (e) { dizer(e.message); }
   };
-  const sair = () => { C.sair(); sessionStorage.setItem("reino.logado", ""); location.reload(); };
+  const sair = () => { Promise.resolve(C.sair()).finally(() => location.reload()); };
 
   return (
     <>

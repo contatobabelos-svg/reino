@@ -91,3 +91,26 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] M1 Notícias com cara de portal (manchete principal, editorias, colunas)
 - [x] M2 Blocos no Dashboard: Notícias, Música e Assistente
 - [x] M3 Assistente com rosto em pixel art vivo (pisca, respira) que mexe a boca enquanto responde — na tela e no bloco
+
+## N — "crie o sistema de login de usuarios no banco de dados real" (19/09)
+- [x] N1 Entrar só com conta real (sem cair em demonstração quando a senha está errada)
+- [ ] N2 Sessão real: continua logado ao voltar, renova token, sair de verdade
+- [ ] N3 Esqueci a senha (e-mail do Supabase) e troca de senha pelo link
+- [ ] N4 Conta nova "aguardando" até aprovação do admin; admin aprova em Contas no banco
+
+## O — "quero antes fazer um teste, mas antes me de a lista de todas as paginas e seus botoes e o que eles fazem, um outro agente fará a tarefa N1, e um outro agente vai criar uma tela de login igual essa aqui: https://uncensored.com/" (21/09)
+- [x] O1 Lista de todas as telas do app, seus botões e o que cada um faz (`00-comando/MAPA-TELAS-BOTOES.md`)
+- [x] O2 N1 por agente próprio: entrar só com conta real
+- [x] O3 Tela de login no estilo da uncensored.com (hero em tela cheia, painel de vidro, definição no canto), com a identidade do Reino — `ui_kits/babel-os/PortalLogin.jsx` + `portal-login.css` + `portal-preview.html` (Ourives, 2026-09-21 01:26; evidência: Playwright 1440×900 e 390×844 sem rolagem horizontal, senha errada mostra "E-mail ou senha não conferem." no painel; troca no App.jsx fica com a Vyra)
+
+## P — "sim para tudo" (21/09, respostas às 3 perguntas da Vyra)
+- [x] P1 Tirar `reino-app.html` e `app-standalone.html` do site publicado
+- [x] P2 Foto de perfil volta no cadastro da tela nova
+- [~] P3 Investigar e corrigir o "Indicado por marcelo" sem link de afiliado — tela corrigida (não mostra o código padrão); atribuição e cliques do código padrão aguardam decisão do fundador
+- [x] P4 Trocar LoginScreen por PortalLogin no App.jsx e testar junto
+- [x] P5 Apagar a conta de teste teste-n1+1789964715639@exemplo.com
+
+## Q — "podemos colocar um video de fundo na tela do login? eu tenho o video já" (21/09)
+- [ ] Q1 Vídeo do fundador como fundo do PortalLogin (aguardando o arquivo certo: "Reino" some e a torre de água sobe) — mecânica pronta com 0.mp4 provisório; troca: `bash ui_kits/babel-os/assets/login/preparar-video.sh <novo.mp4>` + ajustar VIDEO_LOGIN.cardEm/subidaDur no PortalLogin.jsx
+- [x] Q2 "vai aparecer o card de login depois que desaparecer o reino, um bom momento é quando sobe a torre da agua e ele sobe junto"
+- [x] Q3 "e ai fica com blur o fundo" (depois que o card aparece, o fundo desfoca)

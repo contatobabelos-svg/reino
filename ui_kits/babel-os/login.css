@@ -82,3 +82,9 @@ html.is-modo-app .hg-login { padding: 1rem .75rem; }
 .hg-modo-login { position: absolute; top: max(.8rem, env(safe-area-inset-top)); right: .8rem; z-index: 3; background: transparent; border-color: rgba(255, 255, 255, .45); }
 .hg-modo-login button { color: rgba(255, 255, 255, .8); }
 .hg-modo-login button[aria-pressed="true"] { background: transparent; border: 1px solid rgba(255, 255, 255, .85); color: #fff; box-shadow: 0 0 12px rgba(63, 227, 255, .45); }
+
+/* Login real: aviso de sucesso, link de senha, título dos modos de senha */
+.hg-login-aviso { margin: -.3rem 0 0; color: #fff; font-size: .8rem; padding: .45rem .7rem; border-radius: 10px; background: transparent; border: 1px solid rgba(52, 230, 166, .7); }
+.hg-login-link { align-self: flex-end; margin-top: -.4rem; padding: .2rem 0; border: 0; background: none; color: var(--cyan); font: 600 .76rem var(--font); cursor: pointer; }
+.hg-login-link:hover, .hg-login-link:focus-visible { text-decoration: underline; }
+.hg-login-titulo { margin: 0; text-align: center; color: #fff; font: 700 1.05rem var(--font-d); }

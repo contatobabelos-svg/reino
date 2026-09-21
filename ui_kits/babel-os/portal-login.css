@@ -1,0 +1,228 @@
+/* Babel OS · portal de entrada (PortalLogin) — hero em tela cheia, névoa holográfica,
+   painel largo de vidro escuro e definição de dicionário no canto. */
+@import url("https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@1,400;1,600&display=swap");
+
+.hg-portal {
+  position: fixed; inset: 0; z-index: 50; overflow: hidden auto;
+  min-height: 100vh; min-height: 100dvh;
+  display: grid; grid-template-rows: auto 1fr auto;
+  background: var(--bg); color: var(--text); font-family: var(--font);
+}
+
+/* ---------- fundo: canvas + névoa + degradê ---------- */
+.hg-portal-fundo { position: fixed; inset: 0; pointer-events: none; overflow: hidden; background: var(--bg-app); }
+.hg-portal-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hg-portal-fundo::after { content: ""; position: absolute; inset: 0; background: var(--scanlines); opacity: .7; }
+.hg-portal-nevoa { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .55; will-change: transform; mix-blend-mode: screen; }
+.hg-portal-nevoa.n1 { width: 60vmax; height: 38vmax; left: -14vmax; top: 18%; background: radial-gradient(closest-side, rgba(63, 227, 255, .42), transparent); animation: hg-portal-deriva-a 38s ease-in-out infinite alternate; }
+.hg-portal-nevoa.n2 { width: 56vmax; height: 40vmax; right: -16vmax; top: 4%; background: radial-gradient(closest-side, rgba(139, 92, 255, .45), transparent); animation: hg-portal-deriva-b 46s ease-in-out infinite alternate; }
+.hg-portal-nevoa.n3 { width: 70vmax; height: 30vmax; left: 15%; bottom: -8vmax; background: radial-gradient(closest-side, rgba(59, 130, 255, .38), transparent); animation: hg-portal-deriva-c 52s ease-in-out infinite alternate; }
+.hg-portal-nevoa.n4 { width: 34vmax; height: 22vmax; left: 38%; top: 38%; background: radial-gradient(closest-side, rgba(224, 75, 255, .18), transparent); animation: hg-portal-deriva-a 60s ease-in-out infinite alternate-reverse; }
+@keyframes hg-portal-deriva-a { to { transform: translate3d(12vw, -6vh, 0) scale(1.15); } }
+@keyframes hg-portal-deriva-b { to { transform: translate3d(-14vw, 10vh, 0) scale(.9); } }
+@keyframes hg-portal-deriva-c { to { transform: translate3d(-8vw, -8vh, 0) scale(1.2); } }
+.hg-portal-degrade { position: absolute; inset: auto 0 0 0; height: 46%; background: linear-gradient(180deg, transparent, rgba(3, 8, 23, .72) 55%, var(--bg)); }
+
+/* ---------- barra do topo ---------- */
+.hg-portal-topo {
+  position: sticky; top: 0; z-index: 3;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: max(1.1rem, env(safe-area-inset-top)) clamp(1rem, 2.6vw, 2.25rem) 1rem;
+}
+.hg-portal-marca { display: inline-flex; align-items: center; gap: .6rem; color: var(--text-strong); text-decoration: none; font: 700 1rem var(--font-d); letter-spacing: .04em; border-radius: var(--r-sm); }
+.hg-portal-marca b { color: var(--text-strong); letter-spacing: .14em; }
+.hg-portal-marca i { font-style: normal; color: var(--cyan); text-shadow: var(--text-glow-cyan); }
+.hg-portal-marca em { font-style: normal; font-weight: 600; color: var(--text-2); }
+.hg-portal-pilula {
+  min-height: 44px; padding: 0 1.35rem; border-radius: var(--r-pill); cursor: pointer;
+  font: 600 .92rem var(--font-d); letter-spacing: .03em; color: var(--text-strong);
+  background: var(--grad-btn); border: 1px solid rgba(255, 255, 255, .28);
+  box-shadow: var(--glow-btn), inset 0 1px 0 rgba(255, 255, 255, .3);
+  transition: box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.hg-portal-pilula:hover { box-shadow: var(--glow-btn-hover), inset 0 1px 0 rgba(255, 255, 255, .4); }
+.hg-portal-pilula:active { transform: var(--press); }
+.hg-portal-pilula[aria-pressed="true"] { background: var(--surface-glass); border-color: var(--line-2); }
+
+/* ---------- centro ---------- */
+.hg-portal-centro {
+  position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 1rem clamp(1rem, 3vw, 2rem) 2rem; min-width: 0;
+}
+.hg-portal-letreiro {
+  margin: 0 0 clamp(1rem, 3.2vh, 2rem); line-height: .9; user-select: none;
+  font: 700 clamp(4.2rem, 13vw, 11.5rem) var(--font-d); letter-spacing: .08em; padding-left: .08em;
+  color: transparent; background: linear-gradient(180deg, rgba(240, 250, 255, .98) 20%, var(--cyan) 62%, rgba(139, 92, 255, .9));
+  -webkit-background-clip: text; background-clip: text;
+  filter: drop-shadow(0 0 6px rgba(63, 227, 255, .7)) drop-shadow(0 0 26px rgba(63, 227, 255, .35)) drop-shadow(0 0 60px rgba(139, 92, 255, .4));
+  animation: hg-portal-neon 7s ease-in-out infinite;
+}
+@keyframes hg-portal-neon {
+  0%, 100% { opacity: 1; }
+  46% { opacity: 1; } 47% { opacity: .72; } 48% { opacity: 1; } 49.5% { opacity: .85; } 50.5% { opacity: 1; }
+}
+
+/* painel largo de vidro escuro */
+.hg-portal-painel {
+  position: relative; width: min(940px, 100%); display: grid; gap: .85rem;
+  padding: 1.2rem 1.25rem 1rem; border-radius: 28px;
+  background: linear-gradient(180deg, rgba(10, 20, 48, .62), rgba(4, 10, 28, .62));
+  backdrop-filter: blur(24px) saturate(150%); -webkit-backdrop-filter: blur(24px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), var(--glow), 0 30px 80px rgba(0, 0, 0, .45);
+  animation: hg-portal-sobe var(--dur-entrada) var(--ease) both;
+}
+/* borda em gradiente (padrão hg) + faixa de luz ciano no topo */
+.hg-portal-painel::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; background: var(--borda-painel); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; opacity: .75; }
+.hg-portal-painel::after { content: ""; position: absolute; top: 0; left: 12%; right: 12%; height: 1px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); box-shadow: 0 0 12px var(--cyan); pointer-events: none; }
+@keyframes hg-portal-sobe { from { opacity: 0; transform: translateY(18px) scale(.985); } }
+
+/* ---------- fundo em vídeo (TODO Q) ----------
+   is-espera: vídeo tocando, card escondido e inerte · is-entra: card sobe (ease-out) junto com a cena
+   · is-desfocado: fundo borra aos poucos. Durações vêm de --hg-portal-subida (VIDEO_LOGIN no JSX). */
+.hg-portal-video {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+  object-fit: cover; object-position: var(--hg-portal-foco, 50% 50%);
+  filter: blur(0) saturate(1) brightness(1); transform: scale(1);
+  transition: filter var(--hg-portal-subida, 1.2s) var(--ease), transform var(--hg-portal-subida, 1.2s) var(--ease);
+}
+.hg-portal.is-desfocado .hg-portal-video { filter: blur(14px) saturate(1.15) brightness(.62); transform: scale(1.06); }
+.hg-portal-fundo.is-video::after { opacity: .35; }
+.hg-portal-fundo.is-video .hg-portal-degrade { opacity: 0; transition: opacity var(--hg-portal-subida, 1.2s) var(--ease); }
+.hg-portal.is-desfocado .hg-portal-fundo.is-video .hg-portal-degrade { opacity: 1; }
+/* com vídeo, o letreiro e a marca vêm do próprio vídeo (h1 continua para leitor de tela) */
+.hg-portal.tem-video .hg-portal-letreiro { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; animation: none; }
+.hg-portal.tem-video .hg-portal-marca { visibility: hidden; }
+.hg-portal.is-espera .hg-portal-topo, .hg-portal.is-espera .hg-portal-centro, .hg-portal.is-espera .hg-portal-def { pointer-events: none; }
+.hg-portal.is-espera .hg-portal-painel { animation: none; opacity: 0; transform: translateY(min(42vh, 360px)); }
+.hg-portal.is-espera .hg-portal-topo, .hg-portal.is-espera .hg-portal-novidades, .hg-portal.is-espera .hg-portal-def { opacity: 0; }
+.hg-portal.is-entra .hg-portal-painel {
+  animation: none;
+  transition: transform var(--hg-portal-subida) var(--ease-menu), opacity calc(var(--hg-portal-subida) * .6) var(--ease);
+}
+.hg-portal.is-entra .hg-portal-topo, .hg-portal.is-entra .hg-portal-novidades, .hg-portal.is-entra .hg-portal-def {
+  transition: opacity var(--dur-in) var(--ease) calc(var(--hg-portal-subida) * .55);
+}
+.hg-portal.is-saindo .hg-portal-painel { transition: opacity .5s, transform .6s var(--ease); opacity: 0; transform: translateY(-14px) scale(1.02); }
+.hg-portal.is-saindo .hg-portal-letreiro { transition: opacity .5s; opacity: 0; }
+
+.hg-portal-titulo { margin: 0; color: var(--text-2); font: 600 .74rem var(--font-d); letter-spacing: .14em; text-transform: uppercase; }
+
+.hg-portal-campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.hg-portal-campos.is-tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hg-portal-campos.is-um { grid-template-columns: minmax(0, 1fr); }
+.hg-portal-campo { display: grid; gap: .15rem; min-width: 0; padding: .55rem .9rem .5rem; border-radius: 18px; background: rgba(255, 255, 255, .035); border: 1px solid rgba(255, 255, 255, .08); transition: border-color var(--dur), background var(--dur), box-shadow var(--dur); }
+.hg-portal-campo:focus-within { border-color: var(--line-2); background: rgba(63, 227, 255, .05); box-shadow: 0 0 0 3px rgba(63, 227, 255, .18), 0 0 22px rgba(63, 227, 255, .22); }
+.hg-portal-campo span { color: var(--text-3); font: 600 .66rem var(--font-d); letter-spacing: .12em; text-transform: uppercase; }
+.hg-portal-campo input {
+  width: 100%; min-width: 0; min-height: 40px; padding: 0; border: 0; outline: 0; background: transparent;
+  color: var(--text-strong); caret-color: var(--cyan); font: 500 clamp(1.05rem, 1.5vw, 1.25rem) var(--font);
+}
+.hg-portal-campo input::placeholder { color: var(--text-3); }
+.hg-portal-campo input:-webkit-autofill { -webkit-text-fill-color: var(--text-strong); -webkit-box-shadow: 0 0 0 1000px rgba(8, 18, 45, .98) inset; transition: background-color 9999s; }
+.hg-portal-campo.is-pequeno input { font-size: .9rem; min-height: 34px; font-family: var(--font-mono); }
+
+.hg-portal-foto { display: flex; align-items: center; gap: .8rem; margin-bottom: .6rem; }
+.hg-portal-foto p { margin: 0; display: grid; gap: .15rem; font-size: .78rem; line-height: 1.4; color: var(--text-2); }
+.hg-portal-foto b { font-family: var(--font-d); font-size: .9rem; color: var(--text-strong); }
+
+.hg-portal-afiliado { display: grid; gap: .35rem; justify-items: start; }
+.hg-portal-indicado { margin: 0; font-size: .78rem; color: var(--text-2); }
+.hg-portal-indicado b { color: var(--green); text-shadow: var(--neon-green); }
+
+.hg-portal-msg { margin: 0; padding: .55rem .85rem; border-radius: 14px; font-size: .86rem; line-height: 1.4; color: var(--text-strong); background: rgba(255, 255, 255, .03); }
+.hg-portal-msg.is-erro { border: 1px solid rgba(255, 77, 122, .75); box-shadow: 0 0 16px rgba(255, 77, 122, .22); animation: hg-portal-treme .35s var(--ease); }
+.hg-portal-msg.is-aviso { border: 1px solid rgba(52, 230, 166, .7); box-shadow: 0 0 16px rgba(52, 230, 166, .18); }
+@keyframes hg-portal-treme { 25% { transform: translateX(-4px); } 60% { transform: translateX(3px); } }
+
+/* fileira de baixo: chips de títulos + links + botão redondo */
+.hg-portal-base { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-width: 0; }
+.hg-portal-escada { display: flex; align-items: center; gap: .7rem; min-width: 0; }
+.hg-portal-escada-rotulo { color: var(--text); font: 600 .8rem var(--font-d); letter-spacing: .03em; white-space: nowrap; }
+.hg-portal-escada-rotulo b { color: var(--gold); text-shadow: var(--text-glow-gold); font-weight: 600; }
+.hg-portal-chip-nome { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.hg-portal-titulos {
+  list-style: none; margin: 0; padding: 4px; display: flex; gap: 2px; flex: none; min-width: 0; overflow-x: auto; scrollbar-width: none;
+  border-radius: var(--r-pill); background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .06);
+}
+.hg-portal-titulos::-webkit-scrollbar { display: none; }
+.hg-portal-chip { flex: none; display: inline-flex; align-items: center; height: 30px; padding: 0 3px; border-radius: var(--r-pill); color: var(--text-2); font: 600 .7rem var(--font-d); letter-spacing: .03em; white-space: nowrap; background: rgba(255, 255, 255, .03); }
+.hg-portal-chip-bola { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; font: 700 .72rem var(--font-d); color: var(--text-strong); background: radial-gradient(circle at 35% 30%, rgba(63, 227, 255, .55), rgba(59, 130, 255, .25) 60%, rgba(139, 92, 255, .25)); box-shadow: inset 0 0 0 1px rgba(63, 227, 255, .45); animation: hg-portal-acende 8s ease-in-out infinite; animation-delay: calc(var(--i) * .6s); }
+.hg-portal-chip.is-ouro .hg-portal-chip-bola { color: var(--bg); background: var(--grad-gold); box-shadow: var(--neon-gold); animation: none; }
+@keyframes hg-portal-acende { 0%, 12%, 100% { box-shadow: inset 0 0 0 1px rgba(63, 227, 255, .45); } 6% { box-shadow: inset 0 0 0 1px var(--cyan), var(--neon-cyan); } }
+.hg-portal-acoes { display: flex; align-items: center; gap: .9rem; flex: none; }
+.hg-portal-links { display: flex; align-items: center; gap: .9rem; }
+.hg-portal-link { padding: .35rem .1rem; border: 0; background: none; cursor: pointer; color: var(--link); font: 600 .8rem var(--font); border-radius: 6px; white-space: nowrap; }
+.hg-portal-link:hover { color: var(--link-hover); text-decoration: underline; }
+.hg-portal-link.is-destaque { color: var(--cyan); padding: 0 .1rem; font-size: inherit; }
+
+.hg-portal-enviar {
+  position: relative; width: 48px; height: 48px; flex: none; display: grid; place-items: center; overflow: hidden;
+  border-radius: 50%; cursor: pointer; color: var(--bg);
+  background: var(--grad-btn-cyan); border: 1px solid rgba(255, 255, 255, .6);
+  box-shadow: var(--neon-cyan), inset 0 1px 0 rgba(255, 255, 255, .7);
+  transition: transform var(--dur-fast) var(--ease-bounce), box-shadow var(--dur) var(--ease), filter var(--dur);
+}
+.hg-portal-enviar svg { width: 22px; height: 22px; animation: hg-portal-seta 2.4s var(--ease) infinite; }
+.hg-portal-enviar:hover { transform: scale(1.06); filter: brightness(1.08); }
+.hg-portal-enviar:hover svg { animation-duration: 1s; }
+.hg-portal-enviar:active { transform: var(--press-escala); }
+.hg-portal-enviar:disabled { cursor: default; filter: saturate(.7); }
+@keyframes hg-portal-seta { 0%, 55%, 100% { transform: translateX(0); opacity: 1; } 70% { transform: translateX(14px); opacity: 0; } 71% { transform: translateX(-14px); opacity: 0; } 85% { transform: translateX(0); opacity: 1; } }
+.hg-portal-giro { width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid rgba(3, 8, 23, .25); border-top-color: var(--bg); animation: hg-portal-gira .8s linear infinite; }
+@keyframes hg-portal-gira { to { transform: rotate(360deg); } }
+
+.hg-portal-nota { margin: -.2rem 0 0; color: var(--text-3); font-size: .74rem; }
+
+/* linha "Novidades" */
+.hg-portal-novidades { margin: .9rem 0 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .15rem .45rem; color: var(--text-2); font-size: .74rem; letter-spacing: .02em; text-align: center; }
+.hg-portal-novidades .rotulo { color: var(--text-3); }
+.hg-portal-novidades span:not(.rotulo) { color: var(--text); }
+.hg-portal-novidades i { font-style: normal; color: var(--text-3); }
+
+/* definição de dicionário no canto */
+.hg-portal-def { position: relative; z-index: 2; padding: 0 clamp(1rem, 2.8vw, 2.5rem) max(1.4rem, env(safe-area-inset-bottom)); max-width: 640px; font-family: var(--font-d); font-style: italic; }
+.hg-portal-def p { margin: 0; }
+.hg-portal-def-termo { font-weight: 400; font-size: clamp(1.6rem, 2.6vw, 2.3rem); color: var(--text-strong); letter-spacing: .01em; }
+.hg-portal-def-termo span { color: var(--text-2); }
+.hg-portal-def-termo small { font-size: .75em; color: var(--cyan); text-shadow: var(--text-glow-cyan); }
+.hg-portal-def-pron { display: flex; gap: 1.4rem; margin-top: .25rem !important; padding-left: 1.4rem; color: var(--text-2); font-size: .95rem; }
+.hg-portal-def-frase { padding-left: 1.4rem; color: var(--text); font-size: 1rem; font-style: normal; font-family: var(--font); font-weight: 400; }
+
+/* foco de teclado bem visível */
+.hg-portal :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; box-shadow: 0 0 0 5px rgba(63, 227, 255, .2); }
+.hg-portal-campo input:focus-visible { outline: 0; box-shadow: none; }
+.hg-portal-enviar:focus-visible { outline-offset: 4px; }
+
+/* ---------- celular ---------- */
+@media (max-width: 699.98px) {
+  .hg-portal-topo { padding: max(.75rem, env(safe-area-inset-top)) 1rem .5rem; }
+  .hg-portal-marca em { display: none; }
+  .hg-portal-marca i { display: none; }
+  .hg-portal-pilula { min-height: 40px; padding: 0 1rem; font-size: .85rem; }
+  .hg-portal-centro { justify-content: flex-start; padding: 1.2rem 1rem 1.2rem; }
+  .hg-portal-letreiro { font-size: clamp(3.4rem, 21vw, 5.5rem); margin-top: 2vh; }
+  .hg-portal-painel { padding: 1rem .9rem .85rem; border-radius: 24px; gap: .7rem; }
+  .hg-portal-campos, .hg-portal-campos.is-tres { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
+  .hg-portal-base { flex-direction: column; align-items: stretch; gap: .65rem; }
+  .hg-portal-escada { justify-content: space-between; gap: .5rem; }
+  .hg-portal-escada-rotulo { font-size: .74rem; }
+  .hg-portal-titulos { padding: 3px; gap: 1px; }
+  .hg-portal-chip { padding: 0 1px; height: 26px; }
+  .hg-portal-chip-bola { width: 21px; height: 21px; font-size: .64rem; }
+  .hg-portal-escada-rotulo { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .hg-portal-acoes { justify-content: space-between; }
+  .hg-portal-def { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .hg-portal-def-termo { font-size: 1.45rem; }
+  .hg-portal-def-pron { font-size: .85rem; padding-left: 1rem; gap: 1rem; }
+  .hg-portal-def-frase { font-size: .86rem; padding-left: 1rem; }
+  .hg-portal-video { object-position: var(--hg-portal-foco-celular, var(--hg-portal-foco, 50% 50%)); }
+}
+@media (max-height: 760px) and (min-width: 700px) { .hg-portal-letreiro { font-size: clamp(3.6rem, 11vw, 8.5rem); } }
+
+/* movimento reduzido: sem névoa derivando, sem neon piscando, sem seta andando */
+@media (prefers-reduced-motion: reduce) {
+  .hg-portal-nevoa, .hg-portal-letreiro, .hg-portal-painel, .hg-portal-chip-bola, .hg-portal-enviar svg, .hg-portal-msg.is-erro { animation: none !important; }
+  .hg-portal-giro { animation-duration: 2.4s !important; }
+  .hg-portal-video, .hg-portal.is-entra .hg-portal-painel, .hg-portal.is-entra .hg-portal-topo,
+  .hg-portal.is-entra .hg-portal-novidades, .hg-portal.is-entra .hg-portal-def { transition: none !important; }
+}

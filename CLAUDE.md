@@ -80,4 +80,4 @@ da API. Sem evidência, diga o que falta verificar.
 sh montar-site.sh && cd site && python3 -m http.server 8123
 ```
 
-Abra http://localhost:8123. Sem login real, o app entra em modo demonstração.
+Abra http://localhost:8123. Só entra conta real do Supabase (não há mais modo demonstração no login).

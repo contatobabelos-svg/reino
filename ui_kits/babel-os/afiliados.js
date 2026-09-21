@@ -26,6 +26,8 @@
     if (q) return String(q).trim().toLowerCase();
     return sessionStorage.getItem("reino.ref") || localStorage.getItem("reino.indicadoPor") || PADRAO();
   }
+  /* o código padrão da casa vale para a atribuição, mas não é "indicação" de ninguém na tela */
+  const ehPadrao = (c) => !!c && String(c).toLowerCase() === PADRAO();
   const slug = (nome) => String(nome || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "reino";
   const dominio = () => (window.REINO_DOMINIO || location.origin);
   /* O formato bonito /r/<codigo> exige reescrita no servidor (vercel.json). Sem
@@ -133,6 +135,6 @@
     return { codigo, link: linkDe(codigo), linkCurto: linkCurtoDe(codigo), rotaR: window.REINO_ROTA_R === true, cliques, cadastros, comissao, porDia, ranking, online: !!CFG() };
   }
 
-  window.ReinoAfiliados = { codigoDaUrl, registrarClique, registrarCadastro, meuCodigo, linkDe, linkCurtoDe, painel, geo, COMISSAO, PCT, configurado: () => !!CFG() };
+  window.ReinoAfiliados = { codigoDaUrl, ehPadrao, registrarClique, registrarCadastro, meuCodigo, linkDe, linkCurtoDe, painel, geo, COMISSAO, PCT, configurado: () => !!CFG() };
   registrarClique();
 })();

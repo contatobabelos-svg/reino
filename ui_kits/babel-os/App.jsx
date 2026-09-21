@@ -43,7 +43,10 @@ function EmBreve({ titulo }) {
 
 function App() {
   const d = window.BABEL_DEMO;
-  const [logado, setLogado] = React.useState(() => sessionStorage.getItem("reino.logado") === "1");
+  /* login real: undefined = conferindo a sessão salva; null = pedir login; objeto = conta do banco */
+  const [conta, setConta] = React.useState(undefined);
+  const [recuperacao, setRecuperacao] = React.useState(false);
+  const [erroLogin, setErroLogin] = React.useState(""); /* motivo de não ter entrado: sem banco, fora do ar, link vencido */
   const [rota, setRota] = React.useState("index.html");
   const [menu, setMenu] = React.useState(false);
   const [gaveta, setGaveta] = React.useState(null);
@@ -82,13 +85,7 @@ function App() {
   const ir = (href) => { setRota(href); setMenu(false); };
 
   /* conta de administrador: reina como Imperador, com o selo destacado e pulsante */
-  const ehAdm = React.useMemo(() => {
-    try {
-      const s = (window.ReinoContas && window.ReinoContas.sessao && window.ReinoContas.sessao()) || {};
-      return !!s.token && s.situacao === "admin"; /* situação lida do banco no login */
-    } catch (e) { return false; }
-  }, []);
-  const tituloAtual = ehAdm ? "Imperador" : d.perfil.titulo;
+  const ehAdm = !!(conta && conta.token && conta.situacao === "admin"); /* situação lida do banco no login */
   const SeloImperador = ehAdm ? (
     <span className="hg-selo-imperador" title="Conta de administrador">
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 8l4.2 3L12 4l4.8 7L21 8l-1.6 10H4.6L3 8Z" /></svg>Imperador
@@ -102,17 +99,34 @@ function App() {
     return () => document.removeEventListener("click", clique, true);
   }, []);
   React.useEffect(() => {
+    // ao abrir: trata o link do e-mail (confirmação / nova senha) e retoma a sessão salva
+    const C = window.ReinoContas;
+    // só entra conta real do banco: sem banco, fora do ar ou sem sessão válida, fica no login com o motivo
+    if (!C || !C.iniciar) { setErroLogin("Não foi possível carregar o login do Reino. Recarregue a página."); setConta(null); return; }
+    C.iniciar().then((r) => {
+      if (r.erro) setErroLogin("O link do e-mail não vale mais (" + r.erro + "). Peça outro.");
+      else if (r.aviso) setErroLogin(r.aviso);
+      if (r.recuperacao) { setRecuperacao(true); setConta(null); } else setConta(r.sessao && r.sessao.token ? r.sessao : null);
+    }).catch((e) => { setErroLogin((e && e.message) || "Não foi possível conferir sua sessão agora. Tente de novo."); setConta(null); });
+  }, []);
+  React.useEffect(() => {
     document.body.dataset.page = PAGINA[rota] || rota.replace(".html", "");
     document.body.classList.toggle("is-imersivo", rota === "mapa.html");
   }, [rota]);
 
-  if (!logado) return (
+  // tela de login no estilo portal (O3); a antiga fica de reserva se o arquivo não carregar
+  const TelaLogin = window.PortalLogin || LoginScreen;
+  if (conta === undefined) return <div className="hg-moldura hg-moldura-login" aria-busy="true"><p className="hg-carregando-conta">Conferindo sua sessão…</p></div>;
+  if (!conta) return (
     <div className="hg-moldura hg-moldura-login">
-      <LoginScreen onEntrar={() => { sessionStorage.setItem("reino.logado", "1"); setLogado(true); }} />
-      <div className="hg-modo hg-modo-login" role="group" aria-label="Modo de exibição">
-        <button type="button" aria-pressed={modo === "pc"} onClick={() => setModo("pc")}>PC</button>
-        <button type="button" aria-pressed={modo === "app"} onClick={() => setModo("app")}>App</button>
-      </div>
+      <TelaLogin recuperacao={recuperacao} erroInicial={erroLogin}
+        onEntrar={(s) => { const c = s || (window.ReinoContas && window.ReinoContas.sessao()) || null; setRecuperacao(false); setConta(c && c.token ? c : null); }} />
+      {TelaLogin === LoginScreen ? (
+        <div className="hg-modo hg-modo-login" role="group" aria-label="Modo de exibição">
+          <button type="button" aria-pressed={modo === "pc"} onClick={() => setModo("pc")}>PC</button>
+          <button type="button" aria-pressed={modo === "app"} onClick={() => setModo("app")}>App</button>
+        </div>
+      ) : null}
     </div>
   );
   if (rota === "pre-cadastro.html") return <PreCadastroScreen ir={ir} />;
@@ -128,10 +142,13 @@ function App() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
         </button>
         <div className="hg-main">
-          <TopBar user={d.perfil.nome} role={tituloAtual + " · " + d.perfil.cidade} notifications messages
+          <TopBar user={conta.nome || conta.email} role={[ehAdm ? "Imperador" : conta.titulo || "Título a definir", conta.cidade].filter(Boolean).join(" · ")} notifications messages
             onMenu={() => setMenu((v) => !v)} onNotifications={() => setGaveta("notificacoes")} onMessages={() => ir("chat.html")}
             actions={<>{SeloImperador}{Modo}<DemoBadge inline href="#">Dados fictícios</DemoBadge></>} />
           <main className="hg-content">
+            {conta.situacao !== "membro" && conta.situacao !== "admin" ? (
+              <p className="hg-aviso-aprovacao" role="status">Sua conta aguarda a aprovação de um administrador. Enquanto isso, você já pode explorar o Reino.</p>
+            ) : null}
             {Tela ? <Tela ir={ir} usuario={USUARIO} /> : <EmBreve titulo={titulo} />}
           </main>
         </div>

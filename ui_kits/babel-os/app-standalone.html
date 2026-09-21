@@ -3112,7 +3112,7 @@ Object.assign(window, { PreCadastroScreen });
 const { Icon } = window.BabelOSDesignSystem_5ad360;
 
 /* Tela de entrada: o globo imersivo do produto ao fundo e um cartão de vidro
-   azul-claro na frente. Qualquer usuário e senha entram (demonstração). */
+   azul-claro na frente. Só entra quem tem conta no banco (N1). */
 function LoginScreen({ onEntrar }) {
   const [aba, setAba] = React.useState("entrar");
   const [f, setF] = React.useState({ usuario: "", senha: "", nome: "", email: "", afiliado: "" });
@@ -3135,14 +3135,14 @@ function LoginScreen({ onEntrar }) {
     setIndo(true);
     // valida no banco quando há conta configurada; sem banco, segue em demonstração
     const C = window.ReinoContas;
-    if (C) {
+    // N1: só entra conta real do banco — sem contas.js, senha errada ou banco fora do ar, ninguém entra
+    if (!C) { setIndo(false); setErro("Não foi possível conectar ao Reino agora. Recarregue a página."); return; }
+    {
       try {
         if (aba === "entrar") await C.entrar(f.usuario.trim(), f.senha);
         else await C.cadastrar({ nome: f.nome.trim(), email: f.email.trim(), senha: f.senha, titulo: localStorage.getItem("reino.tituloEscolhido") || undefined, indicadoPor: codigoRef(f.afiliado) || refUrl || undefined, situacao: adm ? "admin" : undefined });
       } catch (err) {
-        // demonstração: qualquer usuário e senha entram. O banco só é usado quando confere.
-        if (aba === "entrar") { try { C.entrarLocal(f.usuario.trim()); } catch (e) {} }
-        else { setIndo(false); setErro(err.message); return; }
+        setIndo(false); setErro(err.message); return;
       }
     }
     if (codigo) { localStorage.setItem("reino.indicadoPor", codigo); sessionStorage.setItem("reino.ref", codigo); }
@@ -3257,7 +3257,7 @@ function EmBreve({ titulo }) {
 
 function App() {
   const d = window.BABEL_DEMO;
-  const [logado, setLogado] = React.useState(() => sessionStorage.getItem("reino.logado") === "1");
+  const [logado, setLogado] = React.useState(() => { const s = window.ReinoContas && window.ReinoContas.sessao(); return sessionStorage.getItem("reino.logado") === "1" && !!(s && s.token); });
   const [rota, setRota] = React.useState("index.html");
   const [menu, setMenu] = React.useState(false);
   const [gaveta, setGaveta] = React.useState(null);

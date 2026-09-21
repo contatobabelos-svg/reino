@@ -1,7 +1,5 @@
-<!-- @dsCard group="Babel OS" viewport="1440x900" name="Reino · app" subtitle="Dashboard, guildas, rede social, conquistas e bolsa — clicável" -->
-<!-- @startingPoint section="Babel OS" subtitle="App do Reino com menu, cabeçalho e cinco telas" viewport="1440x900" -->
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Reino · UI kit</title>
+<title>Portal do Reino</title>
 <link rel="stylesheet" href="../../styles.css">
 <link rel="stylesheet" href="app-shell.css">
 <link rel="stylesheet" href="app-layout.css">
@@ -41,44 +39,17 @@ window.REINO_ROTA_R = false; /* true só quando o servidor reescreve /r/* para o
 <script src="demo-municipios.js"></script>
 <script src="dados-demo.js"></script>
 </head>
-<body data-page="inicio">
-<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="bt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3fe3ff"/><stop offset="1" stop-color="#8b5cff"/></linearGradient></defs><rect width="120" height="120" fill="#030817"/><path d="M60 30 84 44v28L60 86 36 72V44z" fill="none" stroke="url(#bt)" stroke-width="5"/><path d="M48 51 60 45l12 6v18l-12 6-12-6z" fill="url(#bt)"/></svg></template>
+<body data-page="portal">
+<!-- Pré-visualização do PortalLogin sem mexer no App.jsx. Pode ser apagado depois da troca. -->
 <div id="root"></div>
-<script type="text/babel" src="NetworkMapLocal.jsx"></script>
-<script type="text/babel" src="ReinoMapa.jsx"></script>
-<script type="text/babel" src="MapaPanel.jsx"></script>
-<script type="text/babel" src="MapaScreen.jsx"></script>
-<script type="text/babel" src="FotoAvatar.jsx"></script>
-<script type="text/babel" src="Stories.jsx"></script>
-<script type="text/babel" src="RedeSocialScreen.jsx"></script>
-<script type="text/babel" src="RostoPixel.jsx"></script>
-<script type="text/babel" src="DashboardScreen.jsx"></script>
-<script type="text/babel" src="GuildasScreen.jsx"></script>
-<script type="text/babel" src="ConquistasScreen.jsx"></script>
-<script type="text/babel" src="BolsaScreen.jsx"></script>
-<script type="text/babel" src="MatchScreen.jsx"></script>
-<script type="text/babel" src="RevistaScreen.jsx"></script>
-<script type="text/babel" src="VitrineScreen.jsx"></script>
-<script type="text/babel" src="HierarquiaScreen.jsx"></script>
-<script type="text/babel" src="PesquisaScreen.jsx"></script>
-<script type="text/babel" src="ConfiguracoesScreen.jsx"></script>
-<script type="text/babel" src="PerfilScreen.jsx"></script>
-<script type="text/babel" src="ClubeScreen.jsx"></script>
-<script type="text/babel" src="RedeCompletaScreen.jsx"></script>
-<script type="text/babel" src="AcessosScreen.jsx"></script>
-<script type="text/babel" src="AdminScreen.jsx"></script>
-<script type="text/babel" src="ChatScreen.jsx"></script>
-<script type="text/babel" src="NiveisScreen.jsx"></script>
-<script type="text/babel" src="AcademyScreen.jsx"></script>
-<script type="text/babel" src="EventosScreen.jsx"></script>
-<script type="text/babel" src="NoticiasScreen.jsx"></script>
-<script type="text/babel" src="MusicaScreen.jsx"></script>
-<script type="text/babel" src="AssistenteScreen.jsx"></script>
-<script type="text/babel" src="PreCadastroScreen.jsx"></script>
-<script type="text/babel" src="LoginScreen.jsx"></script>
 <script type="text/babel" src="PortalLogin.jsx"></script>
-<script type="text/babel" src="App.jsx"></script>
 <script type="text/babel" data-presets="react">
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+function PreviaPortal() {
+  const q = new URLSearchParams(location.search);
+  const [conta, setConta] = React.useState(null);
+  if (conta) return <div style={{ padding: "2rem", color: "var(--text)", fontFamily: "var(--font)" }} role="status">Entrou: {conta.email || "sessão"} (onEntrar chamado)</div>;
+  return <PortalLogin onEntrar={(c) => { window.__portalEntrou = c || true; setConta(c || {}); }} recuperacao={q.get("recuperacao") === "1"} avisoInicial={q.get("aviso") || ""} />;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<PreviaPortal />);
 </script>
 </body></html>
