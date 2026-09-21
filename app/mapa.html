@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="../design-system/styles.css">
 <link rel="stylesheet" href="estilos/app-shell.css">
 <link rel="stylesheet" href="estilos/app-layout.css">
+<link rel="stylesheet" href="estilos/mapa-reino.css">
 <script src="nucleo/app-layout.js"></script>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -13,6 +14,16 @@
 <script src="dados/geo-mundo.js"></script>
 <script src="dados/geo-brasil.js"></script>
 <script src="dados/municipios-tudo.js"></script>
+<script>
+/* mesma configuração do index.html: o mapa lê as empresas cadastradas com foto */
+window.REINO_SUPABASE = {
+  url: "https://fxlansnepokjxdikxocb.supabase.co", /* projeto do cliente */
+  anon: "sb_publishable_qrjZtFZVvByCqBHeTT5ktQ_1RdSulmM" /* chave publicável (Settings → API) — pública por natureza */
+};
+</script>
+<script src="servicos/contas.js"></script>
+<script src="servicos/fotos.js"></script>
+<script src="servicos/empresas.js"></script>
 <script src="componentes/globo.js"></script>
 <script src="dados/demo/demo-brasil.js"></script>
 <script src="dados/demo/demo-municipios.js"></script>

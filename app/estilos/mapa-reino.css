@@ -1,0 +1,162 @@
+/* ==========================================================================
+   AC · Mapa Reino — globo clicável, faixa de cartões embaixo e rede do bairro
+   --------------------------------------------------------------------------
+   Pedido do fundador (21/09): sem botão de "ir para o Brasil"; o globo inteiro
+   é clicável; ficam só os botões laterais e os cartões de cidades/bairros, agora
+   numa faixa horizontal ABAIXO do globo; no mapa só empresas cadastradas com
+   foto; no modo bairro os pinos giram e os fios imitam o Cérebro Babel.
+
+   Este arquivo só ACRESCENTA: o CSS antigo de .hg-globo-* e .hg-rede-* continua
+   em design-system/components/babel-ui.css e app/estilos/app-shell.css, e aqui é
+   sobrescrito por seletor mais específico (ou por vir depois na cascata).
+   ========================================================================== */
+
+/* ---------- estrutura: palco em cima, faixa colada embaixo ---------- */
+.hg-globo { display: flex; flex-direction: column; }
+.hg-globo-palco { position: relative; flex: 1 1 auto; min-height: 0; isolation: isolate; }
+/* o canvas absorve a altura que sobra (nada de altura em %) */
+.hg-globo .hg-globo-palco > .hg-globo-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* botões laterais: sempre no pé do palco, nunca empurrados por folha nenhuma */
+.hg-globo .hg-globo-palco .hg-globo-zoom { top: auto; bottom: 12px; left: 12px; }
+.hg-globo .hg-globo-palco .hg-globo-dica { top: auto; bottom: 12px; }
+.hg-globo .hg-globo-palco .hg-globo-credito { bottom: 12px; }
+
+/* ---------- a faixa ---------- */
+.hg-globo-faixa {
+  flex: 0 0 auto; height: 116px; min-height: 116px;
+  display: flex; flex-direction: column; gap: .35rem;
+  padding: .5rem .55rem .5rem;
+  border-top: 1px solid rgba(80, 150, 255, .28);
+  background: linear-gradient(180deg, rgba(10, 22, 52, .92), rgba(4, 10, 28, .96));
+  position: relative; z-index: 3;
+}
+.hg-globo-faixa.is-carregando::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  animation: hg-carrega 1s linear infinite;
+}
+.hg-globo-faixa-topo {
+  margin: 0; flex: none; display: flex; align-items: baseline; gap: .45rem;
+  white-space: nowrap; overflow: hidden; line-height: 1.2;
+}
+.hg-globo-faixa-sobre { flex: none; font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: var(--cyan); text-shadow: 0 0 8px rgba(63, 227, 255, .5); }
+.hg-globo-faixa-titulo { flex: none; font: 700 .95rem var(--font-d); color: #fff; }
+.hg-globo-faixa-sub { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: .7rem; color: var(--text-2); }
+.hg-globo-faixa-sub b { color: #fff; font-weight: 600; }
+.hg-globo-faixa-vazio { margin: 0; align-self: center; padding: .45rem .7rem; border-radius: 10px; border: 1px dashed rgba(90, 150, 255, .35); color: var(--text-2); font-size: .74rem; }
+
+/* trilho com rolagem horizontal, sem barra visível */
+.hg-globo-trilho {
+  flex: 1 1 auto; min-height: 0; display: flex; align-items: stretch; gap: .4rem;
+  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity; scroll-padding-left: .1rem;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.hg-globo-trilho::-webkit-scrollbar { display: none; }
+.hg-globo-faixa.is-entrando .hg-globo-cartao { animation: hg-cartao-entra .35s cubic-bezier(.2, .8, .2, 1) both; }
+.hg-globo-faixa.is-entrando .hg-globo-cartao:nth-child(2) { animation-delay: .03s; }
+.hg-globo-faixa.is-entrando .hg-globo-cartao:nth-child(3) { animation-delay: .06s; }
+.hg-globo-faixa.is-entrando .hg-globo-cartao:nth-child(n+4) { animation-delay: .09s; }
+@keyframes hg-cartao-entra { from { opacity: 0; transform: translateY(8px); } }
+
+.hg-globo-cartao {
+  flex: 0 0 auto; width: 134px; scroll-snap-align: start;
+  display: grid; grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: "sigla nome" "sigla val"; gap: 0 .45rem; align-content: center;
+  padding: .4rem .5rem; border-radius: 12px; text-align: left; text-decoration: none; cursor: pointer;
+  border: 1px solid rgba(80, 150, 255, .26);
+  background: linear-gradient(140deg, rgba(20, 42, 92, .62), rgba(8, 16, 42, .62));
+  color: var(--text-2);
+  transition: transform .18s var(--ease, ease), border-color .18s, box-shadow .18s, background .18s;
+}
+.hg-globo-cartao-sigla {
+  grid-area: sigla; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px;
+  background: rgba(59, 130, 255, .16); color: #cfe0ff; font: 700 .68rem var(--font-d); letter-spacing: .02em;
+}
+.hg-globo-cartao-foto { grid-area: sigla; width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(190, 225, 255, .6); }
+.hg-globo-cartao-nome { grid-area: nome; align-self: end; color: #eaf2ff; font-size: .78rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hg-globo-cartao-val { grid-area: val; align-self: start; font-size: .66rem; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hg-globo-cartao.is-ativo .hg-globo-cartao-sigla { background: rgba(245, 199, 106, .18); color: var(--gold); box-shadow: 0 0 10px rgba(245, 199, 106, .3); }
+.hg-globo-cartao.is-ativo .hg-globo-cartao-val { color: var(--gold); }
+.hg-globo-cartao:hover, .hg-globo-cartao:focus-visible {
+  transform: translateY(-2px); border-color: rgba(63, 227, 255, .55); outline: none;
+  background: linear-gradient(140deg, rgba(26, 60, 124, .75), rgba(10, 20, 50, .75));
+  box-shadow: 0 6px 18px rgba(0, 20, 60, .5), 0 0 16px rgba(63, 227, 255, .25);
+}
+.hg-globo-cartao:hover .hg-globo-cartao-nome, .hg-globo-cartao:focus-visible .hg-globo-cartao-nome { color: #fff; }
+
+/* celular: faixa um pouco mais baixa e cartão mais estreito */
+@media (max-width: 480px) {
+  .hg-globo-faixa { height: 104px; min-height: 104px; padding: .45rem .45rem; }
+  .hg-globo-cartao { width: 124px; }
+  .hg-globo-faixa-titulo { font-size: .88rem; }
+}
+/* painel estreito (Mapa Reino no Dashboard, ~520 px) */
+@container (max-width: 760px) {
+  .hg-globo-faixa { height: 110px; min-height: 110px; }
+}
+/* modo imersivo (app/mapa.html): a faixa respeita a área segura do aparelho */
+body.is-imersivo .hg-globo-faixa {
+  padding-bottom: max(.5rem, env(safe-area-inset-bottom));
+  height: auto; min-height: 116px;
+  background: linear-gradient(180deg, rgba(10, 22, 52, .55), rgba(4, 10, 28, .8));
+  backdrop-filter: blur(16px) saturate(150%);
+}
+/* o globo do login não mostra nem faixa nem HUD */
+.hg-login-globo .hg-globo-faixa { display: none !important; }
+
+/* ==========================================================================
+   Rede do bairro: pinos que giram e fios como os do Cérebro Babel
+   ========================================================================== */
+.hg-rede-mapa .hg-rede-no { perspective: 560px; }
+.hg-rede-mapa .hg-rede-pino {
+  width: 44px; height: 44px; border-radius: 50%; rotate: none;
+  background: none; border: 0; box-shadow: none; transition: none;
+  transform-style: preserve-3d;
+  animation: hg-pino-gira var(--giro, 8s) linear infinite;
+  animation-delay: var(--fase, 0s);
+}
+.hg-rede-mapa .hg-rede-pino > * { rotate: none; }
+@keyframes hg-pino-gira { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+/* duas faces iguais: a foto nunca some de lado e não há face oculta piscando */
+.hg-rede-mapa .hg-rede-face {
+  position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden;
+  border-radius: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: linear-gradient(135deg, rgba(59, 130, 255, .92), rgba(139, 92, 255, .92));
+  border: 2px solid rgba(190, 225, 255, .85); box-shadow: var(--neon-blue);
+}
+.hg-rede-mapa .hg-rede-face.is-verso { transform: rotateY(180deg); }
+.hg-rede-mapa .hg-rede-face.is-verso > * { transform: scaleX(-1); }
+.hg-rede-mapa .hg-rede-face img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.hg-rede-mapa .hg-rede-face b { color: #fff; font: 700 var(--fs-meta) var(--font-d); }
+/* passar o mouse desacelera o giro e aproxima o pino */
+.hg-rede-mapa .hg-rede-no:hover .hg-rede-pino { transform: none; animation-duration: calc(var(--giro, 8s) * 2.4); }
+.hg-rede-mapa .hg-rede-no:hover, .hg-rede-mapa .hg-rede-no:focus-visible { scale: 1.08; }
+.hg-rede-mapa .hg-rede-no.is-ativo .hg-rede-face { background: linear-gradient(135deg, var(--violet), var(--magenta)); box-shadow: var(--neon-magenta); }
+/* a empresa da própria conta ganha moldura dourada */
+.hg-rede-mapa .hg-rede-no.is-eu .hg-rede-face { border-color: rgba(245, 199, 106, .9); box-shadow: 0 0 14px rgba(245, 199, 106, .55); }
+@media (prefers-reduced-motion: reduce) {
+  .hg-rede-mapa .hg-rede-pino { animation: none; }
+}
+
+/* fios: finos, ciano, semitransparentes, sem halo grosso (Cérebro Babel).
+   #2aa9e0 (fio) e #7eeaff (partícula) são as cores do próprio Cérebro Babel
+   (src/main.js: lineMat e linkDirectionalParticleColor); o resto usa os tokens. */
+.hg-rede-mapa .hg-rede-raios .hg-fio {
+  stroke: #2aa9e0; stroke-opacity: .38; stroke-width: 1.1; stroke-linecap: round; fill: none;
+  transition: stroke .2s, stroke-opacity .2s, stroke-width .2s;
+}
+.hg-rede-mapa .hg-rede-raios .hg-fio.is-aceso { stroke: var(--cyan); stroke-opacity: .95; stroke-width: 1.7; filter: drop-shadow(0 0 4px rgba(63, 227, 255, .85)); }
+/* as duas partículas que viajam pelo fio */
+.hg-rede-mapa .hg-rede-raios .hg-foton { fill: #7eeaff; filter: drop-shadow(0 0 4px rgba(63, 227, 255, .95)); }
+.hg-rede-mapa .hg-rede-raios .hg-foton.is-aceso { fill: #d9fbff; filter: drop-shadow(0 0 6px rgba(63, 227, 255, 1)); }
+/* o ponto no chão fica discreto: quem marca a empresa é o pino com foto */
+.hg-rede-mapa.is-ancorada .hg-rede-ponto { width: 6px; height: 6px; margin: -3px 0 0 -3px; box-shadow: 0 0 6px #fff, 0 0 14px rgba(63, 227, 255, .8); }
+
+/* ---------- a cartografia real (MapLibre) dentro do palco ---------- */
+/* Do Brasil até a cidade quem desenha é o ReinoMapa; ele entra por cima do canvas,
+   mas dentro do palco, para a faixa de cartões continuar visível e navegável. */
+.hg-mapa-host { position: absolute; inset: 0; z-index: 4; }
+.hg-globo:not(.is-com-mapa) .hg-mapa-host { display: none; }
+.hg-globo.is-com-mapa .hg-globo-palco > *:not(.hg-mapa-host) { visibility: hidden; pointer-events: none; }

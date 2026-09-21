@@ -50,33 +50,43 @@
 
     raiz.classList.add("hg-globo");
     if (imersivo) raiz.classList.add("is-imersivo");
+    /* [AC] O globo virou duas partes: o palco (canvas + HUD + botões laterais) e,
+       colado embaixo, a faixa horizontal de cartões — nada de folha sobre o globo. */
     raiz.innerHTML = `
-      <canvas class="hg-globo-canvas" tabindex="0" aria-label="Globo digital. Use o painel ao lado para navegar pelo teclado."></canvas>
-      <div class="hg-globo-hud">
-        <button class="hg-icon-btn hg-globo-voltar" data-voltar aria-label="Voltar um nível" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-        <nav class="hg-globo-trilha" aria-label="Onde você está"></nav>
+      <div class="hg-globo-palco">
+        <canvas class="hg-globo-canvas" tabindex="0" aria-label="Globo digital. Toque no globo para entrar; use a faixa abaixo para navegar pelo teclado."></canvas>
+        <div class="hg-globo-hud">
+          <button class="hg-icon-btn hg-globo-voltar" data-voltar aria-label="Voltar um nível" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <nav class="hg-globo-trilha" aria-label="Onde você está"></nav>
+        </div>
+        <div class="hg-globo-zoom">
+          <button class="hg-icon-btn" data-zoom="1" aria-label="Aproximar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button class="hg-icon-btn" data-zoom="-1" aria-label="Afastar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+          <button class="hg-icon-btn hg-globo-meu" data-meu-bairro aria-label="Mostrar minha localização" title="Mostrar minha localização" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></button>
+          <button class="hg-icon-btn" data-terra aria-label="Ver o planeta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></button>
+        </div>
+        <div class="hg-globo-clima" role="status" hidden></div>
+        <div class="hg-globo-tip" role="status" hidden></div>
+        <p class="hg-globo-dica">Arraste para girar · toque no globo para entrar</p>
+        <p class="hg-globo-credito" hidden>Ruas: Esri · © OpenStreetMap</p>
       </div>
-      <div class="hg-globo-zoom">
-        <button class="hg-icon-btn" data-zoom="1" aria-label="Aproximar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
-        <button class="hg-icon-btn" data-zoom="-1" aria-label="Afastar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
-        <button class="hg-icon-btn hg-globo-meu" data-meu-bairro aria-label="Mostrar minha localização" title="Mostrar minha localização" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></button>
-        <button class="hg-icon-btn" data-terra aria-label="Ver o planeta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></button>
-      </div>
-      <div class="hg-globo-clima" role="status" hidden></div>
-      <div class="hg-globo-tip" role="status" hidden></div>
-      <p class="hg-globo-dica">Arraste para girar · ${imersivo ? "role" : "Ctrl + roda"} ou pinça para aproximar · toque no Brasil</p>
-      <aside class="hg-globo-painel" aria-live="polite"></aside>
-      <p class="hg-globo-credito" hidden>Ruas: Esri · © OpenStreetMap</p>`;
+      <div class="hg-globo-faixa" aria-live="polite">
+        <p class="hg-globo-faixa-topo"></p>
+        <div class="hg-globo-trilho" role="list"></div>
+      </div>`;
 
+    const palco = raiz.querySelector(".hg-globo-palco");
     const cv = raiz.querySelector("canvas");
     const ctx = cv.getContext("2d");
     const tip = raiz.querySelector(".hg-globo-tip");
-    const painel = raiz.querySelector(".hg-globo-painel");
+    const faixa = raiz.querySelector(".hg-globo-faixa");
+    const faixaTopo = raiz.querySelector(".hg-globo-faixa-topo");
+    const trilho = raiz.querySelector(".hg-globo-trilho");
     /* aviso rápido quando a roda passa pelo globo sem Ctrl: a página rola e o zoom fica a um atalho */
     const avisoZoom = document.createElement("div");
     avisoZoom.className = "hg-globo-aviso"; avisoZoom.setAttribute("role", "status"); avisoZoom.hidden = true;
     avisoZoom.textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? "Use ⌘ + roda para dar zoom" : "Use Ctrl + roda para dar zoom";
-    raiz.appendChild(avisoZoom);
+    palco.appendChild(avisoZoom);
     let avisoT = 0;
     const avisarZoom = () => { avisoZoom.hidden = false; clearTimeout(avisoT); avisoT = setTimeout(() => { avisoZoom.hidden = true; }, 1400); };
     const trilha = raiz.querySelector(".hg-globo-trilha");
@@ -95,7 +105,7 @@
     const st = { nivel: "terra", uf: null, cidade: null, bairro: null, hover: null, usuario: null };
     let seqVoo = 0; // cada interação manual invalida a sequência automática em andamento
     const cacheMun = {};
-    const dados = { estados: {}, cidades: {}, bairros: [], empresarios: [], google: [], googleEstado: null };
+    const dados = { estados: {}, cidades: {}, bairros: [], empresarios: [], google: [], googleEstado: null, empresasMapa: [] };
     const estrelasCeu = Array.from({ length: imersivo ? 520 : 160 }, (_, i) => ({ x: ((i * 7919) % 1000) / 1000, y: ((i * 104729) % 1000) / 1000, r: (i % 3) * 0.4 + 0.3 + (imersivo && i % 23 === 0 ? 1 : 0), a: 0.25 + ((i * 31) % 10) / 20, c: i % 11 === 0 ? "#bcd6ff" : i % 13 === 0 ? "#e2c6ff" : "#fff" }));
     // nebulosas do modo imersivo (derivam devagar com a rotação)
     const nebulosas = imersivo ? [
@@ -103,6 +113,22 @@
       { x: 0.65, y: 0.12, r: 0.35, c: "224,75,255", a: 0.12 }, { x: 0.3, y: 0.85, r: 0.4, c: "63,227,255", a: 0.08 },
     ] : [];
     const credito = raiz.querySelector(".hg-globo-credito");
+
+    /* [AC] fotos desenhadas no canvas (só entram no mapa marcadores COM foto) */
+    const fotosCache = new Map();
+    function imagemDePerfil(url) {
+      if (!url) return null;
+      let it = fotosCache.get(url);
+      if (it) return it.ok ? it.img : null;
+      const img = new Image();
+      it = { img, ok: false };
+      fotosCache.set(url, it);
+      img.crossOrigin = "anonymous";
+      img.onload = () => { it.ok = true; sujo = true; };
+      img.onerror = () => { it.ok = false; };
+      img.src = url;
+      return null;
+    }
 
     /* ---------- ruas reais (mosaicos Esri World Dark Gray, tratados em neon) ---------- */
     const mosaicos = new Map();
@@ -175,9 +201,8 @@
 
     /* ---------- projeção ---------- */
     let s0 = 0, c0 = 1, cx = 0, cy = 0;
-    // com o painel à direita (layout largo), o centro visual fica à esquerda dele
-    const largo = () => raiz.clientWidth > 760;
-    const prep = () => { s0 = Math.sin(cam.lat * RAD); c0 = Math.cos(cam.lat * RAD); cx = W / 2 + (largo() ? -160 : 0) + cam.ox; cy = H / 2 + cam.oy; };
+    // [AC] a folha saiu de cima do globo (virou faixa embaixo): o planeta fica centrado
+    const prep = () => { s0 = Math.sin(cam.lat * RAD); c0 = Math.cos(cam.lat * RAD); cx = W / 2 + cam.ox; cy = H / 2 + cam.oy; };
     function proj(lon, lat) {
       const l = (lon - cam.lon) * RAD, p = lat * RAD;
       const cp = Math.cos(p), sp = Math.sin(p), cl = Math.cos(l);
@@ -255,7 +280,7 @@
       dados.total = r.estado === "ok" ? r.dados.total : null;
       dados.estadoApi = r.estado;
       sujo = true;
-      if (st.nivel === "terra" || st.nivel === "brasil") renderPainel();
+      if (st.nivel === "terra" || st.nivel === "brasil") renderFaixa();
     }
     async function contagensEstado(uf) {
       const r = await buscar("reino/mapa", { estado: uf });
@@ -291,11 +316,11 @@
       Object.assign(st, { nivel: "estado", uf, cidade: null, bairro: null });
       voarPara(e.b, 0.8);
       atualizarUI();
-      painel.classList.add("is-carregando");
+      faixa.classList.add("is-carregando");
       await Promise.all([carregarMunicipios(uf), contagensEstado(uf)]);
-      painel.classList.remove("is-carregando");
+      faixa.classList.remove("is-carregando");
       sujo = true;
-      renderPainel();
+      renderFaixa();
     }
     async function irCidade(cidade) {
       Object.assign(st, { nivel: "cidade", cidade, bairro: null });
@@ -304,10 +329,10 @@
       dados.google = []; dados.googleEstado = null;
       dados.populacao = null;
       atualizarUI();
-      populacaoCidade(st.uf, cidade.nome).then((p) => { if (st.cidade === cidade) { dados.populacao = p; renderPainel(); } });
+      populacaoCidade(st.uf, cidade.nome).then((p) => { if (st.cidade === cidade) { dados.populacao = p; renderFaixa(); } });
       dados.bairros = lista(await buscar("reino/bairros", { cidade: cidade.nome, estado: st.uf }));
       sujo = true;
-      renderPainel();
+      renderFaixa();
     }
     async function irBairro(bairro) {
       st.nivel = "bairro";
@@ -317,7 +342,7 @@
       dados.empresarios = [];
       atualizarUI();
       dados.empresarios = lista(await buscar("reino/empresarios", { cidade: st.cidade.nome, bairro: bairro.nome, estado: st.uf }));
-      renderPainel();
+      renderFaixa();
     }
     /* ---------- hook de login: voar até o endereço do usuário ---------- */
     const fimDoVoo = () => new Promise((ok) => {
@@ -329,7 +354,7 @@
       st.usuario = perfil && perfil.uf && perfil.cidade ? { ...perfil, uf: String(perfil.uf).toUpperCase() } : null;
       raiz.querySelector("[data-meu-bairro]").hidden = false; /* sem perfil ainda dá para achar pelo GPS/IP */
       sujo = true;
-      renderPainel();
+      renderFaixa();
     }
     // "Minha localização": 1) GPS do aparelho (pede permissão; chega ao bairro) traduzido pelo
     // OpenStreetMap; 2) sem permissão, cidade aproximada pelo IP (ipwho.is); 3) endereço do perfil.
@@ -354,6 +379,25 @@
       return null;
     }
     async function irEnderecoDoUsuario() { return irEndereco((await localAtual()) || st.usuario); }
+    /* [AC] alcance do título: Imperador/Rei mandam no país ou na região (entram no
+       Brasil), Príncipe no estado, do Duque para baixo na própria cidade. */
+    const ALCANCE = { Imperador: "brasil", Rei: "regiao", "Príncipe": "estado" };
+    const alcanceDoUsuario = () => (st.usuario ? ALCANCE[st.usuario.titulo] || "cidade" : null);
+    /* [AC] tocar no globo entra no território do usuário — é o que o botão "Ir para X" fazia */
+    function nomeDoMeuTerritorio() {
+      const u = st.usuario, a = alcanceDoUsuario();
+      if (!u || a === "brasil") return "Brasil";
+      const est = ESTADOS.find((e) => e.uf === u.uf);
+      if (a === "regiao") return "Região " + (est ? REGIOES[est.regiao] || "" : "");
+      if (a === "estado") return est ? est.nome : u.uf;
+      return u.cidade || "Brasil";
+    }
+    function irMeuTerritorio() {
+      const a = alcanceDoUsuario();
+      if (!a || a === "brasil" || a === "regiao") return irBrasil();
+      if (a === "estado") return irEstado(st.usuario.uf);
+      return irEnderecoDoUsuario();
+    }
     // [UI kit] voa até qualquer endereço { uf, cidade, bairro? } — usado por "Ver no mapa"
     async function irEndereco(u) {
       if (!u || !u.uf || !u.cidade) return;
@@ -406,114 +450,94 @@
       trilha.innerHTML = passos.filter((_, i) => i <= alcance)
         .map(([n, t], i, arr) => i === arr.length - 1 ? `<span aria-current="location">${esc(t)}</span>` : `<button data-ir="${n}">${esc(t)}</button><i>›</i>`).join("");
       dica.classList.toggle("is-oculta", st.nivel !== "terra");
-      cv.setAttribute("aria-label", `Globo digital — ${passos.map((p) => p[1]).join(", ")}`);
+      cv.setAttribute("aria-label", `Globo digital — ${passos.map((p) => p[1]).join(", ")}. Toque ou tecle Enter para entrar.`);
       mostrarClima();
-      renderPainel();
+      renderFaixa();
       sujo = true;
     }
 
     // foto de perfil (fotos.js) quando existir
     const foto = (nome) => (window.ReinoFotos ? window.ReinoFotos.obter(nome) : null);
-    function cabecalho(sobre, titulo, sub) {
-      return `<p class="hg-globo-sobre">${sobre}</p><h3 class="hg-globo-titulo">${esc(titulo)}</h3>${sub ? `<p class="hg-globo-sub">${sub}</p>` : ""}`;
-    }
-    function aviso(msg) { return `<div class="hg-globo-vazio">${msg}</div>`; }
     const semApi = () => dados.estadoApi === "sem-api";
 
-    function blocoGoogle() {
-      if (!empresasGoogle || (st.nivel !== "cidade" && st.nivel !== "bairro")) return "";
-      const onde = st.nivel === "bairro" ? `${st.bairro.nome}, ${st.cidade.nome}` : st.cidade.nome;
-      let corpo = "";
-      if (dados.googleEstado === "carregando") corpo = aviso("Buscando no Google Maps…");
-      else if (dados.googleEstado === "erro") corpo = aviso(esc(dados.googleErro));
-      else if (dados.googleEstado === "ok" && !dados.google.length) corpo = aviso("Nenhuma empresa encontrada.");
-      else if (dados.google.length) corpo = `<ul class="hg-globo-google">${dados.google.map((g) => `<li>${g.foto_url ? `<img src="${esc(g.foto_url)}" alt="" loading="lazy">` : `<span class="hg-avatar">${esc(iniciais(g.nome))}</span>`}<div><strong>${esc(g.nome)}</strong><small>${esc(g.categoria || "")}</small>${g.avaliacao_google != null ? `<span>${estrelas(g.avaliacao_google)} ${num(g.avaliacao_google, 1)} (${num(g.num_avaliacoes_google || 0)})</span>` : ""}<small>${esc(g.endereco || "")}</small>${g.site ? `<a href="${esc(g.site)}" target="_blank" rel="noopener">site ↗</a>` : ""}</div></li>`).join("")}</ul>`;
-      return `<div class="hg-globo-google-bloco"><button class="hg-btn is-ghost is-block" data-google>${dados.google.length ? "Atualizar" : "Empresas reais em"} ${esc(onde)} · Google Maps</button>${corpo}</div>`;
-    }
+    /* ---------- [AC] faixa horizontal abaixo do globo ---------- */
+    const cabecalho = (sobre, titulo, sub) =>
+      `<span class="hg-globo-faixa-sobre">${sobre}</span><b class="hg-globo-faixa-titulo">${esc(titulo)}</b>${sub ? `<span class="hg-globo-faixa-sub">${sub}</span>` : ""}`;
+    const vazio = (msg) => `<p class="hg-globo-faixa-vazio">${msg}</p>`;
+    /* um cartão da faixa: sigla, nome e um número/legenda curta */
+    const cartao = (attrs, sigla, nome, valor, ativo) =>
+      `<button class="hg-globo-cartao${ativo ? " is-ativo" : ""}" role="listitem" ${attrs}><span class="hg-globo-cartao-sigla">${esc(sigla)}</span><span class="hg-globo-cartao-nome">${esc(nome)}</span><span class="hg-globo-cartao-val">${valor}</span></button>`;
+
+    /* [AC] O botão "Empresas reais … Google Maps" saiu com a folha (a faixa é de
+       lugares, não de busca). A função continua aqui, ligada ao clique em
+       [data-google], para quem quiser devolver o botão em outro canto do HUD. */
     async function carregarGoogle() {
       const alvo = st.nivel === "bairro" ? `empresas em ${st.bairro.nome}, ${st.cidade.nome} - ${st.uf}` : `empresas em ${st.cidade.nome} - ${st.uf}`;
       const cidadeId = st.cidade.id;
-      dados.googleEstado = "carregando"; renderPainel();
+      dados.googleEstado = "carregando"; renderFaixa();
       const r = await empresasGoogle(alvo);
       if (st.cidade?.id !== cidadeId) return;
       if (r.estado === "ok") { dados.google = r.dados.candidatos || []; dados.googleEstado = "ok"; }
       else { dados.google = []; dados.googleEstado = "erro"; dados.googleErro = r.status === 503 ? "A chave do Google Maps (RAPIDAPI_MAPS_KEY) não está configurada no servidor." : r.mensagem || "Não foi possível buscar no Google Maps."; }
-      sujo = true; renderPainel();
+      sujo = true; renderFaixa();
     }
 
-    async function renderPainel() {
-      let h = "";
+    const REGIOES = { norte: "Norte", nordeste: "Nordeste", "centro-oeste": "Centro-Oeste", sudeste: "Sudeste", sul: "Sul" };
+    async function renderFaixa() {
+      let topo = "", cartoes = "";
       if (st.nivel === "terra") {
-        // [UI kit] No nível Terra o painel identifica o território do usuário. O
-        // alcance vem do título: Imperador = Brasil, Rei = região, Príncipe =
-        // estado, Duque para baixo = cidade.
+        // [AC] No nível Terra a faixa traz um cartão só: o território do usuário.
         const u = st.usuario;
-        const est = u ? (window.GEO_BRASIL || []).find((e) => e.uf === u.uf) : null;
-        const REG = { norte: "Norte", nordeste: "Nordeste", "centro-oeste": "Centro-Oeste", sudeste: "Sudeste", sul: "Sul" };
-        const ALCANCE = { Imperador: "brasil", Rei: "regiao", "Príncipe": "estado" };
-        const alcance = u ? (ALCANCE[u.titulo] || "cidade") : null;
+        const est = u ? ESTADOS.find((e) => e.uf === u.uf) : null;
+        const alcance = alcanceDoUsuario();
         if (!u) {
-          h = cabecalho("Planeta Terra", "O Reino começa no Brasil", "Gire o globo e toque no Brasil para entrar.")
-            + `<button class="hg-btn is-cyan is-block" data-ir="brasil">Entrar no Brasil</button>`;
+          topo = cabecalho("Planeta Terra", "O Reino começa no Brasil", "Toque no globo para entrar");
+          cartoes = cartao('data-ir="brasil"', "BR", "Brasil", "entrar", true);
         } else {
-          const regiao = est ? REG[est.regiao] || "" : "";
+          const regiao = est ? REGIOES[est.regiao] || "" : "";
           const lugar = alcance === "brasil" ? "Brasil" : alcance === "regiao" ? "Região " + regiao : alcance === "estado" ? (est ? est.nome : u.uf) : u.cidade;
           const onde = [u.bairro, u.cidade, u.uf].filter(Boolean).join(" · ");
           const acao = alcance === "brasil" || alcance === "regiao" ? "brasil" : alcance === "estado" ? "meu-estado" : "endereco";
-          h = cabecalho("Seu território", lugar, `${esc(u.titulo || "Membro")} · você está em ${esc(onde)}`)
-            + `<div class="hg-globo-local"><span class="hg-globo-local-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></span><div><b>${esc(u.cidade)}</b><span>${esc(est ? est.nome : u.uf)}${regiao ? " · " + regiao : ""}</span></div></div>`
-            + `<button class="hg-btn is-cyan is-block" data-ir="${acao}">Ir para ${esc(lugar)}</button>`
-            + (acao === "brasil" ? "" : `<button class="hg-btn is-block" data-ir="brasil">Ver o Brasil inteiro</button>`);
+          topo = cabecalho("Seu território", lugar, `${esc(u.titulo || "Membro")} · ${esc(onde)}`);
+          cartoes = cartao(`data-ir="${acao}"`, alcance === "brasil" || alcance === "regiao" ? "BR" : u.uf || "BR", lugar, esc(onde), true);
         }
-        h += `<button class="hg-btn is-block hg-btn-lua" data-ir="lua">Visitar a torre Babel na Lua</button>`;
       } else if (st.nivel === "lua") {
-        h = cabecalho("Lua · Sede", "Babel", "A torre que conecta todo o Reino. Daqui a Babel acompanha empresas, guildas e territórios.")
-          + `<div class="hg-globo-torre-info"><span>Plataforma</span><b>Babel OS</b><span>Aplicativo</span><b>Reino</b></div>`
-          + `<a class="hg-btn is-block hg-btn-lua" href="https://www.babel-os.com" target="_blank" rel="noopener">Conhecer a Babel</a>`
-          + `<button class="hg-btn is-ghost is-block" data-ir="terra">Voltar para a Terra</button>`;
+        topo = cabecalho("Lua · Sede", "Babel", "A torre que conecta todo o Reino");
+        cartoes = `<a class="hg-globo-cartao is-ativo" role="listitem" href="https://www.babel-os.com" target="_blank" rel="noopener"><span class="hg-globo-cartao-sigla">B</span><span class="hg-globo-cartao-nome">Babel OS</span><span class="hg-globo-cartao-val">babel-os.com ↗</span></a>`;
       } else if (st.nivel === "brasil") {
         const ordem = ESTADOS.slice().sort((a, b) => (dados.estados[b.uf] || 0) - (dados.estados[a.uf] || 0) || a.nome.localeCompare(b.nome, "pt-BR"));
         const ativos = ordem.filter((e) => dados.estados[e.uf]).length;
-        h = cabecalho("País", "Brasil", dados.total != null ? `<b>${num(dados.total)}</b> empresas em <b>${ativos}</b> estados` : "27 unidades federativas")
-          + (semApi() ? aviso('Conecte a API para ver empresas por estado.') : "")
-          + `<ul class="hg-globo-lista">${ordem.map((e) => `<li><button data-uf="${e.uf}" class="${dados.estados[e.uf] ? "is-ativo" : ""}"><span class="uf">${e.uf}</span>${esc(e.nome)}<b>${dados.estados[e.uf] ? num(dados.estados[e.uf]) : "—"}</b></button></li>`).join("")}</ul>`;
+        topo = cabecalho("País", "Brasil", dados.total != null ? `<b>${num(dados.total)}</b> empresas em <b>${ativos}</b> estados` : "27 unidades federativas");
+        cartoes = (semApi() ? vazio("Conecte a API para ver empresas por estado.") : "")
+          + ordem.map((e) => cartao(`data-uf="${e.uf}"`, e.uf, e.nome, dados.estados[e.uf] ? num(dados.estados[e.uf]) + " empresas" : "—", !!dados.estados[e.uf])).join("");
       } else if (st.nivel === "estado") {
         const e = ESTADOS.find((x) => x.uf === st.uf);
         const muns = cacheMun[st.uf] ? await cacheMun[st.uf] : null;
         if (st.nivel !== "estado") return;
         const comEmp = muns ? muns.filter((m) => dados.cidades[norm(m.nome)]) : [];
-        h = cabecalho(`Estado · ${e.uf}`, e.nome, muns ? `<b>${num(muns.length)}</b> cidades · <b>${num(comEmp.length)}</b> com empresas` : "Carregando cidades…")
-          + `<label class="sr-only" for="globo-filtro">Filtrar cidades</label><input class="hg-input hg-globo-filtro" id="globo-filtro" type="search" placeholder="Buscar cidade em ${esc(e.nome)}…">`
-          + `<ul class="hg-globo-lista" data-cidades></ul>`;
+        topo = cabecalho(`Estado · ${e.uf}`, e.nome, muns ? `<b>${num(muns.length)}</b> cidades · <b>${num(comEmp.length)}</b> com empresas` : "Carregando cidades…");
+        const itens = (muns || []).slice().sort((a, b) => (dados.cidades[norm(b.nome)] || 0) - (dados.cidades[norm(a.nome)] || 0) || a.nome.localeCompare(b.nome, "pt-BR")).slice(0, 60);
+        cartoes = itens.length ? itens.map((m) => { const q = dados.cidades[norm(m.nome)]; return cartao(`data-cidade="${m.id}"`, iniciais(m.nome), m.nome, q ? num(q) + " empresas" : "—", !!q); }).join("") : vazio("Carregando cidades…");
       } else if (st.nivel === "cidade") {
         const qtd = dados.cidades[norm(st.cidade.nome)] || 0;
-        const linhaPop = dados.populacao ? `<p class="hg-globo-sub">População: <b>${num(dados.populacao)}</b> (IBGE · Censo 2022)</p>` : "";
-        h = cabecalho(`Cidade · ${st.uf}`, st.cidade.nome, `<b>${num(qtd)}</b> empresas · <b>${num(dados.bairros.length)}</b> bairros com empresários`)
-          + linhaPop
-          + (dados.bairros.length
-            ? `<ul class="hg-globo-lista">${dados.bairros.map((b, i) => `<li><button data-bairro="${i}" class="is-ativo"><span class="uf">${esc(iniciais(b.nome))}</span>${esc(b.nome)}<b>${num(b.empresarios ?? b.empresas ?? 0)}</b></button></li>`).join("")}</ul>`
-            : aviso(semApi() ? "Conecte a API para ver os bairros." : "Nenhum bairro com empresários do Reino nesta cidade ainda."));
+        topo = cabecalho(`Cidade · ${st.uf}`, st.cidade.nome, `<b>${num(qtd)}</b> empresas · <b>${num(dados.bairros.length)}</b> bairros${dados.populacao ? ` · <b>${num(dados.populacao)}</b> habitantes` : ""}`);
+        cartoes = dados.bairros.length
+          ? dados.bairros.map((b, i) => cartao(`data-bairro="${i}"`, iniciais(b.nome), b.nome, num(b.empresarios ?? b.empresas ?? 0) + " empresários", true)).join("")
+          : vazio(semApi() ? "Conecte a API para ver os bairros." : "Nenhum bairro com empresários do Reino nesta cidade ainda.");
       } else if (st.nivel === "bairro") {
-        h = (ehDoUsuario(st.bairro) ? `<p class="hg-globo-voce">📍 Você está aqui</p>` : "") + cabecalho(`Bairro · ${esc(st.cidade.nome)}`, st.bairro.nome, `<b>${num(dados.empresarios.length)}</b> empresários`)
-          + (dados.empresarios.length
-            ? `<ul class="hg-globo-empresarios">${dados.empresarios.map((p) => `<li><div class="hg-globo-pessoa">${foto(p.nome) ? `<img class="hg-globo-foto" src="${foto(p.nome)}" alt="" loading="lazy">` : `<span class="hg-avatar">${esc(iniciais(p.nome))}</span>`}<div><strong>${esc(p.nome)}</strong><span class="hg-gold">${esc(p.titulo || "")}</span></div></div>${(p.empresas || []).map((x) => `<div class="hg-globo-empresa"><span>${esc(x.nome)}</span><small>${esc(x.nicho || "")}</small>${x.nota != null ? estrelas(x.nota) : ""}</div>`).join("")}</li>`).join("")}</ul>`
-            : aviso("Carregando empresários…"));
+        // [AC] só empresas cadastradas com foto (o mapa e a faixa mostram o mesmo)
+        const emp = dados.empresasMapa;
+        topo = cabecalho(`Bairro · ${esc(st.cidade.nome)}`, st.bairro.nome, `<b>${num(emp.length)}</b> empresas com foto${ehDoUsuario(st.bairro) ? " · você está aqui" : ""}`);
+        cartoes = emp.length
+          ? emp.map((p) => `<button class="hg-globo-cartao is-ativo is-foto" role="listitem" data-empresa="${esc(p.id)}"><img class="hg-globo-cartao-foto" src="${esc(p.foto)}" alt="" loading="lazy"><span class="hg-globo-cartao-nome">${esc(p.empresa)}</span><span class="hg-globo-cartao-val">${esc(p.titulo || [p.cidade, p.uf].filter(Boolean).join(" · "))}</span></button>`).join("")
+          : vazio("Nenhuma empresa com foto neste bairro ainda.");
       }
-      painel.innerHTML = h + blocoGoogle();
-      painel.classList.remove("is-entrando");
-      void painel.offsetWidth;
-      painel.classList.add("is-entrando");
-      if (st.nivel === "estado") listarCidades("");
-    }
-    async function listarCidades(filtro) {
-      const ul = painel.querySelector("[data-cidades]");
-      if (!ul || !cacheMun[st.uf]) return;
-      const muns = await cacheMun[st.uf];
-      const f = norm(filtro);
-      const itens = muns.filter((m) => !f || norm(m.nome).includes(f))
-        .sort((a, b) => (dados.cidades[norm(b.nome)] || 0) - (dados.cidades[norm(a.nome)] || 0) || a.nome.localeCompare(b.nome, "pt-BR"));
-      ul.innerHTML = itens.slice(0, 80).map((m) => { const q = dados.cidades[norm(m.nome)]; return `<li><button data-cidade="${m.id}" class="${q ? "is-ativo" : ""}">${esc(m.nome)}<b>${q ? num(q) : ""}</b></button></li>`; }).join("")
-        + (itens.length > 80 ? `<li class="hg-globo-mais">+ ${num(itens.length - 80)} cidades — use a busca</li>` : "");
+      faixaTopo.innerHTML = topo;
+      trilho.innerHTML = cartoes;
+      trilho.scrollLeft = 0;
+      faixa.classList.remove("is-entrando");
+      void faixa.offsetWidth;
+      faixa.classList.add("is-entrando");
     }
 
     raiz.addEventListener("click", async (e) => {
@@ -530,13 +554,14 @@
       else if (b.dataset.uf) irEstado(b.dataset.uf);
       else if (b.dataset.cidade) { const m = (await cacheMun[st.uf]).find((x) => x.id === b.dataset.cidade); if (m) irCidade(m); }
       else if (b.dataset.bairro) irBairro(dados.bairros[+b.dataset.bairro]);
+      // [AC] cartão de empresa: quem acende o pino é a rede desenhada por cima do mapa
+      else if (b.dataset.empresa) raiz.dispatchEvent(new CustomEvent("globo:empresa", { detail: { id: b.dataset.empresa } }));
       else if (b.hasAttribute("data-voltar")) voltar();
       else if (b.hasAttribute("data-terra")) irTerra();
       else if (b.hasAttribute("data-meu-bairro")) irEnderecoDoUsuario();
       else if (b.hasAttribute("data-google")) carregarGoogle();
       else if (b.dataset.zoom) { giro = false; voar(cam.lon, cam.lat, clamp(cam.R * (b.dataset.zoom === "1" ? 1.8 : 1 / 1.8), Rmin(), Rmax()), 500); }
     });
-    painel.addEventListener("input", (e) => e.target.id === "globo-filtro" && listarCidades(e.target.value));
     raiz.addEventListener("keydown", (e) => { if (e.key === "Escape" && st.nivel !== "terra") { e.preventDefault(); voltar(); } });
 
     /* ---------- hit test ---------- */
@@ -575,11 +600,15 @@
       const a = alvoEm(x, y);
       const chave = a && (a.tipo === "lua" ? "lua" : a.pais?.n || a.estado?.uf || a.cidade?.id || a.bairro?.nome);
       if (chave !== (st.hover && st.hover.chave)) { st.hover = a ? { ...a, chave } : null; sujo = true; }
-      cv.style.cursor = a && a.tipo !== "oceano" ? "pointer" : "grab";
-      if (!a || a.tipo === "oceano") { tip.hidden = true; return; }
+      // [AC] no nível terra o globo inteiro é clicável: qualquer ponto dentro do disco vale
+      const noGlobo = st.nivel === "terra" && !!a;
+      if (noGlobo !== st.sobreGlobo) { st.sobreGlobo = noGlobo; sujo = true; }
+      cv.style.cursor = (a && a.tipo !== "oceano") || noGlobo ? "pointer" : "grab";
+      if (!a || (a.tipo === "oceano" && !noGlobo)) { tip.hidden = true; return; }
       let html = "";
       if (a.tipo === "lua") html = st.nivel === "lua" ? "<b>Torre Babel</b><span>Sede do Reino</span>" : "<b>Lua · Torre Babel</b><span>Toque para visitar a sede</span>";
       if (a.tipo === "pais") html = a.pais === BRASIL ? "<b>Brasil</b><span>Toque para entrar no Reino</span>" : `<b>${esc(a.pais.n)}</b><span>Em breve no Reino</span>`;
+      if (noGlobo && a.tipo !== "lua") html = `<b>${esc(nomeDoMeuTerritorio())}</b><span>Toque no globo para entrar</span>`;
       if (a.tipo === "estado") {
         const q = dados.estados[a.estado.uf];
         html = `<b>${esc(a.estado.nome)}</b><span>${q ? `${num(q)} empresas` : "Sem empresas ainda"}</span>`;
@@ -596,7 +625,7 @@
       if (a.tipo === "bairro") html = `<b>${esc(a.bairro.nome)}</b><span>${num(a.bairro.empresarios ?? 0)} empresários · ${num(a.bairro.empresas ?? 0)} empresas</span>`;
       tip.innerHTML = html;
       tip.hidden = false;
-      const r = raiz.getBoundingClientRect();
+      const r = palco.getBoundingClientRect();
       tip.style.left = clamp(x + 14, 8, r.width - 240) + "px";
       tip.style.top = clamp(y + 14, 8, r.height - 90) + "px";
     }
@@ -605,7 +634,8 @@
       if (!a) return;
       if (a.tipo === "lua") { if (st.nivel !== "lua") irLua(); return; }
       if (st.nivel === "lua") { if (a.tipo !== "oceano" || inverter(x, y)) irTerra(); return; }
-      if (st.nivel === "terra") { if (a.pais === BRASIL) irBrasil(); return; }
+      // [AC] terra: o globo inteiro leva ao território do usuário (era o botão "Ir para X")
+      if (st.nivel === "terra") return irMeuTerritorio();
       if (a.tipo === "bairro") return irBairro(a.bairro);
       if (a.tipo === "cidade" && (st.nivel === "estado" || st.nivel === "cidade" || st.nivel === "bairro")) return irCidade(a.cidade);
       if (a.tipo === "estado") return irEstado(a.estado.uf);
@@ -648,7 +678,8 @@
       if (ptrs.size < 2) pinca = null;
       if (arr && ptrs.size === 0) {
         const [x, y] = pos(e);
-        const toque = Math.hypot(x - arr.x0, y - arr.y0) < 7 && performance.now() - arr.t0 < 450;
+        // [AC] clique x arrasto: até 5 px de movimento ainda é um toque
+        const toque = Math.hypot(x - arr.x0, y - arr.y0) < 5 && performance.now() - arr.t0 < 600;
         if (toque) clicar(x, y);
         else if (!reduz) inercia = { ...vel, t: performance.now() };
         arr = null;
@@ -674,7 +705,11 @@
       if (mapa[e.key]) { e.preventDefault(); giro = false; cam.lon += mapa[e.key][0]; cam.lat = clamp(cam.lat + mapa[e.key][1], -85, 85); sujo = true; }
       if (e.key === "+" || e.key === "=") { cam.R = clamp(cam.R * 1.3, Rmin(), Rmax()); sujo = true; }
       if (e.key === "-") { cam.R = clamp(cam.R / 1.3, Rmin(), Rmax()); sujo = true; }
-      if (e.key === "Enter" && st.nivel === "terra") irBrasil();
+      // [AC] teclado: Enter no canvas faz o mesmo que tocar no globo
+      if (e.key === "Enter" || e.key === " ") {
+        if (st.nivel === "terra") { e.preventDefault(); irMeuTerritorio(); }
+        else if (st.nivel === "lua") { e.preventDefault(); irTerra(); }
+      }
     });
     let inercia = null;
 
@@ -684,7 +719,7 @@
       const zoomRel = cam.R / Rmin();
       const orbX = cx + Math.cos(lua.ang) * cam.R * 1.85, orbY = cy + Math.sin(lua.ang) * cam.R * 0.4 - cam.R * 0.1;
       const orbR = Math.max(16, cam.R * 0.22);
-      const areaW = largo() ? W - 330 : W;
+      const areaW = W;
       const cenX = areaW * 0.52, cenY = H * 0.56, cenR = Math.min(areaW, H) * 0.24;
       const e = easeInOut(lua.k);
       lua.px = orbX + (cenX - orbX) * e;
@@ -939,38 +974,36 @@
             ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - 26, py - 11, 52, 22, 11) : ctx.rect(x - 26, py - 11, 52, 22); ctx.fill(); ctx.shadowBlur = 0;
             ctx.fillStyle = "#1a1206"; ctx.font = "800 11px 'Exo 2', sans-serif"; ctx.textBaseline = "middle"; ctx.fillText("VOCÊ", x, py + 0.5);
           }
-          // empresários orbitando o bairro selecionado
-          if (sel && dados.empresarios.length) {
-            dados.empresarios.forEach((pe, i) => {
-              const ang = t / 2200 + (i / dados.empresarios.length) * Math.PI * 2, rr = r + 42;
-              const ox = x + Math.cos(ang) * rr, oy = y + Math.sin(ang) * rr * 0.6;
-              ctx.strokeStyle = "rgba(245,199,106,.35)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ox, oy); ctx.stroke();
-              const g = ctx.createLinearGradient(ox - 14, oy - 14, ox + 14, oy + 14); g.addColorStop(0, "#3b82ff"); g.addColorStop(1, "#8b5cff");
-              ctx.fillStyle = g; ctx.shadowColor = "#8b5cff"; ctx.shadowBlur = 14;
-              ctx.beginPath(); ctx.arc(ox, oy, 14, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-              ctx.fillStyle = "#fff"; ctx.font = "700 10px 'Exo 2', sans-serif"; ctx.textBaseline = "middle";
-              ctx.fillText(iniciais(pe.nome), ox, oy + 0.5);
-            });
-          }
+          // [AC] os empresários que orbitavam o bairro (bolinhas com iniciais, sem
+          // foto) saíram: no mapa só ficam as empresas cadastradas com foto, que a
+          // rede de pinos desenha por cima do canvas.
         });
       }
 
-      // empresas reais do Google Maps (posição exata)
+      // [AC] empresas reais do Google Maps: só as que têm foto entram no mapa
       if ((st.nivel === "cidade" || st.nivel === "bairro") && dados.google.length) {
         dados.google.forEach((g, i) => {
-          if (g.lat == null) return;
+          if (g.lat == null || !g.foto_url) return;
           const [x, y, c] = proj(g.lng, g.lat);
           if (c <= 0 || x < -20 || x > W + 20 || y < -20 || y > H + 20) return;
           const salto = reduz ? 0 : 2 * Math.sin(t / 300 + i);
-          ctx.fillStyle = "#fff"; ctx.shadowColor = "#3fe3ff"; ctx.shadowBlur = 14;
-          ctx.beginPath(); ctx.arc(x, y - 10 + salto, 7, Math.PI, 0); ctx.lineTo(x, y + salto); ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
-          ctx.fillStyle = "#3b82ff"; ctx.beginPath(); ctx.arc(x, y - 10 + salto, 3, 0, Math.PI * 2); ctx.fill();
+          const img = imagemDePerfil(g.foto_url);
+          if (!img) return;
+          const r = 15, py = y - r - 4 + salto;
+          ctx.save();
+          ctx.beginPath(); ctx.arc(x, py, r, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(190,225,255,.85)"; ctx.lineWidth = 2; ctx.shadowColor = "#3fe3ff"; ctx.shadowBlur = 14; ctx.stroke(); ctx.shadowBlur = 0;
+          ctx.clip();
+          ctx.drawImage(img, x - r, py - r, r * 2, r * 2);
+          ctx.restore();
         });
       }
 
-      // brilho da borda do planeta
+      // brilho da borda do planeta (acende quando o ponteiro está sobre o globo clicável)
       if (globoInteiro) {
-        ctx.strokeStyle = "rgba(120,220,255,.55)"; ctx.lineWidth = 1.5; ctx.shadowColor = "#3fe3ff"; ctx.shadowBlur = 20;
+        const aceso = st.sobreGlobo && st.nivel === "terra";
+        ctx.strokeStyle = aceso ? "rgba(160,240,255,.95)" : "rgba(120,220,255,.55)";
+        ctx.lineWidth = aceso ? 2.2 : 1.5; ctx.shadowColor = "#3fe3ff"; ctx.shadowBlur = aceso ? 34 : 20;
         ctx.beginPath(); ctx.arc(cx, cy, cam.R, 0, Math.PI * 2); ctx.stroke(); ctx.shadowBlur = 0;
       }
       if (!lua.atras) desenharLua(t);
@@ -1038,7 +1071,17 @@
     // [UI kit] projeção pública: lon/lat → px na tela do canvas (null quando atrás do globo)
     const projetar = (lon, lat) => { prep(); const [x, y, cosc] = proj(lon, lat); return cosc > 0 ? { x, y, R: cam.R } : null; };
     const bairroAtual = () => (st.nivel === "bairro" && st.bairro ? { lat: st.bairro.lat, lng: st.bairro.lng, nome: st.bairro.nome } : null);
-    const api = { irBrasil, irTerra, irEstado, voltar, definirUsuario, irEnderecoDoUsuario, irEndereco, destruir, projetar, bairroAtual };
+    /* [AC] a rede de empresas (MapaPanel) entrega aqui a lista que está no mapa,
+       para a faixa de baixo listar exatamente as mesmas empresas com foto. */
+    const definirEmpresas = (lista) => {
+      const novas = Array.isArray(lista) ? lista : [];
+      const chave = novas.map((e) => e.id).join("|");
+      if (chave === dados.chaveEmpresas) return;
+      dados.chaveEmpresas = chave;
+      dados.empresasMapa = novas;
+      if (st.nivel === "bairro") renderFaixa();
+    };
+    const api = { irBrasil, irTerra, irEstado, voltar, definirUsuario, irEnderecoDoUsuario, irEndereco, irMeuTerritorio, definirEmpresas, destruir, projetar, bairroAtual, palco };
     raiz.globo = api;
     return api;
   }

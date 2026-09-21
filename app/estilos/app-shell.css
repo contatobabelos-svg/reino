@@ -430,3 +430,13 @@ body[data-page="inicio"] .hg-analytics > .hg-panel > .hg-btn { margin-top: auto;
 .hg-resumo-3 > div { display: grid; gap: .15rem; min-width: 0; }
 .hg-resumo-3 .hg-sub { font-size: .7rem; }
 .hg-resumo-3 b { font: 700 1.05rem var(--font-d); color: var(--text-strong); }
+
+/* Tela leve: o desfoque de vidro (backdrop-filter) das barras e dos painéis sobre o conteúdo que
+   rola fazia o Dashboard cair para ~28 quadros/s e a rolagem parecer travar (medido: sem ele, 51;
+   com as duas animações contínuas baratas, ~60). Os fundos já são translúcidos e o fundo do app é
+   liso, então o visual quase não muda. Ficam de fora o mapa em tela cheia e a galeria de stories,
+   que ficam sobre imagens. */
+body:not(.is-imersivo) :is(.hg-top, .hg-tabbar, .hg-main *):not(.hg-story-view):not(.hg-story-view *) {
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+.hg-top { background: rgba(3, 8, 23, .88); }

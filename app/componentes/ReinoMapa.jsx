@@ -243,6 +243,17 @@ function dentro(pt, poli) {
   return d;
 }
 
+/* caixa que enquadra um estado inteiro (pelos municípios, não por um deles) */
+function caixaDoEstado(uf) {
+  if (!uf) return null;
+  let x1 = 180, y1 = 90, x2 = -180, y2 = -90, n = 0;
+  for (const [k, c] of cidadesIndex()) {
+    if (!k.endsWith("|" + String(uf).toUpperCase())) continue;
+    n++; if (c.lng < x1) x1 = c.lng; if (c.lng > x2) x2 = c.lng; if (c.lat < y1) y1 = c.lat; if (c.lat > y2) y2 = c.lat;
+  }
+  return n > 1 ? [[x1, y1], [x2, y2]] : null;
+}
+
 function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
   const caixa = React.useRef(null);
   const mapa = React.useRef(null);
@@ -267,15 +278,7 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
     carregarMapLibre().then((ml) => {
       if (morto || !caixa.current) return;
       /* estado: enquadra pelo conjunto dos municípios, não por um deles */
-      const caixaEstado = (() => {
-        if (!uf) return null;
-        let x1 = 180, y1 = 90, x2 = -180, y2 = -90, n = 0;
-        for (const [k, c] of cidadesIndex()) {
-          if (!k.endsWith("|" + String(uf).toUpperCase())) continue;
-          n++; if (c.lng < x1) x1 = c.lng; if (c.lng > x2) x2 = c.lng; if (c.lat < y1) y1 = c.lat; if (c.lat > y2) y2 = c.lat;
-        }
-        return n > 1 ? [[x1, y1], [x2, y2]] : null;
-      })();
+      const caixaEstado = caixaDoEstado(uf);
       const centro = (() => {
         if (cidade) { const c = acharCidade(cidade, uf); if (c) return [c.lng, c.lat]; }
         if (caixaEstado) return [(caixaEstado[0][0] + caixaEstado[1][0]) / 2, (caixaEstado[0][1] + caixaEstado[1][1]) / 2];
@@ -342,6 +345,20 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
     });
     atualizarCalor();
   }, [pronto, uf, cidade]);
+
+  /* [AC] A faixa de cartões abaixo do globo continua sendo a navegação: quando ela
+     troca de estado, cidade ou bairro, o mapa voa até o novo lugar. */
+  const primeiroLugar = React.useRef(true);
+  React.useEffect(() => {
+    const m = mapa.current;
+    if (!pronto || !m) return;
+    if (primeiroLugar.current) { primeiroLugar.current = false; return; }
+    const c = cidade ? acharCidade(cidade, uf) : null;
+    if (c) { m.easeTo({ center: [c.lng, c.lat], zoom: bairro ? 15.4 : 11.6, duration: 900 }); return; }
+    const cx = caixaDoEstado(uf);
+    if (cx) { m.fitBounds(cx, { padding: 48, duration: 900 }); return; }
+    m.easeTo({ center: [-47.9, -15.8], zoom: 4.1, duration: 900 });
+  }, [pronto, uf, cidade, bairro]);
 
   const atualizarCalor = React.useCallback(() => {
     const m = mapa.current; if (!m || !m.getSource("calor")) return;

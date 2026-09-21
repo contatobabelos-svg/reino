@@ -25,7 +25,7 @@
   padding: .62rem .8rem;
   border-radius: 12px;
   color: #c5d4f2;
-  font-weight: 500;
+  font: 500 .875rem var(--font-d);
   border: 1px solid transparent;
   transition: background .2s, color .2s, box-shadow .2s;
 }
