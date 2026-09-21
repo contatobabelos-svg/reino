@@ -2,9 +2,6 @@
    Conversa com bolhas + barra de comando no estilo do Babel OS, com as cores e fontes do
    Reino (tokens do design-system). Nada de caixa/card: só bolhas de vidro e a barra. */
 
-@property --li-energia { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
-@keyframes hg-li-gira { to { --li-energia: 360deg; } }
-
 .hg-li {
   position: fixed; inset: 0; z-index: 50; overflow: hidden;
   background: var(--bg); color: var(--text); font-family: var(--font);
@@ -54,7 +51,6 @@
   min-height: 44px; padding: 0 20px; border-radius: var(--r-pill); cursor: pointer;
   font: 600 14px var(--font-d); letter-spacing: .03em; color: var(--text-strong);
   background: rgba(6, 14, 36, .5); border: 1px solid var(--line-2);
-  backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%);
   box-shadow: 0 0 18px rgba(63, 227, 255, .18), inset 0 1px 0 rgba(255, 255, 255, .14);
   transition: box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
 }
@@ -71,7 +67,7 @@
   display: flex; flex-direction: column; gap: 10px;
   transition: bottom .25s var(--ease);
 }
-.hg-li-progresso { align-self: flex-start; padding: 5px 12px; border-radius: var(--r-pill); background: rgba(3, 8, 23, .55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; gap: 12px; font: 600 11px var(--font-d); letter-spacing: .12em; text-transform: uppercase; color: var(--text-2); text-shadow: 0 1px 8px rgba(0, 0, 0, .6); }
+.hg-li-progresso { align-self: flex-start; padding: 5px 12px; border-radius: var(--r-pill); background: rgba(3, 8, 23, .55); display: flex; align-items: center; gap: 12px; font: 600 11px var(--font-d); letter-spacing: .12em; text-transform: uppercase; color: var(--text-2); text-shadow: 0 1px 8px rgba(0, 0, 0, .6); }
 .hg-li-progresso-trilho { display: flex; gap: 5px; width: 160px; }
 .hg-li-progresso-trilho i { flex: 1; height: 3px; border-radius: 3px; background: rgba(186, 204, 240, .22); transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
 .hg-li-progresso-trilho i.is-feito { background: var(--cyan); opacity: .7; }
@@ -96,7 +92,6 @@
 .hg-li-bolha-in {
   color: var(--text); background: rgba(6, 14, 36, .62);
   border: 1px solid rgba(120, 180, 255, .22); border-top-color: rgba(63, 227, 255, .38); border-bottom-left-radius: 4px;
-  backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%);
   box-shadow: 0 4px 18px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .06);
 }
 .hg-li-bolha-in small { display: block; margin-bottom: 2px; font: 600 10px var(--font-d); letter-spacing: .16em; text-transform: uppercase; color: var(--cyan); opacity: .85; }
@@ -149,7 +144,6 @@
 .hg-li-correios a {
   display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border-radius: 14px; text-decoration: none;
   color: var(--text-strong); background: rgba(6, 14, 36, .62); border: 1px solid rgba(120, 180, 255, .24);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
 }
 .hg-li-correios a:hover, .hg-li-correios a:focus-visible { border-color: var(--cyan); box-shadow: 0 0 18px rgba(63, 227, 255, .3); outline: none; }
@@ -162,29 +156,19 @@
 .hg-li-link:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 4px; }
 
 /* ---------------------------------------------------------------- barra de comando (igual à do Babel OS, cores do Reino) */
-.hg-li-barra { position: relative; border-radius: 24px; padding: 3px; overflow: hidden; isolation: isolate; margin: 0; }
-.hg-li-barra::before {
-  content: ""; position: absolute; inset: -60%; z-index: 0; filter: blur(2px);
-  background: conic-gradient(from var(--li-energia),
-    transparent 0deg, rgba(63, 227, 255, .55) 40deg, rgba(63, 227, 255, .95) 60deg, rgba(63, 227, 255, .55) 80deg, transparent 130deg,
-    transparent 200deg, rgba(139, 92, 255, .55) 230deg, rgba(224, 75, 255, .9) 250deg, rgba(139, 92, 255, .55) 270deg, transparent 320deg);
-  animation: hg-li-gira 4s linear infinite;
-}
-.hg-li-barra::after {
-  content: ""; position: absolute; left: 50%; top: 50%; width: 110%; height: 200%; transform: translate(-50%, -50%);
-  z-index: -1; pointer-events: none; filter: blur(20px);
-  background: radial-gradient(50% 40% at 50% 50%, rgba(63, 227, 255, .2), transparent 70%);
-}
+.hg-li-barra { position: relative; border-radius: 22px; margin: 0; }
+/* vidro transparente: só o tom do fundo (ciano/violeta/azul-noite) e uma borda fina; sem blur,
+   sem anel em rotação — deixa o fundo em vídeo respirar e a tela leve */
 .hg-li-barra-dentro {
   position: relative; z-index: 1; display: flex; align-items: center; gap: 10px;
-  min-height: 64px; padding: 8px 8px 8px 18px; border-radius: 21px;
+  min-height: 64px; padding: 8px 8px 8px 18px; border-radius: 22px;
   background:
-    radial-gradient(140% 200% at 50% 120%, rgba(63, 227, 255, .16) 0%, rgba(139, 92, 255, .10) 35%, rgba(6, 12, 32, .78) 75%),
-    linear-gradient(180deg, rgba(8, 16, 40, .62), rgba(4, 9, 26, .86));
-  backdrop-filter: blur(28px) saturate(200%); -webkit-backdrop-filter: blur(28px) saturate(200%);
-  border: 1px solid rgba(63, 227, 255, .2); border-top-color: rgba(63, 227, 255, .4);
-  box-shadow: inset 0 1px 0 rgba(63, 227, 255, .22), inset 0 -1px 0 rgba(139, 92, 255, .12), 0 8px 32px rgba(139, 92, 255, .28);
+    linear-gradient(180deg, rgba(63, 227, 255, .10) 0%, rgba(139, 92, 255, .06) 45%, rgba(6, 12, 32, .30) 100%);
+  border: 1px solid rgba(63, 227, 255, .26); border-top-color: rgba(63, 227, 255, .5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 26px rgba(63, 227, 255, .05), 0 6px 20px rgba(3, 8, 23, .35);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
+.hg-li-barra-dentro:focus-within { border-color: rgba(63, 227, 255, .55); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 0 26px rgba(63, 227, 255, .09), 0 6px 20px rgba(3, 8, 23, .35), 0 0 0 1px rgba(63, 227, 255, .18); }
 /* faixa de luz ciano no topo (holograma do Reino) */
 .hg-li-barra-dentro::before { content: ""; position: absolute; top: 0; left: 14%; right: 14%; height: 1px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); box-shadow: 0 0 10px var(--cyan); pointer-events: none; }
 .hg-li-barra-dentro:has(.hg-li-acao:first-child) { padding-left: 8px; }
@@ -240,7 +224,6 @@
 @media (max-height: 560px) { .hg-li-janela { max-height: 40vh; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .hg-li-barra::before { animation: none; }
   .hg-li-slide.vem-da-direita, .hg-li-slide.vem-da-esquerda, .hg-li-bolha-in, .hg-li-bolha-out { animation: none; }
   .hg-li-palco, .hg-li.is-saindo .hg-li-palco { transition: none; }
 }
