@@ -222,5 +222,5 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] AD2 Letreiro do login no celular: fica como está (inteiro no alto, fundo desfocado embaixo — FUNDO_REINO.retrato = "encaixar")
 - [x] AD3 Lista dos 14 veículos de notícias: mantida
 - [x] AD4 Card Conquistas: mantido onde está (coluna do centro do Dashboard) — leitura de "nos dois"
-- [ ] AD5 Aberto: SMTP próprio (Resend etc.) — o fundador não respondeu; o Supabase padrão manda só 2 e-mails/hora
+- [x] AD5 SMTP próprio: Resend, domínio babel-os.com (já verificado na conta), remetente Reino <nao-responda@babel-os.com>, limite 60 e-mails/h, e-mails de confirmação e de senha em português. Login e envio SMTP testados. Falta o teste de ponta a ponta com um cadastro real do fundador
 - [ ] AD6 Aberto: CNPJ repetido barra também quem já tem conta em outro e-mail; falta fluxo de suporte para "o CNPJ é meu mas o cadastro é de outra pessoa"
