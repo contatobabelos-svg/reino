@@ -95,15 +95,26 @@
     return codigo;
   }
 
-  /* ---------- cadastro ---------- */
+  /* ---------- cadastro ----------
+     C6 do Parecer 1: a linha de `cadastros` NÃO é mais inserida pelo navegador. Ela era
+     forjável por qualquer pessoa com a chave publicável (que é pública por natureza) e é dela
+     que saem o ranking de afiliados e a comissão. Agora quem grava é a Edge Function
+     `reino-cadastro`, com a chave de serviço, depois que o Auth criou a conta de verdade.
+     O que o navegador faz é só entregar o contexto da visita (contexto(), abaixo) para o
+     servidor e, quando não há Supabase configurado, manter o registro local do painel. */
+  function contexto() {
+    return {
+      codigo: sessionStorage.getItem("reino.ref") || localStorage.getItem("reino.indicadoPor") || PADRAO(),
+      visitaId: visitaId || sessionStorage.getItem("reino.visitaId") || "",
+      dispositivo: dispositivo(),
+    };
+  }
   async function registrarCadastro({ nome, email, titulo, cidade, uf }) {
-    const codigo = sessionStorage.getItem("reino.ref") || localStorage.getItem("reino.indicadoPor") || PADRAO();
+    const c = contexto();
     if (!cidade || !uf) { const g = await geo(); if (g) { cidade = cidade || g.cidade; uf = uf || g.uf; } }
-    const linha = { id: uuid(), codigo, visita_id: visitaId || null, nome, email: email || null, titulo: titulo || null, cidade: cidade || null, uf: uf || null, dispositivo: dispositivo(), criado_em: agora() };
-    const local = () => { const d = ler(); (d.cadastros = d.cadastros || []).push(linha); (d.cliques || []).forEach((c) => { if (c.id === visitaId) c.cadastrou = true; }); gravar(d); };
-    if (!CFG()) local(); else try {
-      await sb("cadastros", "POST", linha); /* o banco marca o clique (visita_id) como cadastrado por trigger */
-    } catch (e) { console.warn("[afiliados] cadastro não enviado, guardando local:", e.message); local(); }
+    const linha = { id: uuid(), codigo: c.codigo, visita_id: c.visitaId || null, nome, email: email || null, titulo: titulo || null, cidade: cidade || null, uf: uf || null, dispositivo: c.dispositivo, criado_em: agora() };
+    /* sem banco, o painel de demonstração continua funcionando pelo armazenamento local */
+    if (!CFG()) { const d = ler(); (d.cadastros = d.cadastros || []).push(linha); (d.cliques || []).forEach((x) => { if (x.id === c.visitaId) x.cadastrou = true; }); gravar(d); }
     return linha;
   }
 
@@ -154,6 +165,6 @@
     } catch (e) { console.warn("[afiliados] ranking falhou:", e.message); return null; }
   }
 
-  window.ReinoAfiliados = { ranking, codigoDaUrl, ehPadrao, registrarClique, registrarCadastro, meuCodigo, linkDe, linkCurtoDe, painel, geo, COMISSAO, PCT, configurado: () => !!CFG() };
+  window.ReinoAfiliados = { ranking, codigoDaUrl, ehPadrao, registrarClique, registrarCadastro, contexto, meuCodigo, linkDe, linkCurtoDe, painel, geo, COMISSAO, PCT, configurado: () => !!CFG() };
   registrarClique();
 })();

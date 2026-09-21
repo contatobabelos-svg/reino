@@ -1,5 +1,6 @@
 // Reino · cadastro do login imersivo (W). Recebe multipart/form-data:
-//   nome, empresa, cnpj, cidade, uf, email, usuario, senha, foto (arquivo webp/jpeg), indicado_por?, titulo?, redirecionar?
+//   nome, empresa, cnpj, cidade, uf, email, usuario, senha, foto (arquivo webp/jpeg),
+//   indicado_por?, titulo?, redirecionar?, visita_id?, dispositivo?
 // Valida tudo de novo aqui (o navegador não é confiável), cria a conta pelo signup normal do Auth
 // (o Supabase manda o e-mail de confirmação), grava a foto no Storage em avatares/<user_id>.webp
 // e o link em perfis.foto. Nada de base64 em coluna.
@@ -21,6 +22,10 @@ const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const URL_PUBLICA = (Deno.env.get("REINO_URL_PUBLICA") || SUPABASE_URL).replace(/\/$/, "");
 const FOTO_MAX = 2 * 1024 * 1024;
 const TITULOS = ["Barão", "Visconde", "Conde", "Marquês", "Duque", "Príncipe", "Rei", "Imperador"];
+// C6: quando a visita chega sem ?ref=, a indicação é do afiliado da casa — nenhum cadastro fica órfão
+// (é o mesmo padrão que o navegador usava em app/servicos/afiliados.js, PADRAO()).
+const AFILIADO_PADRAO = (Deno.env.get("REINO_AFILIADO_PADRAO") || "marcelo").toLowerCase();
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const sem = { auth: { persistSession: false, autoRefreshToken: false } };
 // erro de validação sai com 200 + ok:false (é resposta esperada; o navegador não loga como falha)
@@ -54,6 +59,9 @@ Deno.serve(async (req) => {
   const indicadoPor = txt("indicado_por").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40) || null;
   const foto = form.get("foto");
   const titulo = TITULOS.includes(txt("titulo")) ? txt("titulo") : null; // título escolhido antes (opcional)
+  // C6: o clique que trouxe esta pessoa e o aparelho dela — só para a linha de `cadastros`
+  const visitaId = UUID_RE.test(txt("visita_id")) ? txt("visita_id") : null;
+  const dispositivo = txt("dispositivo") === "celular" ? "celular" : "computador";
 
   if (!nomeValido(nome)) return erro("campo_invalido", "Digite seu nome completo (nome e sobrenome).", "nome");
   if (!empresaValida(empresa)) return erro("campo_invalido", "Digite o nome da sua empresa.", "empresa");
@@ -123,6 +131,21 @@ Deno.serve(async (req) => {
     console.error("upload avatar", eUp);
     await admin.auth.admin.deleteUser(user.id).catch(() => {});
     return erro("servidor", "Não foi possível salvar sua foto agora. Tente de novo.", "foto", 500);
+  }
+
+  // C6 (Parecer 1): a linha de indicação nasce AQUI, com a chave de serviço, amarrada ao user.id
+  // recém-criado — o navegador não insere mais em `cadastros` (era forjável com a chave pública,
+  // e o ranking e a comissão saem dessas linhas). A chave primária é o próprio user.id: uma conta,
+  // um registro, sem duplicata nem corrida. Falhar aqui NÃO derruba o cadastro: a conta já existe.
+  {
+    const { error: eCad } = await admin.from("cadastros").insert({
+      id: user.id,
+      codigo: indicadoPor || AFILIADO_PADRAO,
+      visita_id: visitaId,
+      nome, email, titulo, cidade, uf, dispositivo,
+      criado_em: new Date().toISOString(),
+    });
+    if (eCad) console.error("cadastros.insert", eCad);
   }
 
   if (data.session) {

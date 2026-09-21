@@ -96,19 +96,27 @@ function Globo({ imersivo, usuario }) {
   const [hostMapa, setHostMapa] = React.useState(null);
   const [posicoes, setPosicoes] = React.useState(null);
   const [empresas, setEmpresas] = React.useState([]);
-  /* a empresa da própria conta entra sempre (quando tem foto), no lugar do usuário */
   const [minha, setMinha] = React.useState(null);
   const nosRef = React.useRef([]);
 
-  /* lista real do banco: só perfis com foto, empresa e situação aprovada */
+  /* [C8] lista real do banco, pedida POR CIDADE e paginada.
+     Antes o mapa baixava a lista inteira de uma vez; passando de 1.000 empresas o PostgREST
+     cortava em silêncio (max_rows) e as UFs do fim do alfabeto sumiam. Como o globo só desenha
+     a cidade em que está, é ela que pedimos — e o serviço percorre todas as páginas dela. */
   React.useEffect(() => {
     let vivo = true;
-    if (window.ReinoEmpresas) window.ReinoEmpresas.doMapa().then((l) => vivo && setEmpresas(l || []));
+    const { uf, cidade } = lugar;
+    if (!uf || !cidade || !window.ReinoEmpresas) { setEmpresas([]); return undefined; }
+    window.ReinoEmpresas.doLugar(uf, cidade).then((l) => { if (vivo) setEmpresas(l || []); });
+    return () => { vivo = false; };
+  }, [lugar.uf, lugar.cidade]);
+
+  /* a empresa da própria conta entra sempre (quando tem foto), no lugar do usuário */
+  React.useEffect(() => {
     const c = window.ReinoContas && window.ReinoContas.sessao && window.ReinoContas.sessao();
     if (c && c.foto && c.empresa) {
       setMinha({ id: c.id || "minha-conta", empresa: c.empresa, foto: c.foto, titulo: c.titulo || null, cidade: (usuario && usuario.cidade) || c.cidade, uf: (usuario && usuario.uf) || c.uf });
     }
-    return () => { vivo = false; };
   }, [usuario && usuario.cidade, usuario && usuario.uf]);
 
   React.useEffect(() => {

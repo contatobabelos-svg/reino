@@ -182,6 +182,12 @@
     ["nome", "empresa", "cnpj", "cidade", "uf", "email", "usuario", "senha"].forEach((k) => f.append(k, d[k] == null ? "" : String(d[k])));
     if (d.indicadoPor) f.append("indicado_por", d.indicadoPor);
     if (d.titulo) f.append("titulo", d.titulo);
+    /* C6: o contexto da visita vai junto — é o servidor que grava a linha de `cadastros` agora */
+    try {
+      const A = window.ReinoAfiliados;
+      const c = A && A.contexto ? A.contexto() : null;
+      if (c) { if (c.visitaId) f.append("visita_id", c.visitaId); f.append("dispositivo", c.dispositivo); }
+    } catch (e) { /* sem afiliados.js: o servidor usa o afiliado padrão */ }
     f.append("redirecionar", location.origin + "/");
     if (d.foto) f.append("foto", d.foto, "foto." + (d.foto.type === "image/jpeg" ? "jpg" : "webp"));
     const j = await funcao("reino-cadastro", f);

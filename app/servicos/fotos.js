@@ -3,12 +3,12 @@
    empresa. Fica no navegador (localStorage) e, quando a tabela "fotos" existe no
    Supabase, também no banco — assim a foto aparece em qualquer aparelho.
 
-   SQL opcional (rode no Supabase para compartilhar as fotos):
-     create table if not exists fotos (chave text primary key, url text not null, criado_em timestamptz default now());
-     alter table fotos enable row level security;
-     create policy "ler fotos"    on fotos for select to anon using (true);
-     create policy "gravar fotos" on fotos for insert to anon with check (true);
-     create policy "trocar fotos" on fotos for update to anon using (true) with check (true); */
+   Regra de acesso desde 2026-09-21 (C3 do Parecer 1, migração
+   supabase/2026-09-21_fotos_so_logado_com_limite.sql): GRAVAR exige conta — a linha é do
+   dono (dono = auth.uid()) e a url tem teto de 20 kB. Visitante sem login continua LENDO,
+   mas o que ele escolher fica só no localStorage deste aparelho (o POST volta 401/403 e o
+   definir() cai no catch de sempre). Antes disso qualquer pessoa da internet gravava linhas
+   sem limite de tamanho com a chave publicável, o que enchia o disco do projeto. */
 (function () {
   const LS = "reino.fotos";
   const CFG = () => { const c = window.REINO_SUPABASE; return c && c.url && c.anon ? c : null; };

@@ -519,11 +519,9 @@
       if (codigo) { try { localStorage.setItem("reino.indicadoPor", codigo); sessionStorage.setItem("reino.ref", codigo); } catch (e) { /* sem armazenamento */ } }
       let titulo; try { titulo = localStorage.getItem("reino.tituloEscolhido") || undefined; } catch (e) { titulo = undefined; }
       try {
+        // C6 (Parecer 1): a linha de `cadastros` é gravada pelo servidor, dentro da reino-cadastro,
+        // depois que a conta existe — o navegador só manda o contexto da visita (contas.js).
         const r = await C.cadastrarCompleto({ ...dados, foto: foto.blob, indicadoPor: codigo || undefined, titulo });
-        // o indicado entra na tabela cadastros só depois que a conta existe de verdade
-        if (window.ReinoAfiliados && window.ReinoAfiliados.registrarCadastro) {
-          try { await window.ReinoAfiliados.registrarCadastro({ nome: dados.nome, email: dados.email, titulo }); } catch (e) { /* o afiliados.js guarda local se falhar */ }
-        }
         credRef.current = { usuario: dados.usuario, senha: dados.senha };
         if (r.conta) { entrarComConta(r.conta); return; }
         setValidar({ emailMascarado: r.emailMascarado, origem: "cadastro" });
