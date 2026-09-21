@@ -129,6 +129,74 @@
     await salvarPerfil({});
     return { sessao, confirmar };
   }
+  /* ---------- login imersivo (W): funções reino-cadastro / reino-login ----------
+     Mesma sessão de sempre (id, email, token, refresh); só muda quem fala com o Auth: o
+     servidor valida o cadastro, resolve usuário → e-mail e devolve access/refresh. */
+  async function funcao(nome, corpo) {
+    if (!CFG()) throw new Error(SEM_BANCO);
+    const multipart = typeof FormData !== "undefined" && corpo instanceof FormData;
+    const headers = { apikey: CFG().anon, Authorization: "Bearer " + CFG().anon };
+    if (!multipart) headers["Content-Type"] = "application/json";
+    const r = await chamar(base() + "/functions/v1/" + nome, { method: "POST", headers, body: multipart ? corpo : JSON.stringify(corpo) });
+    const j = await r.json().catch(() => null);
+    if (!j) throw erroRede();
+    if (r.status >= 500 && !j.mensagem) throw erroRede();
+    return j;
+  }
+  /* guarda a sessão devolvida pela função e carrega a conta (perfil do banco) */
+  async function abrirSessao(j) {
+    if (!j.access_token || !j.user || !j.user.id) throw new Error("O banco não confirmou o login. Tente de novo.");
+    sessao = { id: j.user.id, email: j.user.email, token: j.access_token, refresh: j.refresh_token, nome: (j.user.email || "").split("@")[0], situacao: "aguardando" };
+    gravarSessao(sessao);
+    let conta = null;
+    try { conta = await carregarConta(); } catch (e) { sessao = null; gravarSessao(null); throw e; }
+    if (!conta) { sessao = null; gravarSessao(null); throw new Error("Não foi possível abrir sua conta agora. Tente entrar de novo."); }
+    return conta;
+  }
+  const erroFuncao = (j, padrao) => { const e = new Error((j && j.mensagem) || padrao); e.codigo = j && j.codigo; e.campo = j && j.campo; return e; };
+
+  /* usuário (ou e-mail, para contas antigas) + senha.
+     → { conta } entrou · { confirmar: true, emailMascarado } falta validar o e-mail · erro genérico se não confere */
+  async function entrarUsuario(usuario, senha) {
+    const j = await funcao("reino-login", { usuario: String(usuario || "").trim(), senha });
+    if (j.ok) return { conta: await abrirSessao(j) };
+    if (j.codigo === "email_nao_confirmado") return { confirmar: true, emailMascarado: j.email_mascarado };
+    throw erroFuncao(j, "Usuário ou senha não conferem.");
+  }
+  /* reenvia o link de confirmação (confere a senha no servidor; se já validou, entra) */
+  async function reenviarConfirmacao(usuario, senha) {
+    const j = await funcao("reino-login", { usuario: String(usuario || "").trim(), senha, acao: "reenviar", redirecionar: location.origin + "/" });
+    if (j.ok) return { conta: await abrirSessao(j) };
+    if (j.codigo === "email_nao_confirmado") {
+      if (j.reenviado === false) throw erroFuncao(j, "Não foi possível reenviar agora. Aguarde um minuto e tente de novo.");
+      return { reenviado: true, emailMascarado: j.email_mascarado };
+    }
+    throw erroFuncao(j, "Usuário ou senha não conferem.");
+  }
+  /* cadastro completo: { nome, empresa, cnpj, foto (Blob), email, usuario, senha, indicadoPor?, titulo? }
+     → { confirmar: true, emailMascarado } ou { conta } (projeto sem confirmação de e-mail) */
+  async function cadastrarCompleto(d) {
+    const f = new FormData();
+    ["nome", "empresa", "cnpj", "email", "usuario", "senha"].forEach((k) => f.append(k, d[k] == null ? "" : String(d[k])));
+    if (d.indicadoPor) f.append("indicado_por", d.indicadoPor);
+    if (d.titulo) f.append("titulo", d.titulo);
+    f.append("redirecionar", location.origin + "/");
+    if (d.foto) f.append("foto", d.foto, "foto." + (d.foto.type === "image/jpeg" ? "jpg" : "webp"));
+    const j = await funcao("reino-cadastro", f);
+    if (!j.ok) throw erroFuncao(j, "Não foi possível criar a conta agora. Tente de novo.");
+    if (!j.confirmar && j.access_token) return { conta: await abrirSessao(j) };
+    return { confirmar: true, emailMascarado: j.email_mascarado, foto: j.foto };
+  }
+  /* true = livre. Só responde sim/não (RPC usuario_disponivel). null = não deu para conferir. */
+  async function usuarioDisponivel(usuario) {
+    if (!CFG()) return null;
+    try {
+      const r = await fetch(base() + "/rest/v1/rpc/usuario_disponivel", { method: "POST", headers: cab({ Authorization: "Bearer " + CFG().anon }), body: JSON.stringify({ p_usuario: usuario }) });
+      if (!r.ok) return null;
+      return (await r.json()) === true;
+    } catch (e) { return null; }
+  }
+
   async function sair() {
     const tk = sessao && sessao.token;
     sessao = null; gravarSessao(null);
@@ -186,6 +254,7 @@
   }
   window.ReinoContas = {
     sessao: () => sessao, entrar, cadastrar, sair, salvarPerfil, iniciar, carregarConta, recuperarSenha,
+    entrarUsuario, reenviarConfirmacao, cadastrarCompleto, usuarioDisponivel,
     codigoLivre, reservarCodigo, limpar,
     online: () => !!CFG(), token,
     trocarSenha: async (nova) => { if (!CFG() || !sessao || !sessao.token) throw new Error("Entre novamente para trocar a senha."); const r = await fetch(base() + "/auth/v1/user", { method: "PUT", headers: cab({ Authorization: "Bearer " + sessao.token }), body: JSON.stringify({ password: nova }) }); if (!r.ok) throw new Error(erroDe(await r.json().catch(() => ({})), r)); return true; },

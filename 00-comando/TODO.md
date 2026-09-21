@@ -139,3 +139,13 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] V3 Cadastros e cliques deixam de ser legíveis pelo público; afiliado vê só o próprio código; e-mail só pelo admin; ranking só código + total
 - [x] V4 K2 (parcial): cópias antigas de afiliados/contas/fotos retiradas do `_ds_bundle.js` (a de afiliados registrava o clique antes da versão atual)
 - [ ] V5 Ambiente de teste na nuvem (branch do Supabase Pro ou projeto separado): custa por hora, aguardando decisão do fundador
+
+## W — "esse é o video de fundo do login do reino. a barra de login é igual da babel os mas das cores do reino. é um sistema de carrosel de cadastro imersivo. sempre vai começar com tela de cadastro. nome, nome da empresa, cnpj, foto de perfil, email, usuario de login e senha. todos os dados sao necessarios. atenção, nao quero que faça em caixa, faça igual da babel os babel-os.com caso ja possuir cadastro, poder alternar "ja tenho conta" e ai é so colocar usuario - enviar - senha - enviar. caso ele tenha validado o email dele, o login entra, se nao, aparece para validade e tem um botao que leva ao gmail, yahoo, outlock em lista com uma seta que leva a esses sites." (21/09; vídeo = `~/Downloads/Reino Animado.html`; só local, publicação depois pela Vyra com o fundador)
+- [x] W1 Fundo: cena "Reino Animado" (letreiro neon no lago com castelo) em tela cheia cobrindo tudo, sem faixas pretas, no PC e no celular; respeita movimento reduzido; vídeo antigo fica de reserva
+- [x] W2 Barra de login igual à do Babel OS (conversa com bolhas + barra de comando embaixo, uma pergunta por vez), com cores e fontes do Reino — nada de caixa/card
+- [x] W3 Carrossel de cadastro (sempre abre no cadastro): nome, empresa, CNPJ, foto, e-mail, usuário, senha — todos obrigatórios, validados no navegador e no servidor; resumo e "criar conta"; código de afiliado continua
+- [x] W4 "Já tenho conta": usuário → enviar → senha → enviar (aceita e-mail no lugar do usuário)
+- [x] W5 E-mail não validado: aviso com e-mail mascarado, reenviar e lista Gmail / Yahoo / Outlook com seta (nova aba)
+- [x] W6 Banco: perfis ganha usuario/empresa/cnpj, bucket `avatares`, funções `reino-cadastro` e `reino-login`, checagem de usuário disponível
+- [x] W7 Testes locais (Playwright 1440×900 e 390×844) e passos de publicação documentados
+- [x] W8 Publicar (Vyra, com autorização do fundador): migração → funções reino-cadastro/reino-login (--no-verify-jwt) → Auth (Site URL/Redirect URLs, SMTP próprio) → push do site. Passo a passo em `supabase/README.md` (Ourives, pronto e testado no local em 2026-09-21 06:53) — publicado em 21/09 (migração, funções reino-cadastro e reino-login, Site URL e redirects do Auth corrigidos, senha mínima 8)

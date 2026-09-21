@@ -65,7 +65,7 @@ da API. Sem evidência, diga o que falta verificar.
 app/                  o app do Reino — é o que vai ao ar
 ├─ index.html         shell do app; mapa.html e pre-cadastro.html são as outras páginas
 ├─ nucleo/            App.jsx (rotas, sessão) e app-layout.js
-├─ telas/             uma tela por arquivo: *Screen.jsx, PortalLogin.jsx (login atual), LoginScreen.jsx (reserva)
+├─ telas/             uma tela por arquivo: *Screen.jsx, LoginImersivo.jsx (login atual: cadastro em carrossel + barra de comando), PortalLogin.jsx e LoginScreen.jsx (reservas)
 ├─ componentes/       peças reaproveitadas: FotoAvatar, Stories, RostoPixel, MapaPanel, ReinoMapa, NetworkMapLocal, globo.js
 ├─ servicos/          acesso ao banco: contas.js, afiliados.js, fotos.js
 ├─ estilos/           CSS do shell, do layout e dos logins

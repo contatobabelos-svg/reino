@@ -114,8 +114,8 @@ function App() {
     document.body.classList.toggle("is-imersivo", rota === "mapa.html");
   }, [rota]);
 
-  // tela de login no estilo portal (O3); a antiga fica de reserva se o arquivo não carregar
-  const TelaLogin = window.PortalLogin || LoginScreen;
+  // login imersivo (W): conversa + barra de comando; PortalLogin (O3) e LoginScreen ficam de reserva
+  const TelaLogin = window.LoginImersivo || window.PortalLogin || LoginScreen;
   if (conta === undefined) return <div className="hg-moldura hg-moldura-login" aria-busy="true"><p className="hg-carregando-conta">Conferindo sua sessão…</p></div>;
   if (!conta) return (
     <div className="hg-moldura hg-moldura-login">
