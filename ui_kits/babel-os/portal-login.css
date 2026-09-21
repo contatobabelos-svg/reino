@@ -86,6 +86,28 @@
   transition: filter var(--hg-portal-subida, 1.2s) var(--ease), transform var(--hg-portal-subida, 1.2s) var(--ease);
 }
 .hg-portal.is-desfocado .hg-portal-video { filter: blur(14px) saturate(1.15) brightness(.62); transform: scale(1.06); }
+/* lista de vídeos: o da frente toca, o de trás espera carregado com o próximo */
+.hg-portal-video.is-frente { z-index: 1; }
+.hg-portal-video.is-atras { z-index: 0; opacity: 0; }
+/* capa: enquanto o card espera, pega qualquer clique/toque da tela (nada por baixo recebe) */
+.hg-portal-capa {
+  position: fixed; inset: 0; z-index: 6; margin: 0; padding: 0 1rem max(2.4rem, calc(env(safe-area-inset-bottom) + 1.6rem));
+  display: flex; align-items: flex-end; justify-content: center;
+  background: none; border: 0; border-radius: 0; cursor: pointer; color: inherit; font: inherit;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.hg-portal-capa:focus-visible { outline: 0; box-shadow: none; }
+.hg-portal-dica {
+  display: inline-flex; align-items: center; min-height: 40px; padding: 0 1.2rem; border-radius: var(--r-pill);
+  font: 600 .78rem var(--font-d); letter-spacing: .16em; text-transform: uppercase; color: var(--text-strong);
+  text-shadow: var(--text-glow-cyan); background: var(--surface-glass); border: 1px solid var(--line-2);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  animation: hg-portal-pulso 2.6s ease-in-out infinite;
+  transition: opacity var(--dur-3) var(--ease), transform var(--dur-3) var(--ease);
+}
+.hg-portal-capa:focus-visible .hg-portal-dica { box-shadow: var(--neon-cyan); }
+.hg-portal-capa.is-saindo .hg-portal-dica { opacity: 0; transform: translateY(8px); animation: none; }
+@keyframes hg-portal-pulso { 0%, 100% { opacity: .62; box-shadow: none; } 50% { opacity: 1; box-shadow: var(--neon-cyan); } }
 .hg-portal-fundo.is-video::after { opacity: .35; }
 .hg-portal-fundo.is-video .hg-portal-degrade { opacity: 0; transition: opacity var(--hg-portal-subida, 1.2s) var(--ease); }
 .hg-portal.is-desfocado .hg-portal-fundo.is-video .hg-portal-degrade { opacity: 1; }
@@ -223,6 +245,7 @@
 @media (prefers-reduced-motion: reduce) {
   .hg-portal-nevoa, .hg-portal-letreiro, .hg-portal-painel, .hg-portal-chip-bola, .hg-portal-enviar svg, .hg-portal-msg.is-erro { animation: none !important; }
   .hg-portal-giro { animation-duration: 2.4s !important; }
+  .hg-portal-dica { animation: none !important; opacity: 1; }
   .hg-portal-video, .hg-portal.is-entra .hg-portal-painel, .hg-portal.is-entra .hg-portal-topo,
   .hg-portal.is-entra .hg-portal-novidades, .hg-portal.is-entra .hg-portal-def { transition: none !important; }
 }

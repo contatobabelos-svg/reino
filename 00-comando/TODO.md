@@ -114,3 +114,7 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [ ] Q1 Vídeo do fundador como fundo do PortalLogin (aguardando o arquivo certo: "Reino" some e a torre de água sobe) — mecânica pronta com 0.mp4 provisório; troca: `bash ui_kits/babel-os/assets/login/preparar-video.sh <novo.mp4>` + ajustar VIDEO_LOGIN.cardEm/subidaDur no PortalLogin.jsx
 - [x] Q2 "vai aparecer o card de login depois que desaparecer o reino, um bom momento é quando sobe a torre da agua e ele sobe junto"
 - [x] Q3 "e ai fica com blur o fundo" (depois que o card aparece, o fundo desfoca)
+
+## R — "voce colocou só um video, quero que seja todos. e quero que só apareaça o card de login quando clicar a tela. seja com mouse ou touch" (21/09)
+- [ ] R1 Todos os vídeos da pasta `~/Vídeos/video login` no fundo, em sequência (hoje os 7 arquivos são idênticos, md5 734b5c79 — confirmar com o fundador) — estrutura pronta: VIDEO_LOGIN.lista em sequência e loop (2 <video>, próximo pré-carregado) e preparar-video.sh aceita vários arquivos e pula repetidos pelo sha256
+- [x] R2 Card de login só aparece ao clicar ou tocar na tela (sem tempo automático) — Playwright 1440/390: 10 s sem clique → card invisível e inerte; clique (mouse) e toque (hasTouch) em cima da pílula abrem o card sem trocar a aba; Enter/Espaço/Tab abrem; vídeo pausa no quadro do clique

@@ -4,17 +4,19 @@
    painel largo de vidro com o login e a definição de dicionário no canto.
    Mesmas props do LoginScreen: onEntrar(conta), recuperacao, avisoInicial, erroInicial.
    Modos: entrar · cadastro · esqueci (link por e-mail) · nova-senha (veio do link).
-   Fundo em vídeo (TODO Q): o vídeo toca uma vez; em VIDEO_LOGIN.cardEm o card sobe junto
-   com a cena e o fundo desfoca. Céu em canvas + névoa + letreiro CSS viram reserva. */
+   Fundo em vídeo (TODO Q/R): a lista de VIDEO_LOGIN toca em sequência e em loop até a pessoa
+   clicar, tocar ou apertar Enter/Espaço/Tab; aí o card sobe, o vídeo pausa no quadro em que
+   estiver e o fundo desfoca. Céu em canvas + névoa + letreiro CSS viram reserva. */
 
-/* Vídeo de fundo do login. Para trocar o vídeo: rode assets/login/preparar-video.sh <novo.mp4>
-   e ajuste cardEm (segundo em que o card começa a subir) e subidaDur (duração da subida). */
+/* Vídeos de fundo do login. Para trocar: rode assets/login/preparar-video.sh <v1.mp4> [v2.mp4 ...]
+   e cole aqui a lista que ele imprime (um vídeo só toca em loop; dois ou mais, em sequência). */
 const VIDEO_LOGIN = {
-  src: { webm: "assets/login/fundo-login.webm", mp4: "assets/login/fundo-login.mp4" },
+  lista: [
+    { webm: "assets/login/fundo-login.webm", mp4: "assets/login/fundo-login.mp4" },
+  ],
   final: "assets/login/fundo-login-final.jpg", // último quadro: movimento reduzido e card direto
-  cardEm: 4.5,        // s — provisório (0.mp4 tem 5,875 s); no vídeo final: quando a torre de água sobe
-  subidaDur: 1.2,     // s — subida do card e entrada do desfoque
-  pularDur: 0.45,     // s — subida curta quando a pessoa pula ou o vídeo falha
+  subidaDur: 1.2,     // s — subida do card e entrada do desfoque, depois do clique
+  diretoDur: 0.45,    // s — subida curta quando o vídeo falha ou chega aviso/erro
   esperaMax: 2.5,     // s sem começar a tocar → desiste do vídeo e usa o fundo de reserva
   foco: "50% 50%",        // object-position no computador
   focoCelular: "50% 50%", // object-position no celular (cover corta as laterais)
@@ -143,98 +145,119 @@ function PortalLogin({ onEntrar, recuperacao, avisoInicial, erroInicial }) {
   const primeiroCampo = React.useRef(null);
 
   /* ---------- fundo em vídeo ----------
-     fundo: "video" (toca e revela o card) · "imagem" (último quadro parado, desfocado) · "reserva" (céu em canvas)
-     card:  "espera" (invisível e inerte) · "entra" (subindo) · "pronto" (entrou sem esperar o vídeo) */
+     fundo: "video" (lista em loop até o clique) · "imagem" (último quadro parado, desfocado) · "reserva" (céu em canvas)
+     card:  "espera" (invisível e inerte; a capa pega o clique) · "entra" (subindo) · "pronto" (entrou direto) */
+  const LISTA = VIDEO_LOGIN.lista;
   const inicio = React.useMemo(() => {
     let quieto = false;
     try { quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { quieto = false; }
-    return quieto || recuperacao || erroInicial || avisoInicial ? "imagem" : "video";
+    return quieto || recuperacao || erroInicial || avisoInicial || !LISTA.length ? "imagem" : "video";
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const formato = React.useMemo(() => {
+    try { return document.createElement("video").canPlayType('video/webm; codecs="vp9"') ? "webm" : "mp4"; } catch (e) { return "mp4"; }
+  }, []);
+  const ehToque = React.useMemo(() => { try { return window.matchMedia("(pointer: coarse)").matches; } catch (e) { return false; } }, []);
   const [fundo, setFundo] = React.useState(inicio);
   const [card, setCard] = React.useState(inicio === "video" ? "espera" : "pronto");
+  const [capa, setCapa] = React.useState(inicio === "video"); // camada de cima que segura o clique até ele terminar
   const [desfoque, setDesfoque] = React.useState(false);
   const [subida, setSubida] = React.useState(VIDEO_LOGIN.subidaDur);
-  const videoRef = React.useRef(null);
+  // dois <video>: o da frente toca, o de trás já carrega o próximo da lista (troca sem piscar)
+  const [slots, setSlots] = React.useState([0, LISTA.length > 1 ? 1 : 0]);
+  const [ativo, setAtivo] = React.useState(0);
+  const ativoRef = React.useRef(0);
+  const video0 = React.useRef(null), video1 = React.useRef(null);
+  const videos = () => [video0.current, video1.current];
   const entrouRef = React.useRef(inicio !== "video");
   const tocouRef = React.useRef(false);
-  const pularNoFimRef = React.useRef(false);
+  const focarRef = React.useRef(true);
+  const soltarCapaRef = React.useRef(0);
   const topoRef = React.useRef(null), centroRef = React.useRef(null), defRef = React.useRef(null);
   const esperando = card === "espera";
 
-  const entrar = React.useCallback((rapido) => {
+  const entrar = React.useCallback((dur, focar) => {
     if (entrouRef.current) return;
     entrouRef.current = true;
-    setSubida(rapido ? VIDEO_LOGIN.pularDur : VIDEO_LOGIN.subidaDur);
+    focarRef.current = focar !== false;
+    setSubida(dur);
     setDesfoque(true);
     setCard("entra");
   }, []);
-  const irProFim = (v) => {
-    if (!v || !isFinite(v.duration) || !v.duration) { pularNoFimRef.current = true; return; }
-    const alvo = Math.max(0, v.duration - 0.05);
-    let pode = false;
-    try { for (let i = 0; i < v.seekable.length; i++) if (v.seekable.start(i) <= alvo && v.seekable.end(i) >= alvo) pode = true; } catch (e) { pode = false; }
-    // servidor sem Range (vídeo não pesquisável): o JPG do último quadro faz o papel do fim do vídeo
-    if (!pode) { setFundo("imagem"); return; }
-    try { v.pause(); v.currentTime = alvo; } catch (e) { setFundo("imagem"); }
-  };
-  const pular = React.useCallback(() => { entrar(true); irProFim(videoRef.current); }, [entrar]);
+  // clique, toque ou tecla: card sobe e o vídeo para no quadro em que estiver
+  const abrir = React.useCallback((focar) => {
+    entrar(VIDEO_LOGIN.subidaDur, focar);
+    [video0.current, video1.current].forEach((v) => { if (v) { try { v.pause(); } catch (e) { /* já parado */ } } });
+  }, [entrar]);
   const falhar = React.useCallback(() => {
     if (tocouRef.current) return; // já tocou: um erro tardio não derruba a cena
-    setFundo("reserva"); setDesfoque(false); entrar(true);
+    setFundo("reserva"); setDesfoque(false); setCapa(false); entrar(VIDEO_LOGIN.diretoDur);
   }, [entrar]);
 
-  // tempos do vídeo: requestVideoFrameCallback (preciso) com timeupdate de reserva
+  // começa a tocar; mais de esperaMax sem tocar (rede lenta, autoplay bloqueado) → reserva
   React.useEffect(() => {
     if (fundo !== "video") return undefined;
-    const v = videoRef.current;
+    const v = video0.current;
     if (!v) return undefined;
-    let vivo = true, idQuadro = 0, timer = 0;
-    const checar = (t) => { if (t >= VIDEO_LOGIN.cardEm) { entrar(false); return true; } return false; };
-    const temQuadro = typeof v.requestVideoFrameCallback === "function";
-    const aoQuadro = (agora, meta) => { if (vivo && !checar(meta.mediaTime)) idQuadro = v.requestVideoFrameCallback(aoQuadro); };
-    if (temQuadro) idQuadro = v.requestVideoFrameCallback(aoQuadro);
-    const aoTempo = () => checar(v.currentTime);
-    const aoFim = () => entrar(false);
-    const aoTocar = () => { tocouRef.current = true; };
-    const aoMeta = () => { if (pularNoFimRef.current) { pularNoFimRef.current = false; irProFim(v); } };
-    v.addEventListener("timeupdate", aoTempo);
-    v.addEventListener("ended", aoFim);
-    v.addEventListener("playing", aoTocar);
-    v.addEventListener("loadedmetadata", aoMeta);
-    // mais de esperaMax sem tocar (rede lenta, autoplay bloqueado) → reserva; aba escondida não conta
+    let vivo = true, timer = 0;
     const armar = () => { timer = setTimeout(() => { if (!vivo || tocouRef.current) return; if (document.hidden) armar(); else falhar(); }, VIDEO_LOGIN.esperaMax * 1000); };
     armar();
     v.muted = true;
+    if (video1.current) video1.current.muted = true;
     const p = v.play && v.play();
     if (p && p.catch) p.catch((err) => { if (vivo && !(err && err.name === "AbortError") && !entrouRef.current) falhar(); });
-    return () => {
-      vivo = false; clearTimeout(timer);
-      if (temQuadro && idQuadro && v.cancelVideoFrameCallback) v.cancelVideoFrameCallback(idQuadro);
-      v.removeEventListener("timeupdate", aoTempo); v.removeEventListener("ended", aoFim);
-      v.removeEventListener("playing", aoTocar); v.removeEventListener("loadedmetadata", aoMeta);
-    };
-  }, [fundo, entrar, falhar]);
+    return () => { vivo = false; clearTimeout(timer); };
+  }, [fundo, falhar]);
 
-  // qualquer clique, toque ou tecla antes do card pula para o estado final
+  // fim de um vídeo da lista: o de trás (já carregado) vem para a frente e o que saiu carrega o seguinte
+  const aoFimVideo = (s) => {
+    if (s !== ativoRef.current || LISTA.length < 2 || entrouRef.current) return;
+    const atual = videos()[s], prox = videos()[1 - s];
+    const recomecar = () => { try { atual.currentTime = 0; atual.play().catch(() => {}); } catch (e) { /* segue parado */ } };
+    if (!prox || prox.error || prox.readyState < 2) { recomecar(); return; }
+    const p = prox.play();
+    if (p && p.catch) p.catch(() => {});
+    ativoRef.current = 1 - s; setAtivo(1 - s);
+    setSlots((sl) => { const n = sl.slice(); n[s] = (sl[1 - s] + 1) % LISTA.length; return n; });
+    try { atual.currentTime = 0; } catch (e) { /* recarrega com o src novo */ }
+  };
+  const aoErroVideo = (s) => { if (s === ativoRef.current) falhar(); };
+
+  // teclado: Enter, Espaço e Tab também abrem o card
   React.useEffect(() => {
     if (!esperando) return undefined;
-    const aoGesto = () => pular();
-    window.addEventListener("pointerdown", aoGesto, true);
-    window.addEventListener("keydown", aoGesto, true);
-    return () => { window.removeEventListener("pointerdown", aoGesto, true); window.removeEventListener("keydown", aoGesto, true); };
-  }, [esperando, pular]);
+    const aoTeclar = (e) => {
+      if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar" && e.key !== "Tab") return;
+      e.preventDefault();
+      setCapa(false);
+      abrir(true);
+    };
+    window.addEventListener("keydown", aoTeclar, true);
+    return () => window.removeEventListener("keydown", aoTeclar, true);
+  }, [esperando, abrir]);
+  // clique/toque na capa: abre no pointerdown e só solta a capa depois do click, para ele não cair no card
+  const capaPointerDown = (e) => {
+    e.preventDefault();
+    abrir(e.pointerType !== "touch"); // no toque não foca o campo (o teclado virtual cobriria a subida)
+    const soltar = () => { clearTimeout(soltarCapaRef.current); soltarCapaRef.current = setTimeout(() => setCapa(false), 1500); };
+    window.addEventListener("pointerup", soltar, { once: true, capture: true });
+    window.addEventListener("pointercancel", () => setCapa(false), { once: true, capture: true });
+  };
+  const capaClique = () => { clearTimeout(soltarCapaRef.current); setCapa(false); abrir(true); };
+  React.useEffect(() => () => clearTimeout(soltarCapaRef.current), []);
   // aviso ou erro que chega depois (ex.: volta do link de confirmação) mostra o card na hora
-  React.useEffect(() => { if ((aviso || erro) && esperando) pular(); }, [aviso, erro, esperando, pular]);
+  React.useEffect(() => {
+    if ((aviso || erro) && esperando) { setCapa(false); entrar(VIDEO_LOGIN.diretoDur); [video0.current, video1.current].forEach((v) => v && v.pause()); }
+  }, [aviso, erro, esperando, entrar]);
 
   // card invisível não recebe foco: inert (+ aria-hidden no JSX) até entrar
   React.useLayoutEffect(() => {
     [topoRef, centroRef, defRef].forEach((r) => { if (r.current) r.current.inert = esperando; });
   }, [esperando]);
   React.useEffect(() => {
-    if (card !== "entra") return undefined;
+    if (card !== "entra" || !focarRef.current) return undefined;
     const t = setTimeout(() => {
-      const ativo = document.activeElement;
-      if ((!ativo || ativo === document.body) && primeiroCampo.current) primeiroCampo.current.focus({ preventScroll: true });
+      const ativoEl = document.activeElement;
+      if ((!ativoEl || ativoEl === document.body || ativoEl.classList.contains("hg-portal-capa")) && primeiroCampo.current) primeiroCampo.current.focus({ preventScroll: true });
     }, 60);
     return () => clearTimeout(t);
   }, [card]);
@@ -342,11 +365,13 @@ function PortalLogin({ onEntrar, recuperacao, avisoInicial, erroInicial }) {
       style={{ "--hg-portal-subida": subida + "s", "--hg-portal-foco": VIDEO_LOGIN.foco, "--hg-portal-foco-celular": VIDEO_LOGIN.focoCelular }}>
       <div className={"hg-portal-fundo" + (fundo !== "reserva" ? " is-video" : "")} aria-hidden="true">
         {fundo === "video" ? (
-          <video ref={videoRef} className="hg-portal-video" muted playsInline autoPlay preload="auto"
-            disablePictureInPicture disableRemotePlayback tabIndex={-1} onError={falhar}>
-            <source src={VIDEO_LOGIN.src.webm} type="video/webm" />
-            <source src={VIDEO_LOGIN.src.mp4} type="video/mp4" onError={falhar} />
-          </video>
+          (LISTA.length > 1 ? [0, 1] : [0]).map((s) => (
+            <video key={s} ref={s ? video1 : video0} className={"hg-portal-video" + (s === ativo ? " is-frente" : " is-atras")}
+              src={LISTA[slots[s]][formato]} data-item={slots[s]}
+              muted playsInline autoPlay={LISTA.length === 1} loop={LISTA.length === 1} preload="auto"
+              disablePictureInPicture disableRemotePlayback tabIndex={-1}
+              onPlaying={() => { tocouRef.current = true; }} onEnded={() => aoFimVideo(s)} onError={() => aoErroVideo(s)} />
+          ))
         ) : fundo === "imagem" ? (
           <img className="hg-portal-video" src={VIDEO_LOGIN.final} alt="" decoding="async" onError={() => setFundo("reserva")} />
         ) : (
@@ -357,6 +382,13 @@ function PortalLogin({ onEntrar, recuperacao, avisoInicial, erroInicial }) {
         )}
         <span className="hg-portal-degrade" />
       </div>
+
+      {capa ? (
+        <button type="button" className={"hg-portal-capa" + (esperando ? "" : " is-saindo")}
+          onPointerDown={capaPointerDown} onClick={capaClique} aria-label="Abrir o login do Reino">
+          <span className="hg-portal-dica">{ehToque ? "Toque na tela para entrar" : "Clique na tela para entrar"}</span>
+        </button>
+      ) : null}
 
       <header ref={topoRef} className="hg-portal-topo" aria-hidden={esperando || undefined}>
         <a className="hg-portal-marca" href="#portal-painel" aria-label="REINO · Babel OS — ir para o login">
