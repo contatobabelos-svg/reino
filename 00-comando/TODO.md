@@ -157,3 +157,16 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] Z1 Tirar o anel de luz girando (conic-gradient animado) e o brilho desfocado da barra de comando do login
 - [x] Z2 Barra em vidro transparente tingido com as cores do fundo (ciano/violeta/azul-noite), borda fina, foco por borda estática
 - [x] Z3 Tela mais leve: remover todos os backdrop-filter (custo alto sobre vídeo) do login-imersivo.css; vidro só por transparência
+
+## Y — "melhore ao maximo o app de noticias" + "deixar responsivo a tela de noticias. trazer mais cara de blog tecnologico com as imagems que vem de do site." (21/09)
+- [x] Y1 Notícias deixa de depender do Google Notícias como fonte única: a função `reino-apis` passa a ler o RSS **dos próprios veículos** (14 feeds públicos: InfoMoney, EXAME, Brazil Journal, NeoFeed, Startups, Agência Brasil, g1 Economia, g1 Tecnologia, Canaltech, Tecnoblog, Olhar Digital, Mobile Time, TI Inside, AdNews) — de lá vêm link direto, resumo curto e **a foto da matéria**
+- [x] Y2 Imagem que vem do site da notícia em cada cartão (`loading=lazy`, `decoding=async`, `referrerpolicy=no-referrer`, proporção 16:9 fixa) e capa do Reino (degradê por veículo + inicial) quando o feed não traz foto ou a imagem falha
+- [x] Y3 Cara de blog de tecnologia: manchete grande com título sobre degradê, cartões com foto no topo, etiqueta de editoria, veículo + horário relativo, trecho curto, "Em alta agora" e lista de veículos na lateral
+- [x] Y4 Editorias para dono de empresa: Destaques, Negócios, Economia, Tecnologia, Marketing, Crédito e juros, Empreendedorismo, Política e empresas — mais busca livre (o Google Notícias entra só na busca e para completar as abas mais estreitas)
+- [x] Y5 Responsivo de verdade por *container query*: 1 coluna até 540 px, 2 até 1180, 3 até 1500, 4 acima; abas rolam na horizontal no celular; alvos de toque de 44 px; sem rolagem horizontal em 390×844, 768×1024 e 1440×900
+- [x] Y6 Abre instantâneo: cache no navegador com "mostra o que tinha e atualiza por trás" (localStorage com try/catch), esqueleto no lugar de tela vazia, atualização sozinha a cada 4 min sem piscar
+- [x] Y7 Salvar para ler depois (aba Salvas), marcar lidas, compartilhar (Web Share ou copiar link), filtro por veículo, ordenação, atalhos "/" e "r", `aria-live`, foco visível, links em nova aba com `rel="noopener noreferrer"`
+- [x] Y8 Serviço único `app/servicos/noticias.js`: a tela e o bloco do Dashboard dividem busca, cache, salvos e lidos — o bloco do Dashboard ganhou manchete com foto e lista com miniaturas
+- [x] Y9 Teste `supabase/testes/e2e-noticias.cjs` (50 conferências): respostas simuladas (sucesso, vazio, erro, timeout, cache velho, salvar/lida/compartilhar, editoria, busca, imagem que falha), dados reais da função rodando local e leitura real da função em produção; 390×844, 768×1024 e 1440×900 sem rolagem horizontal e sem erro de JavaScript
+- [ ] Y10 **Publicar (Vyra):** `supabase functions deploy reino-apis` e push do site. Enquanto a função não subir, a tela funciona com o formato antigo (sem foto nem resumo) — testado
+- [ ] Y11 **Decisão do fundador:** a lista de veículos é fixa no servidor. Incluir, tirar ou trocar algum? (hoje não há veículo com paywall nem conteúdo pago na lista)

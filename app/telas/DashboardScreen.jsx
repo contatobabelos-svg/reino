@@ -26,33 +26,67 @@ function chamarReinoApis(corpo) {
 
 function IconPausar() { return <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ width: 14, height: 14 }}><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>; }
 
-/* Bloco Notícias: 5 manchetes reais, sem dado fictício. */
-function NoticiasWidget({ onClose, ir }) {
-  const [itens, setItens] = React.useState(null); // null = carregando
-  const [erro, setErro] = React.useState(null);
-  React.useEffect(() => {
-    let vivo = true;
-    chamarReinoApis({ rota: "noticias" })
-      .then((j) => { if (vivo) setItens((j.itens || []).slice(0, 5)); })
-      .catch((e) => { if (vivo) { setErro(e.message); setItens([]); } });
-    return () => { vivo = false; };
-  }, []);
+/* Bloco Notícias: a mesma edição da tela cheia (mesmo serviço, mesmo cache,
+   mesmos salvos e lidos) — manchete com foto e quatro chamadas com miniatura.
+   Abre na hora com o que estava guardado e atualiza por trás. */
+function MiniFoto({ n }) {
+  const [falhou, setFalhou] = React.useState(false);
+  const tem = !!n.imagem && !falhou;
   return (
-    <Panel title="Notícias do Reino" subtitle="Manchetes reais, agora" headingLevel={3} onClose={onClose}>
+    <span className="hg-nt-foto" data-tom={window.ReinoNoticias.tomDaFonte(n.fonte)}>
+      {tem ? <img src={n.imagem} alt="" width="320" height="180" loading="lazy" decoding="async"
+        referrerPolicy="no-referrer" onError={() => setFalhou(true)} />
+        : <span className="hg-nt-semfoto" aria-hidden="true"><span>{window.ReinoNoticias.iniciais(n.fonte)}</span></span>}
+    </span>
+  );
+}
+function NoticiasWidget({ onClose, ir }) {
+  const N = window.ReinoNoticias;
+  const pedido = React.useMemo(() => ({ tema: "destaques" }), []);
+  const [itens, setItens] = React.useState(() => { const g = N.doCache(pedido); return g ? g.itens : null; });
+  const [erro, setErro] = React.useState(null);
+  const [lidas, setLidas] = React.useState(() => N.lidas());
+  React.useEffect(() => {
+    const ctrl = new AbortController();
+    N.buscar(pedido, ctrl.signal)
+      .then((d) => setItens(d.itens))
+      .catch((e) => { if (e.name !== "AbortError") { setErro(e.message); setItens((v) => v || []); } });
+    return () => ctrl.abort();
+  }, [pedido, N]);
+  const abrir = (n) => { N.marcarLida(n.link); setLidas(N.lidas()); };
+  const lista = (itens || []).slice(0, 5);
+  const capa = lista[0];
+  return (
+    <Panel title="Notícias do Reino" subtitle="O que move os negócios agora" headingLevel={3} onClose={onClose}>
       {itens === null ? <p className="hg-sub">Buscando manchetes…</p>
-        : erro ? <p className="hg-sub">{erro}</p>
-        : !itens.length ? <p className="hg-sub">Nenhuma manchete agora.</p>
+        : !lista.length ? <p className="hg-sub">{erro || "Nenhuma manchete agora."}</p>
         : (
-          <ul className="hg-noticias">
-            {itens.map((n, i) => (
-              <li key={n.link || i}>
-                <a href={n.link} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none", display: "grid", gap: ".1rem" }}>
-                  <strong>{n.titulo}</strong>
-                  <span><em>{n.fonte || "Reino"}</em></span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <div className="hg-nt hg-nt-mini">
+            <article className="hg-nt-card" data-lida={lidas.indexOf(capa.link) >= 0 ? "1" : "0"}>
+              <a href={capa.link} target="_blank" rel="noopener noreferrer" tabIndex={-1} aria-hidden="true" onClick={() => abrir(capa)}>
+                <MiniFoto n={capa} />
+              </a>
+              <h3><a href={capa.link} target="_blank" rel="noopener noreferrer" onClick={() => abrir(capa)}>{capa.titulo}</a></h3>
+              <span className="hg-nt-meta">
+                <span className="hg-nt-veiculo">{capa.fonte}</span>
+                {N.tempoRelativo(capa.publicado) ? <><span aria-hidden="true">·</span><time dateTime={capa.publicado}>{N.tempoRelativo(capa.publicado)}</time></> : null}
+              </span>
+            </article>
+            <ul className="hg-nt-mini-lista">
+              {lista.slice(1).map((n) => (
+                <li key={n.link} data-lida={lidas.indexOf(n.link) >= 0 ? "1" : "0"}>
+                  <a href={n.link} target="_blank" rel="noopener noreferrer" onClick={() => abrir(n)}>
+                    <MiniFoto n={n} />
+                    <span style={{ display: "grid", gap: ".15rem" }}>
+                      <strong>{n.titulo}</strong>
+                      <span className="hg-nt-meta"><span className="hg-nt-veiculo">{n.fonte}</span>
+                        {N.tempoRelativo(n.publicado) ? <><span aria-hidden="true">·</span><time dateTime={n.publicado}>{N.tempoRelativo(n.publicado)}</time></> : null}</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       <Button variant="ghost" block onClick={() => ir("noticias.html")}>Ver todas</Button>
     </Panel>

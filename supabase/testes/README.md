@@ -16,3 +16,20 @@ Rodam contra o Supabase **local** (portas 5436x, `supabase/config.toml`), nunca 
    cadastra pelo carrossel em 1440×900 e 390×844, confere banco/Storage/cadastros, confirma pelo Mailpit
    (porta 54364) e entra por usuário e por e-mail. Prints em `REINO_TESTE_PRINTS` (padrão
    `/tmp/claude-1000/reino-login-prints`, fora do git).
+
+5. `e2e-noticias.cjs` (TODO Y): tela Notícias do Reino e bloco de notícias do Dashboard. **Não escreve nada**
+   — a rota `noticias` da `reino-apis` é pública e só de leitura. Monta sozinho a cópia do site na porta 8152.
+   A maior parte roda com respostas simuladas (`page.route`), então funciona sem banco nenhum:
+   ```sh
+   node supabase/testes/e2e-noticias.cjs                   # simulações + leitura real de produção
+   REINO_SEM_PRODUCAO=1 node supabase/testes/e2e-noticias.cjs   # só simulações
+   ```
+   Para conferir também o formato **real** dos feeds, suba a função localmente antes (não precisa de Docker
+   nem de `supabase start` — o Deno roda o arquivo direto; a cópia em `/tmp` só troca a porta):
+   ```sh
+   sed 's/^Deno.serve(async (req) => {/Deno.serve({ port: 8153 }, async (req) => {/' \
+     supabase/functions/reino-apis/index.ts > /tmp/reino-func/index.ts
+   npx deno@2 run --allow-net --allow-env /tmp/reino-func/index.ts
+   REINO_FUNC_LOCAL=http://127.0.0.1:8153 node supabase/testes/e2e-noticias.cjs
+   ```
+   Prints em `REINO_TESTE_PRINTS` (padrão `/tmp/claude-1000/reino-noticias-prints`, fora do git).
