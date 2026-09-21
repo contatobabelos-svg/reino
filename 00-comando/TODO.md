@@ -132,3 +132,10 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] U3 Exports antigos, produto original e dados sem uso em `arquivo/`; contexto, aulas e referências em `docs/`
 - [x] U4 `montar-site.sh`, CLAUDE.md, README, agentes e hook Dominic apontando para os caminhos novos
 - [x] U5 Site montado com os mesmos arquivos de antes (hash) e teste de navegador igual ao de antes
+
+## V — "sim" (21/09, começar a Fase 0 do PLANO-ENTREGA: backup completo e fechar o vazamento de `cadastros`)
+- [x] V1 Backup do banco (papéis, esquema, dados) em `~/Backups/reino/`, fora do git, com `COMO-RESTAURAR.md`; gatilho de `auth.users` que o dump não traz salvo à parte
+- [x] V2 Ambiente de teste local: Supabase local do Reino (portas 5436x) com o esquema restaurado do backup
+- [x] V3 Cadastros e cliques deixam de ser legíveis pelo público; afiliado vê só o próprio código; e-mail só pelo admin; ranking só código + total
+- [x] V4 K2 (parcial): cópias antigas de afiliados/contas/fotos retiradas do `_ds_bundle.js` (a de afiliados registrava o clique antes da versão atual)
+- [ ] V5 Ambiente de teste na nuvem (branch do Supabase Pro ou projeto separado): custa por hora, aguardando decisão do fundador

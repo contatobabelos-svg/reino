@@ -43,8 +43,11 @@
   /* ---------- Supabase REST ---------- */
   async function sb(tabela, metodo, corpo, query) {
     const c = CFG(); if (!c) return null;
+    /* logado, vai com o token da conta: cada afiliado só lê os cliques e cadastros do próprio código (RLS) */
+    const C = window.ReinoContas;
+    const tk = C && C.token ? await C.token().catch(() => null) : null;
     const r = await fetch(c.url.replace(/\/$/, "") + "/rest/v1/" + tabela + (query ? "?" + query : ""), {
-      method: metodo, headers: { apikey: c.anon, Authorization: "Bearer " + c.anon, "Content-Type": "application/json", Prefer: "return=minimal" },
+      method: metodo, headers: { apikey: c.anon, Authorization: "Bearer " + (tk || c.anon), "Content-Type": "application/json", Prefer: "return=minimal" },
       body: corpo ? JSON.stringify(corpo) : undefined,
     });
     if (!r.ok) throw new Error("Supabase " + r.status + " " + (await r.text()));
@@ -99,8 +102,7 @@
     const linha = { id: uuid(), codigo, visita_id: visitaId || null, nome, email: email || null, titulo: titulo || null, cidade: cidade || null, uf: uf || null, dispositivo: dispositivo(), criado_em: agora() };
     const local = () => { const d = ler(); (d.cadastros = d.cadastros || []).push(linha); (d.cliques || []).forEach((c) => { if (c.id === visitaId) c.cadastrou = true; }); gravar(d); };
     if (!CFG()) local(); else try {
-      await sb("cadastros", "POST", linha);
-      if (visitaId) await sb("cliques", "PATCH", { cadastrou: true }, "id=eq." + visitaId);
+      await sb("cadastros", "POST", linha); /* o banco marca o clique (visita_id) como cadastrado por trigger */
     } catch (e) { console.warn("[afiliados] cadastro não enviado, guardando local:", e.message); local(); }
     return linha;
   }
@@ -122,7 +124,7 @@
       if (CFG()) {
         cliques = await sb("cliques", "GET", null, "codigo=eq." + encodeURIComponent(codigo) + "&order=criado_em.desc&limit=500");
         cadastros = await sb("cadastros", "GET", null, "select=id,codigo,nome,titulo,cidade,uf,criado_em&codigo=eq." + encodeURIComponent(codigo) + "&order=criado_em.desc&limit=500");
-        ranking = await sb("ranking_afiliados", "GET", null, "order=cadastros.desc&limit=10");
+        ranking = await sb("rpc/ranking_afiliados", "GET", null, "order=cadastros.desc&limit=10");
       }
     } catch (e) { console.warn("[afiliados] leitura falhou:", e.message); }
     const d = ler();

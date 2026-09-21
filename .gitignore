@@ -7,3 +7,4 @@ site
 .claude/dominic/backups/
 .claude/dominic/estado/
 00-comando/logs/dominic.tsv
+supabase/.temp

@@ -44,7 +44,7 @@ function AdminScreen() {
       pega("perfis?select=*&order=criado_em.desc"),
       pega("codigos?select=codigo,user_id,nome"),
       pega("cliques?select=codigo,cadastrou"),
-      pega("cadastros?select=codigo,nome,email,titulo,cidade,uf,criado_em&order=criado_em.desc"),
+      pega("rpc/admin_cadastros?select=codigo,nome,email,titulo,cidade,uf,criado_em&order=criado_em.desc"),
     ]).then(([perfis, codigos, cliques, cadastros]) => {
       if (!vivo) return;
       if (!Array.isArray(perfis)) return setErro("Não foi possível ler a tabela perfis.");

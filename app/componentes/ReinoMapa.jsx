@@ -131,7 +131,11 @@ async function camadasBanco() {
   const cfg = window.REINO_SUPABASE;
   if (!cfg || !cfg.url || !cfg.anon) return { cliques: fc([]), cadastros: fc([]) };
   const base = cfg.url.replace(/\/$/, "") + "/rest/v1/";
-  const cab = { apikey: cfg.anon, Authorization: "Bearer " + cfg.anon };
+  /* cliques e cadastros só saem com login: o afiliado vê os do próprio código, o admin vê todos (RLS) */
+  const C = window.ReinoContas;
+  const tk = C && C.token ? await C.token().catch(() => null) : null;
+  if (!tk) return { cliques: fc([]), cadastros: fc([]) };
+  const cab = { apikey: cfg.anon, Authorization: "Bearer " + tk };
   const pega = (q) => fetch(base + q, { headers: cab }).then((r) => (r.ok ? r.json() : [])).catch(() => []);
   const [cl, cd] = await Promise.all([
     pega("cliques?select=codigo,cidade,uf,cadastrou,criado_em&order=criado_em.desc&limit=500"),
