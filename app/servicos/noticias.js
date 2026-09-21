@@ -215,8 +215,11 @@
   }
   const iniciais = (nome) => String(nome || "Reino").replace(/^(g1|o|a|do|da)\s+/i, "").trim().split(/\s+/).slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join("") || "R";
 
+  /* só as matérias com foto sobem: as sem foto vão para o fim, cada grupo mantém a ordem que já tinha */
+  const comFotoPrimeiro = (itens) => { const l = itens || []; return l.filter((n) => n.imagem).concat(l.filter((n) => !n.imagem)); };
+
   window.ReinoNoticias = {
-    EDITORIAS, FUNC_URL, VALIDADE,
+    EDITORIAS, FUNC_URL, VALIDADE, comFotoPrimeiro,
     doCache, buscar, chaveDe,
     salvas, estaSalva, alternarSalva, lidas, foiLida, marcarLida, limparLidas,
     compartilhar, tempoRelativo, hora, dataPorExtenso, tomDaFonte, iniciais, semRepetir,

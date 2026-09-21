@@ -345,7 +345,7 @@ async function entrarComoConta(ctx) {
     await pageDash.goto(SITE + '/', { waitUntil: 'domcontentloaded' });
     await pageDash.waitForSelector('.hg-nt-mini', { timeout: 30000 });
     ok('bloco do Dashboard usa o mesmo serviço e mostra foto',
-      (await pageDash.locator('.hg-nt-mini .hg-nt-foto').count()) >= 3,
+      (await pageDash.locator('.hg-nt-mini .hg-nt-foto').count()) >= 2,
       'fotos no bloco: ' + (await pageDash.locator('.hg-nt-mini .hg-nt-foto').count()));
     const rolDash = await semRolagemH(pageDash);
     ok('Dashboard sem rolagem horizontal', rolDash.doc && rolDash.conteudo, JSON.stringify(rolDash));
@@ -399,7 +399,7 @@ async function entrarComoConta(ctx) {
       await pageReal.waitForSelector('.hg-nt-mini .hg-nt-foto img', { timeout: 40000 });
       await esperarFotos(pageReal);
       const fotosBloco = await pageReal.evaluate(() => [...document.querySelectorAll('.hg-nt-mini .hg-nt-foto img')].filter((i) => i.naturalWidth > 1).length);
-      ok('bloco do Dashboard com fotos reais dos veículos', fotosBloco >= 3, 'fotos reais no bloco: ' + fotosBloco);
+      ok('bloco do Dashboard com fotos reais dos veículos', fotosBloco >= 2, 'fotos reais no bloco: ' + fotosBloco);
       await pageReal.locator('.hg-nt-mini').scrollIntoViewIfNeeded();
       await pageReal.waitForTimeout(400);
       await pageReal.screenshot({ path: path.join(PRINTS, 'dashboard-bloco-dados-reais.png') });

@@ -6,7 +6,7 @@ const { PageHead, Panel, Button, Input, KpiCard, ProgressRing, MetricRow, ListRo
    colunas conforme o que sobrou, então nada fica em cima de nada nem deixa buraco. */
 const WIDGETS = {
   "kpi-afiliados": "Afiliados ativos", "kpi-bonus": "Bônus acumulado", "kpi-negocios": "Negócios fechados", "kpi-cidades": "Cidades ativas",
-  social: "Rede social", mapa: "Mapa Reino", noticias: "Notícias", chat: "Bate Papo",
+  social: "Rede social", mapa: "Mapa Reino", noticias: "Notícias de tecnologia", ranking: "Ranking de afiliados", chat: "Bate Papo",
   musica: "Música", assistente: "Assistente",
   conquistas: "Conquistas", match: "Match e alertas",
   reputacao: "Score de reputação", bolsa: "Bolsa de Valores", vendas: "Vendas", afiliado: "Link de afiliado",
@@ -26,9 +26,10 @@ function chamarReinoApis(corpo) {
 
 function IconPausar() { return <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ width: 14, height: 14 }}><path d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>; }
 
-/* Bloco Notícias: a mesma edição da tela cheia (mesmo serviço, mesmo cache,
-   mesmos salvos e lidos) — manchete com foto e quatro chamadas com miniatura.
-   Abre na hora com o que estava guardado e atualiza por trás. */
+/* Bloco Notícias: compacto (fica no topo da coluna da direita), sempre de
+   Tecnologia. Mesmo serviço, mesmo cache, mesmos salvos e lidos da tela cheia;
+   as matérias com foto vêm primeiro. Abre na hora com o que estava guardado e
+   atualiza por trás. */
 function MiniFoto({ n }) {
   const [falhou, setFalhou] = React.useState(false);
   const tem = !!n.imagem && !falhou;
@@ -42,7 +43,7 @@ function MiniFoto({ n }) {
 }
 function NoticiasWidget({ onClose, ir }) {
   const N = window.ReinoNoticias;
-  const pedido = React.useMemo(() => ({ tema: "destaques" }), []);
+  const pedido = React.useMemo(() => ({ tema: "tecnologia" }), []);
   const [itens, setItens] = React.useState(() => { const g = N.doCache(pedido); return g ? g.itens : null; });
   const [erro, setErro] = React.useState(null);
   const [lidas, setLidas] = React.useState(() => N.lidas());
@@ -54,26 +55,15 @@ function NoticiasWidget({ onClose, ir }) {
     return () => ctrl.abort();
   }, [pedido, N]);
   const abrir = (n) => { N.marcarLida(n.link); setLidas(N.lidas()); };
-  const lista = (itens || []).slice(0, 5);
-  const capa = lista[0];
+  const lista = N.comFotoPrimeiro(itens || []).slice(0, 2);
   return (
-    <Panel title="Notícias do Reino" subtitle="O que move os negócios agora" headingLevel={3} onClose={onClose}>
+    <Panel title="Notícias de tecnologia" headingLevel={3} onClose={onClose}>
       {itens === null ? <p className="hg-sub">Buscando manchetes…</p>
         : !lista.length ? <p className="hg-sub">{erro || "Nenhuma manchete agora."}</p>
         : (
-          <div className="hg-nt hg-nt-mini">
-            <article className="hg-nt-card" data-lida={lidas.indexOf(capa.link) >= 0 ? "1" : "0"}>
-              <a href={capa.link} target="_blank" rel="noopener noreferrer" tabIndex={-1} aria-hidden="true" onClick={() => abrir(capa)}>
-                <MiniFoto n={capa} />
-              </a>
-              <h3><a href={capa.link} target="_blank" rel="noopener noreferrer" onClick={() => abrir(capa)}>{capa.titulo}</a></h3>
-              <span className="hg-nt-meta">
-                <span className="hg-nt-veiculo">{capa.fonte}</span>
-                {N.tempoRelativo(capa.publicado) ? <><span aria-hidden="true">·</span><time dateTime={capa.publicado}>{N.tempoRelativo(capa.publicado)}</time></> : null}
-              </span>
-            </article>
+          <div className="hg-nt hg-nt-mini hg-nt-compacto">
             <ul className="hg-nt-mini-lista">
-              {lista.slice(1).map((n) => (
+              {lista.map((n) => (
                 <li key={n.link} data-lida={lidas.indexOf(n.link) >= 0 ? "1" : "0"}>
                   <a href={n.link} target="_blank" rel="noopener noreferrer" onClick={() => abrir(n)}>
                     <MiniFoto n={n} />
@@ -89,6 +79,36 @@ function NoticiasWidget({ onClose, ir }) {
           </div>
         )}
       <Button variant="ghost" block onClick={() => ir("noticias.html")}>Ver todas</Button>
+    </Panel>
+  );
+}
+
+/* Bloco Ranking de afiliados: quem mais trouxe gente para o Reino. A função do
+   banco devolve só o código e o total de cadastros; a própria conta aparece marcada. */
+function RankingWidget({ onClose, ir, meuCodigo }) {
+  const [estado, setEstado] = React.useState({ carregando: true, linhas: null });
+  React.useEffect(() => {
+    let vivo = true;
+    const A = window.ReinoAfiliados;
+    (A && A.ranking ? A.ranking(5) : Promise.resolve(null)).then((linhas) => { if (vivo) setEstado({ carregando: false, linhas }); });
+    return () => { vivo = false; };
+  }, []);
+  const { carregando, linhas } = estado;
+  return (
+    <Panel tone="afiliado" title="Ranking de afiliados" subtitle="Cadastros por afiliado" headingLevel={3} onClose={onClose}>
+      {carregando ? <p className="hg-sub">Carregando o ranking…</p>
+        : linhas && linhas.length ? (
+          <ol className="hg-titulos hg-rank-lista">
+            {linhas.map((r, i) => (
+              <li key={r.codigo}>
+                <span className="hg-rank">{i + 1}</span>
+                <strong className={r.codigo === meuCodigo ? "hg-gold" : ""}>{r.codigo}{r.codigo === meuCodigo ? " (você)" : ""}</strong>
+                <b className="hg-rank-n" title={r.cadastros + (r.cadastros === 1 ? " cadastro" : " cadastros")}>{r.cadastros}</b>
+              </li>
+            ))}
+          </ol>
+        ) : <p className="hg-sub hg-rank-vazio">{linhas ? "O ranking aparece quando houver cadastros." : "O ranking não carregou agora. Tente de novo em instantes."}</p>}
+      <Button variant="ghost" block onClick={() => ir("meus-acessos.html")}>Meus acessos e ranking</Button>
     </Panel>
   );
 }
@@ -246,8 +266,8 @@ function DashboardScreen({ ir, usuario }) {
 
   /* colunas de operação: só as que têm algum widget visível entram na grade */
   const colEsq = w.ve("social");
-  const colCentro = w.ve("mapa") || w.ve("noticias") || w.ve("chat") || w.ve("musica") || w.ve("assistente");
-  const colDir = w.ve("conquistas") || w.ve("match");
+  const colCentro = w.ve("mapa") || w.ve("conquistas") || w.ve("chat") || w.ve("musica") || w.ve("assistente");
+  const colDir = w.ve("noticias") || w.ve("ranking") || w.ve("match");
   const colunas = [colEsq && "esquerda", colCentro && "centro", colDir && "direita"].filter(Boolean).join(" ");
   const kpis = ["kpi-afiliados", "kpi-bonus", "kpi-negocios", "kpi-cidades"].filter(w.ve);
   const analytics = ["reputacao", "bolsa", "vendas"].filter(w.ve);
@@ -311,7 +331,13 @@ function DashboardScreen({ ir, usuario }) {
           {colCentro ? (
             <div className="hg-col" data-zona="centro">
               {w.ve("mapa") ? <MapaPanel usuario={usuario} subtitle={"Seu título mostra: " + alcance + ". Desça até o bairro para ver a rede de empresas."} onClose={() => w.esconder("mapa")} /> : null}
-              {w.ve("noticias") ? <NoticiasWidget ir={ir} onClose={() => w.esconder("noticias")} /> : null}
+              {w.ve("conquistas") ? (
+                <Panel tone="conquistas" title="Conquistas" subtitle="Sua evolução no Reino" onClose={() => w.esconder("conquistas")}>
+                  <ProgressRing value={64} label="até Príncipe" />
+                  {d.metricas.map((m) => <MetricRow key={m.nome} name={m.nome} label={m.rotulo} value={m.percentual} />)}
+                  <Button variant="ghost" block onClick={() => ir("conquistas.html")}>Ver conquistas</Button>
+                </Panel>
+              ) : null}
               {w.ve("chat") ? (
                 <Panel title="Bate Papo do Reino" subtitle="Só Marquês para cima envia mensagem" headingLevel={3} onClose={() => w.esconder("chat")}>
                   <ul className="hg-list">
@@ -330,13 +356,8 @@ function DashboardScreen({ ir, usuario }) {
 
           {colDir ? (
             <div className="hg-col" data-zona="direita">
-              {w.ve("conquistas") ? (
-                <Panel tone="conquistas" title="Conquistas" subtitle="Sua evolução no Reino" onClose={() => w.esconder("conquistas")}>
-                  <ProgressRing value={64} label="até Príncipe" />
-                  {d.metricas.map((m) => <MetricRow key={m.nome} name={m.nome} label={m.rotulo} value={m.percentual} />)}
-                  <Button variant="ghost" block onClick={() => ir("conquistas.html")}>Ver conquistas</Button>
-                </Panel>
-              ) : null}
+              {w.ve("noticias") ? <NoticiasWidget ir={ir} onClose={() => w.esconder("noticias")} /> : null}
+              {w.ve("ranking") ? <RankingWidget ir={ir} meuCodigo={window.ReinoAfiliados ? window.ReinoAfiliados.meuCodigo(d.perfil.nome) : ""} onClose={() => w.esconder("ranking")} /> : null}
               {w.ve("match") ? (
                 <Panel tone="match" fill title="Match e alertas" subtitle="Empresas complementares e o que pede atenção" onClose={() => w.esconder("match")}>
                   <div className="hg-rolar">

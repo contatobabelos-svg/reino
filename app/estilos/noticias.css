@@ -152,3 +152,16 @@
   .hg-nt-foto img { transition: none; }
   .hg-nt-card:hover .hg-nt-foto img, .hg-nt-hero:hover .hg-nt-foto img { transform: none; }
 }
+
+/* Dashboard: bloco de notícias compacto (coluna da direita) — só miniaturas e manchetes */
+.hg-nt-compacto .hg-nt-mini-lista { gap: .35rem; }
+.hg-nt-compacto .hg-nt-mini-lista li a { grid-template-columns: 76px minmax(0, 1fr); gap: .55rem; padding: .28rem; }
+.hg-nt-compacto .hg-nt-mini-lista strong { font-size: .78rem; line-height: 1.25; }
+.hg-nt-compacto .hg-nt-meta { font-size: .68rem; }
+
+/* Dashboard: ranking de afiliados enxuto para caber na lateral */
+.hg-rank-lista { gap: .4rem; }
+.hg-rank-lista li { grid-template-columns: 28px minmax(0, 1fr) auto; padding: .4rem .65rem; gap: .6rem; }
+.hg-rank-lista .hg-rank-n { font: 700 .95rem var(--font-d); color: var(--cyan); }
+.hg-rank-lista .hg-rank { width: 28px; height: 28px; font-size: .8rem; }
+.hg-rank-lista strong { font-size: .86rem; overflow-wrap: anywhere; }

@@ -170,3 +170,11 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] Y9 Teste `supabase/testes/e2e-noticias.cjs` (50 conferências): respostas simuladas (sucesso, vazio, erro, timeout, cache velho, salvar/lida/compartilhar, editoria, busca, imagem que falha), dados reais da função rodando local e leitura real da função em produção; 390×844, 768×1024 e 1440×900 sem rolagem horizontal e sem erro de JavaScript
 - [ ] Y10 **Publicar (Vyra):** `supabase functions deploy reino-apis` e push do site. Enquanto a função não subir, a tela funciona com o formato antigo (sem foto nem resumo) — testado
 - [ ] Y11 **Decisão do fundador:** a lista de veículos é fixa no servidor. Incluir, tirar ou trocar algum? (hoje não há veículo com paywall nem conteúdo pago na lista)
+
+## AA — "quero que o card de noticias seja menor pela metade e encaixe aonde fica "conquistas" em dashboard. no app de noticias, só ir para o topo as noticias que tem imagem. quero que a seção principal a se mostrar no dashboard seja de tecnologia. preencha um espaço na lateral com um rank de quem tem mais afiliados." (21/09)
+- [x] AA1 Bloco de notícias do Dashboard pela metade (481 → 246 px, 2 manchetes com miniatura) e no topo da coluna da direita, onde ficava Conquistas
+- [x] AA2 Conquistas passa para o centro (onde ficava o bloco de notícias); continua ocultável pelo ✕
+- [x] AA3 Tela Notícias: só as matérias com foto sobem (as sem foto vão para o fim, ordem mantida); não vale para "Ordem por veículo"
+- [x] AA4 Seção principal do Dashboard = Tecnologia (pedido `tema: "tecnologia"`)
+- [x] AA5 Novo bloco "Ranking de afiliados" na coluna da direita (top 5 pela função ranking_afiliados, a própria conta em dourado, widget ocultável em Personalizar)
+- [ ] AA6 Decisão do fundador: Conquistas fica no centro ou some do Dashboard?

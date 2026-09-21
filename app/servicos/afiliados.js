@@ -137,6 +137,14 @@
     return { codigo, link: linkDe(codigo), linkCurto: linkCurtoDe(codigo), rotaR: window.REINO_ROTA_R === true, cliques, cadastros, comissao, porDia, ranking, online: !!CFG() };
   }
 
-  window.ReinoAfiliados = { codigoDaUrl, ehPadrao, registrarClique, registrarCadastro, meuCodigo, linkDe, linkCurtoDe, painel, geo, COMISSAO, PCT, configurado: () => !!CFG() };
+  /* ranking do Reino: a função do banco só devolve código e total de cadastros. null = sem banco ou falha */
+  async function ranking(limite) {
+    try {
+      if (!CFG()) return null;
+      return await sb("rpc/ranking_afiliados", "GET", null, "order=cadastros.desc&limit=" + (limite || 5));
+    } catch (e) { console.warn("[afiliados] ranking falhou:", e.message); return null; }
+  }
+
+  window.ReinoAfiliados = { ranking, codigoDaUrl, ehPadrao, registrarClique, registrarCadastro, meuCodigo, linkDe, linkCurtoDe, painel, geo, COMISSAO, PCT, configurado: () => !!CFG() };
   registrarClique();
 })();

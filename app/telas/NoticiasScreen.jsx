@@ -235,7 +235,8 @@ function NoticiasScreen() {
   const visiveis = React.useMemo(() => {
     let lista = fonteFiltro ? itens.filter((n) => n.fonte === fonteFiltro) : itens;
     if (ordem === "veiculo") lista = [...lista].sort((a, b) => a.fonte.localeCompare(b.fonte, "pt-BR") || (Date.parse(b.publicado) || 0) - (Date.parse(a.publicado) || 0));
-    else if (ordem === "naolidas") lista = [...lista].sort((a, b) => (lidas.indexOf(a.link) >= 0) - (lidas.indexOf(b.link) >= 0));
+    else if (ordem === "naolidas") lista = N.comFotoPrimeiro([...lista].sort((a, b) => (lidas.indexOf(a.link) >= 0) - (lidas.indexOf(b.link) >= 0)));
+    else lista = N.comFotoPrimeiro(lista);
     return lista;
   }, [itens, fonteFiltro, ordem, lidas]);
 
