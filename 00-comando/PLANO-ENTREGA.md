@@ -150,7 +150,7 @@ reino/
 ## Decisões do fundador (travam fases)
 | Decisão | Trava |
 |---|---|
-| Supabase Pro (e PITR?) | Fases 0, 1 e 5 |
+| ~~Supabase Pro~~ feito em 21/09: projeto na org BABEL OS (Pro). PITR ainda a decidir | Fases 0, 1 e 5 |
 | Serviço de e-mail (SMTP) e domínio | Fase 2 |
 | Código padrão "marcelo" (P3) | Fase 2 |
 | Preços e comissões em disputa | Fase 7 |
