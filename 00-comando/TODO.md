@@ -149,3 +149,11 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] W6 Banco: perfis ganha usuario/empresa/cnpj, bucket `avatares`, funções `reino-cadastro` e `reino-login`, checagem de usuário disponível
 - [x] W7 Testes locais (Playwright 1440×900 e 390×844) e passos de publicação documentados
 - [x] W8 Publicar (Vyra, com autorização do fundador): migração → funções reino-cadastro/reino-login (--no-verify-jwt) → Auth (Site URL/Redirect URLs, SMTP próprio) → push do site. Passo a passo em `supabase/README.md` (Ourives, pronto e testado no local em 2026-09-21 06:53) — publicado em 21/09 (migração, funções reino-cadastro e reino-login, Site URL e redirects do Auth corrigidos, senha mínima 8)
+
+## X — "deixe mais rápido o vídeo de fundo, para parecer fluido." (21/09)
+- [x] X1 Pré-renderizar a cena do fundo do login em vídeo (WebM VP9 + MP4 H.264 + poster webp) e tocar o vídeo no lugar da cena JS, com a cena JS de reserva e o iframe de última reserva (Ourives, 2026-09-21 09:03; no mesmo notebook e no mesmo Chrome: cena JS 12–20 quadros/s com 23–64 quadros longos em 6 s; vídeo 60 quadros/s com 0 quadro longo. Falta a Vyra conferir e publicar)
+
+## Z — "nao ter animação de giroflex na caixa de texto da tela inicial. manter o aspecto de vidro de é trasnparente, usando as cores de fundo. e deixe mais leve a tela de login." (21/09)
+- [x] Z1 Tirar o anel de luz girando (conic-gradient animado) e o brilho desfocado da barra de comando do login
+- [x] Z2 Barra em vidro transparente tingido com as cores do fundo (ciano/violeta/azul-noite), borda fina, foco por borda estática
+- [x] Z3 Tela mais leve: remover todos os backdrop-filter (custo alto sobre vídeo) do login-imersivo.css; vidro só por transparência

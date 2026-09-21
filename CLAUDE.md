@@ -71,10 +71,15 @@ app/                  o app do Reino — é o que vai ao ar
 ├─ estilos/           CSS do shell, do layout e dos logins
 ├─ dados/             geo-*, municipios-tudo.js, municipios/*.json, data.js
 │  └─ demo/           dados fictícios (saem quando cada tela ficar real)
-└─ assets/            imagens e o vídeo do login (assets/login/)
+└─ assets/            imagens e vídeos do login (assets/login/): `reino-fundo.webm`/`.mp4` +
+                      `reino-fundo-poster.webp` são a cena do fundo já renderizada (o que toca
+                      hoje); `reino-cena.webp`/`reino-neon.png` alimentam a cena JS de reserva,
+                      `reino-animado.html` é a página original e `fundo-login.*`, o vídeo antigo
 design-system/        tokens/, components/ (babel-ui.css = hg-*), styles.css, _ds_bundle.js, guidelines/, SKILL.md
 supabase/             migrações em ordem de data, functions/ e README do banco
-scripts/              preparar-video.sh (vídeo do login → app/assets/login)
+scripts/              renderizar-fundo.cjs + render-fundo/ (pré-renderizam a cena do login em
+                      vídeo), medir-fundo.cjs (mede a fluidez do fundo no Chrome com GPU) e
+                      preparar-video.sh (vídeo do fundador → app/assets/login)
 docs/                 contexto/ (pesquisa de design), aulas/ (origem do método), referencias/ (prints e fotos)
 00-comando/           TODO.md, PLANO-ENTREGA.md, MAPA-TELAS-BOTOES.md e logs/
 arquivo/              fora do ar: produto-original/, index exportado antigo, exports com login demo

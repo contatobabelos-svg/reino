@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<!-- Página de RENDERIZAÇÃO da cena do fundo do login. Não vai para o site publicado:
+     montar-site.sh copia só app/, e esta página mora em scripts/.
+     Ela carrega o mesmo app/componentes/FundoReino.jsx do app, mas pede a cena com um
+     T fixo (window.__fixarT(t)) em vez do relógio de tempo real — é assim que o
+     scripts/renderizar-fundo.cjs tira os quadros em ordem, sempre iguais.
+     O gancho só existe porque esta página define __REINO_RENDER_FUNDO antes do arquivo. -->
+<base href="/app/">
+<title>Reino · renderizar o fundo</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #030817; overflow: hidden; }
+  #palco { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #030817; }
+</style>
+<script>window.__REINO_RENDER_FUNDO = true;</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="palco"></div>
+<script type="text/babel" src="componentes/FundoReino.jsx"></script>
+<script type="text/babel" data-presets="react">
+(function () {
+  const peca = window.__REINO_CENA;
+  if (!peca) { window.__erroRender = "FundoReino não expôs a cena (__REINO_RENDER_FUNDO)"; return; }
+  const { Cena, TOTAL, FUNDO_REINO } = peca;
+  window.__TOTAL = TOTAL;
+
+  let aplicar = null;
+  function Render() {
+    const [T, setT] = React.useState(0);
+    aplicar = setT;
+    return <Cena id="render" T={T} k={FUNDO_REINO.intensidade} />;
+  }
+  ReactDOM.createRoot(document.getElementById("palco")).render(<Render />);
+
+  /* fixa o tempo da cena e só devolve quando o quadro já foi pintado */
+  window.__fixarT = (t) => new Promise((ok) => {
+    aplicar(t);
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => ok(t))));
+  });
+
+  /* pronto = React montou e as duas imagens da cena carregaram */
+  window.__pronto = () => {
+    if (!aplicar) return false;
+    const imgs = Array.from(document.querySelectorAll("#palco img"));
+    return imgs.length >= 3 && imgs.every((i) => i.complete && i.naturalWidth > 0);
+  };
+})();
+</script>
+</body>
+</html>

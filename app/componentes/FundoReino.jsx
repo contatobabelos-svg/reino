@@ -4,21 +4,40 @@
    Origem: ~/Downloads/Reino Animado.html (página autoextraível do fundador; cópia intacta em
    assets/login/reino-animado.html). A cena de lá (reino-video.jsx, 20 s em loop) foi portada
    para cá com as duas imagens extraídas (assets/login/reino-cena.webp e reino-neon.png), sem o
-   motor de animação nem o painel de ajustes: o relógio é próprio (requestAnimationFrame,
-   no máximo 60 quadros/s, parado com a aba escondida) e os ajustes ficam como no original
-   (intro desligada, intensidade 0,4).
+   motor de animação nem o painel de ajustes; o ciclo virou 14 s.
 
-   Enquadramento (FUNDO_REINO.retrato):
-   - paisagem: "cobrir" — palco 1920×1080 escalado para cobrir a janela (corta as sobras).
+   POR PADRÃO O FUNDO É VÍDEO. A cena em React/SVG redesenha tudo a cada quadro (feTurbulence +
+   feDisplacementMap na água e nas quedas, ~70 divs animados) e no notebook do fundador não passa
+   de ~20 quadros/s, com quadros longos o tempo todo — daí a queixa de que não parece fluido.
+   A mesma cena foi pré-renderizada quadro a quadro em 1920×1080 a 30 q/s (scripts/renderizar-fundo.cjs)
+   e vira assets/login/reino-fundo.webm / .mp4, com reino-fundo-poster.webp aparecendo antes de
+   carregar. O ciclo é fechado, então o vídeo repete sem salto.
+
+   Escada de reserva (cada degrau só entra se o de cima falhar):
+     1. vídeo (padrão);
+     2. cena JS de sempre — se o vídeo der erro, se o autoplay for bloqueado ou se ele não
+        começar a tocar em 8 s;
+     3. página original em iframe — se a cena JS quebrar em tempo de execução;
+     4. onFalha() — o LoginImersivo volta ao fundo de reserva (o vídeo antigo do fundador).
+
+   Enquadramento (FUNDO_REINO.retrato), igual para o vídeo e para a cena (ambos são o palco 1920×1080):
+   - paisagem: "cobrir" — palco escalado para cobrir a janela (corta as sobras).
    - retrato (celular): "encaixar" — cobrir cortaria o letreiro; o palco é escalado para o
      letreiro caber na largura, fica no alto, e o resto da tela é a própria cena desfocada.
      Nenhuma faixa preta. Troque para "cobrir" para o corte puro.
-   Movimento reduzido (prefers-reduced-motion): um quadro parado, sem animação.
-   Se a imagem não carregar: onFalha() — o LoginImersivo volta ao fundo de reserva. */
+   Movimento reduzido (prefers-reduced-motion): só o poster, parado (vídeo) ou um quadro da cena.
+   Aba escondida: o vídeo pausa; a cena JS já não desenhava. */
 (function () {
   const FUNDO_REINO = {
     cena: "assets/login/reino-cena.webp",
     neon: "assets/login/reino-neon.png",
+    video: {
+      webm: "assets/login/reino-fundo.webm",
+      mp4: "assets/login/reino-fundo.mp4",
+      poster: "assets/login/reino-fundo-poster.webp",
+    },
+    modo: "auto",        // "auto" (vídeo com a cena de reserva) | "video" | "cena"
+    esperaVideo: 8000,   // ms até desistir do vídeo e usar a cena JS
     intensidade: 0.4,
     retrato: "encaixar", // "encaixar" | "cobrir"
     quadroParado: 6,     // s — quadro usado com movimento reduzido
@@ -232,7 +251,74 @@
     return { s: cobrir, left: (w - SW * cobrir) / 2, top: (h - SH * cobrir) / 2, encaixado: false };
   }
 
-  function FundoReino({ onFalha, className }) {
+  /* moldura comum: o palco 1920×1080 posicionado na janela (e a cena desfocada atrás, no celular) */
+  function Palco({ className, encaixado, desfoque, estilo, children }) {
+    return (
+      <div className={"hg-fundo-reino" + (encaixado ? " is-encaixado" : "") + (className ? " " + className : "")} aria-hidden="true">
+        {encaixado ? <img className="hg-fundo-reino-desfoque" src={desfoque} alt="" /> : null}
+        <div className="hg-fundo-reino-palco" style={estilo}>{children}</div>
+      </div>
+    );
+  }
+
+  /* 1º degrau: o vídeo pré-renderizado da cena — barato e fluido */
+  function FundoVideo({ className, onVideoFalhou }) {
+    const quieto = React.useMemo(() => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } }, []);
+    const [tam, setTam] = React.useState(() => ({ w: window.innerWidth, h: window.innerHeight }));
+    const ref = React.useRef(null);
+    const desistiu = React.useRef(false);
+    const desistir = React.useCallback((motivo) => {
+      if (desistiu.current) return;
+      desistiu.current = true;
+      try { console.warn("[FundoReino] vídeo não deu conta (" + motivo + "), usando a cena JS"); } catch (e) { /* nada */ }
+      onVideoFalhou && onVideoFalhou();
+    }, [onVideoFalhou]);
+
+    React.useEffect(() => {
+      const medir = () => setTam({ w: window.innerWidth, h: window.innerHeight });
+      window.addEventListener("resize", medir);
+      return () => window.removeEventListener("resize", medir);
+    }, []);
+
+    React.useEffect(() => {
+      if (quieto) return undefined;            // movimento reduzido: fica só o poster
+      const v = ref.current;
+      if (!v) return undefined;
+      let tocou = false, prazo = 0;
+      const tocar = () => { const p = v.play(); if (p && p.catch) p.catch(() => { if (!tocou) desistir("autoplay bloqueado"); }); };
+      const comecou = () => { tocou = true; clearTimeout(prazo); };
+      const vigiar = () => {
+        clearTimeout(prazo);
+        if (tocou || document.hidden) return;   // aba escondida: o navegador só atrasa, não é falha
+        prazo = setTimeout(() => { if (!tocou && !document.hidden) desistir("não começou em " + FUNDO_REINO.esperaVideo + " ms"); }, FUNDO_REINO.esperaVideo);
+      };
+      const aoVisivel = () => { if (document.hidden) { v.pause(); } else { tocar(); vigiar(); } };
+      v.addEventListener("playing", comecou);
+      document.addEventListener("visibilitychange", aoVisivel);
+      tocar(); vigiar();
+      return () => {
+        clearTimeout(prazo);
+        v.removeEventListener("playing", comecou);
+        document.removeEventListener("visibilitychange", aoVisivel);
+      };
+    }, [quieto, desistir]);
+
+    const q = enquadrar(tam.w, tam.h);
+    const estilo = { width: SW, height: SH, transform: `translate(${q.left}px, ${q.top}px) scale(${q.s})` };
+    return (
+      <Palco className={className} encaixado={q.encaixado} desfoque={FUNDO_REINO.video.poster} estilo={estilo}>
+        <video ref={ref} className="hg-fundo-reino-video" poster={FUNDO_REINO.video.poster}
+          autoPlay={!quieto} muted loop playsInline preload="auto" tabIndex={-1} disablePictureInPicture
+          onError={() => desistir("erro ao carregar")}>
+          <source src={FUNDO_REINO.video.webm} type="video/webm" />
+          <source src={FUNDO_REINO.video.mp4} type="video/mp4" />
+        </video>
+      </Palco>
+    );
+  }
+
+  /* 2º degrau: a cena em React/SVG desenhada a cada quadro (o fundo de antes do vídeo) */
+  function CenaJS({ onFalha, className }) {
     const id = React.useMemo(() => "fr" + Math.random().toString(36).slice(2, 7), []);
     const quieto = React.useMemo(() => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } }, []);
     const [T, setT] = React.useState(FUNDO_REINO.quadroParado);
@@ -262,14 +348,22 @@
     }, [quieto]);
 
     const q = enquadrar(tam.w, tam.h);
+    const estilo = { width: SW, height: SH, transform: `translate(${q.left}px, ${q.top}px) scale(${q.s})` };
     return (
-      <div className={"hg-fundo-reino" + (q.encaixado ? " is-encaixado" : "") + (className ? " " + className : "")} aria-hidden="true">
-        {q.encaixado ? <img className="hg-fundo-reino-desfoque" src={FUNDO_REINO.cena} alt="" /> : null}
-        <div className="hg-fundo-reino-palco" style={{ width: SW, height: SH, transform: `translate(${q.left}px, ${q.top}px) scale(${q.s})` }}>
-          <Cena id={id} T={T} k={FUNDO_REINO.intensidade} onErro={aoErro} />
-        </div>
-      </div>
+      <Palco className={className} encaixado={q.encaixado} desfoque={FUNDO_REINO.cena} estilo={estilo}>
+        <Cena id={id} T={T} k={FUNDO_REINO.intensidade} onErro={aoErro} />
+      </Palco>
     );
+  }
+
+  /* escolhe o degrau: vídeo por padrão, cena JS se o vídeo não der conta.
+     window.FUNDO_REINO_MODO ("video" | "cena") existe só para os testes de medição
+     (scripts/medir-fundo.cjs injeta antes do app carregar); no site ninguém define. */
+  function FundoReino(props) {
+    const modo = window.FUNDO_REINO_MODO || FUNDO_REINO.modo || "auto";
+    const [usarVideo, setUsarVideo] = React.useState(modo !== "cena");
+    if (usarVideo) return <FundoVideo className={props.className} onVideoFalhou={() => setUsarVideo(false)} />;
+    return <CenaJS {...props} />;
   }
 
   /* se a cena quebrar em tempo de execução, cai para a página original em iframe (cobrindo) */
@@ -289,6 +383,12 @@
       return <FundoReino {...this.props} />;
     }
   }
+
+  /* Gancho exclusivo da página de renderização (scripts/render-fundo/index.html, que não
+     vai para o site): ela define window.__REINO_RENDER_FUNDO = true ANTES de carregar este
+     arquivo e só então recebe as peças da cena para desenhar um T fixo, quadro a quadro.
+     No app publicado esse "se" é sempre falso e nada é exposto. */
+  if (window.__REINO_RENDER_FUNDO) window.__REINO_CENA = { Cena, TOTAL, SW, SH, FUNDO_REINO };
 
   Object.assign(window, { FundoReino: FundoReinoSeguro, FUNDO_REINO });
 })();
