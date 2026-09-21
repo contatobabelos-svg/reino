@@ -203,3 +203,6 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] AD3 three.js e 3d-force-graph saem do unpkg (o endereço do three dava 404) e passam a vir de `app/vendor/`, baixados só quando o Cérebro abre (~1,3 MB a menos para todo mundo)
 - [x] AD4 Ícone `brain` incluído no `_ds_bundle.js` (antes só estava no fonte `Icon.jsx`)
 - [ ] AD5 O esquema mostrado é fixo no código (10 tabelas); não acompanha migrações novas sozinho
+
+## AE — "remova de lá. vamos iniciar outro projeto." (21/09)
+- [x] AE1 Cérebro do Reino fora do ar: rota, item do menu e scripts saem do app; tela, estilo e bibliotecas vão para `arquivo/cerebro-reino/` (guardados, não publicados). O ícone `brain` fica no bundle, sem uso

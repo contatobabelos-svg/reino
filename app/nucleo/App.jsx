@@ -25,7 +25,6 @@ const TELAS = {
   "noticias.html": NoticiasScreen,
   "musica.html": MusicaScreen,
   "assistente.html": AssistenteScreen,
-  "cerebro.html": CerebroReinoScreen,
 };
 const PAGINA = { "index.html": "inicio", "bolsa.html": "bolsa" };
 const USUARIO = { ...(window.BABEL_DEMO ? window.BABEL_DEMO.perfil : {}), uf: "SP", cidade: "Campinas", bairro: "Cambuí" };
@@ -65,7 +64,6 @@ function App() {
     if (por("assistente.html") < 0) antes(["assistente.html", "buscaIA", "Assistente do Reino"]);
     if (por("perfil.html") < 0) antes(["perfil.html", "tecnicos", "Minha conta"]);
     if (por("admin.html") < 0) antes(["admin.html", "clientes", "Contas no banco"]);
-    if (por("cerebro.html") < 0) antes(["cerebro.html", "brain", "Cérebro do Reino"]);
     return novo;
   }, []);
   React.useEffect(() => { localStorage.setItem("reino.menu", recolhido ? "recolhido" : "aberto"); }, [recolhido]);
@@ -133,15 +131,13 @@ function App() {
   );
   if (rota === "pre-cadastro.html") return <PreCadastroScreen ir={ir} />;
 
-  /* o Cérebro mostra a estrutura do banco: só conta de administrador vê no menu e abre a tela */
-  const itensMenu = ehAdm ? MENU : MENU.filter(([h]) => h !== "cerebro.html");
-  const Tela = rota === "cerebro.html" && !ehAdm ? null : TELAS[rota];
+  const Tela = TELAS[rota];
   const titulo = (MENU.find(([h]) => h === rota) || [, , rota])[2];
 
   return (
     <div className="hg-moldura">
       <div className={"hg-app" + (menu ? " is-menu" : "") + (recolhido ? " is-recolhido" : "")}>
-        <Sidebar current={rota} items={itensMenu} onNavigate={ir} collapsed={recolhido} />
+        <Sidebar current={rota} items={MENU} onNavigate={ir} collapsed={recolhido} />
         <button type="button" className="hg-side-seta" onClick={() => setRecolhido((v) => !v)} aria-label={recolhido ? "Expandir menu" : "Recolher menu"} aria-expanded={!recolhido}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
         </button>
