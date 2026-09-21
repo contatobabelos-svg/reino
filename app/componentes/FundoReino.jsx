@@ -5,7 +5,7 @@
    assets/login/reino-animado.html). A cena de lá (reino-video.jsx, 20 s em loop) foi portada
    para cá com as duas imagens extraídas (assets/login/reino-cena.webp e reino-neon.png), sem o
    motor de animação nem o painel de ajustes: o relógio é próprio (requestAnimationFrame,
-   no máximo 30 quadros/s, parado com a aba escondida) e os ajustes ficam como no original
+   no máximo 60 quadros/s, parado com a aba escondida) e os ajustes ficam como no original
    (intro desligada, intensidade 0,4).
 
    Enquadramento (FUNDO_REINO.retrato):
@@ -62,7 +62,8 @@
   const FALLS = [[722, 452, 42, 95], [620, 480, 42, 60], [1357, 460, 40, 95], [1557, 405, 40, 80], [307, 390, 32, 55], [1640, 385, 28, 45], [1290, 368, 26, 42]];
   const DIPS = [[9.4, 0.55, 0.16], [14.75, 0.4, 0.1], [16.9, 0.3, 0.12]];
   // intro desligada (como no original): o letreiro fica aceso com um zumbido sutil e três piscadas
-  function litAt(T) {
+  function litAt(T0) {
+    const T = T0 * 20 / TOTAL; // piscadas marcadas na escala original de 20 s
     let hum = 1 - 0.035 * (0.5 + 0.5 * wave(T, 54)) * (0.5 + 0.5 * wave(T, 18, 0.16));
     for (const [t0, prof, dur] of DIPS) { const u = (T - t0) / dur; if (u >= 0 && u <= 1) hum -= prof * (u < 0.35 ? u / 0.35 : (1 - u) / 0.65); }
     return hum;
@@ -201,7 +202,7 @@
     const img = FUNDO_REINO.cena, neon = FUNDO_REINO.neon;
     return (
       <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-        <Filtros id={id} waterDx={-WTILE * frac(T / TOTAL * SPD)} waterDy={3 * wave(T, 4 * SPD)} waterScale={24 * k} fallsDy={frac(T * 126 * SPD / FTILE) * FTILE} fallsScale={16 * k} />
+        <Filtros id={id} waterDx={-WTILE * frac(T / TOTAL * SPD)} waterDy={3 * wave(T, 4 * SPD)} waterScale={24 * k} fallsDy={frac(T / TOTAL * 42) * FTILE} fallsScale={16 * k} />
         <div style={{ position: "absolute", left: IX, top: 0, width: IW, height: IH, transform: `translate3d(${camX}px, 0, 0) scale(${cam})`, transformOrigin: "50% 58%", willChange: "transform", backfaceVisibility: "hidden" }}>
           <img src={img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }} onError={onErro} />
           <Agua id={id} img={img} onErro={onErro} />
