@@ -24,7 +24,7 @@
     quadroParado: 6,     // s — quadro usado com movimento reduzido
   };
 
-  const TOTAL = 20;
+  const TOTAL = 14;
   const SW = 1920, SH = 1080;          // palco
   const IW = 2024, IH = 1080;          // caixa da imagem (cover)
   const IX = (SW - IW) / 2;
@@ -35,7 +35,7 @@
   const TAU = Math.PI * 2;
   const frac = (v) => v - Math.floor(v);
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-  const SPD = 2;
+  const SPD = 3;
   const wave = (T, ciclos, fase) => Math.sin(TAU * (T / TOTAL * ciclos + (fase || 0)));
   // letreiro: medidas no palco (para o enquadramento no celular)
   const LETREIRO = { x0: IX + X(560), x1: IX + X(1170), cy: Y(380) };
@@ -252,7 +252,7 @@
         const dt = Math.min(0.1, (agora - antes) / 1000); antes = agora;
         if (document.hidden) return;
         acumulado = (acumulado + dt) % TOTAL;
-        if (agora - ultimo < 33) return;
+        if (agora - ultimo < 16) return;
         ultimo = agora;
         setT(acumulado);
       };
