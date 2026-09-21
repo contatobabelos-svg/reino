@@ -86,6 +86,26 @@ body[data-page="inicio"] .hg-ops { display: grid; grid-template-columns: 290px m
 body[data-page="inicio"] .hg-ops > .hg-col { min-height: 0; overflow: visible; align-content: start; gap: .8rem; padding-right: 2px; }
 body[data-page="inicio"] .hg-ops > .hg-col[data-zona="centro"] { overflow: visible; display: flex; flex-direction: column; }
 body[data-page="inicio"] .hg-ops > .hg-col[data-zona="centro"] > .hg-panel:not(.hg-globo-panel) { flex: none; }
+/* Sem buraco no Dashboard: em cada coluna o último painel estica até o fim da grade
+   (o globo do centro já cresce sozinho). Lista e botão do painel esticado se distribuem:
+   a lista ocupa a folga e o botão fica no rodapé. Só nas combinações de colunas lado a lado. */
+@media (min-width: 1100.02px) {
+  /* .hg-ops.hg-ops: vence a regra de telas < 1400px que faz da última coluna um grid */
+  body[data-page="inicio"] .hg-ops.hg-ops[data-colunas="esquerda centro direita"] > .hg-col,
+  body[data-page="inicio"] .hg-ops.hg-ops[data-colunas="esquerda centro"] > .hg-col,
+  body[data-page="inicio"] .hg-ops.hg-ops[data-colunas="centro direita"] > .hg-col { display: flex; flex-direction: column; }
+  body[data-page="inicio"] .hg-ops[data-colunas="esquerda centro direita"] > .hg-col > .hg-panel:last-child:not(.hg-globo-panel),
+  body[data-page="inicio"] .hg-ops[data-colunas="esquerda centro"] > .hg-col > .hg-panel:last-child:not(.hg-globo-panel),
+  body[data-page="inicio"] .hg-ops[data-colunas="centro direita"] > .hg-col > .hg-panel:last-child:not(.hg-globo-panel) { flex: 1 1 auto; display: flex; flex-direction: column; }
+  /* o globo cresce para ocupar a folga da coluna (o .hg-encher do fill o travava em flex:none) */
+  body[data-page="inicio"] .hg-ops > .hg-col[data-zona="centro"] > .hg-panel.hg-globo-panel { flex: 1 0 auto; }
+  /* na coluna do globo, quem absorve a folga é o globo: o último painel dela não estica */
+  body[data-page="inicio"] .hg-ops > .hg-col:has(> .hg-globo-panel) > .hg-panel:last-child:not(.hg-globo-panel) { flex: none; }
+  body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel:last-child:not(.hg-globo-panel) > :is(.hg-list, .hg-rolar, .hg-titulos, .hg-nt) { flex: 1 1 auto; align-content: space-between; }
+  body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel:last-child:not(.hg-globo-panel) > .hg-rolar { display: flex; flex-direction: column; }
+  body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel:last-child:not(.hg-globo-panel) > .hg-rolar > .hg-list { flex: 1 1 auto; align-content: space-between; }
+  body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel:last-child:not(.hg-globo-panel) > .hg-btn { margin-top: auto; flex: none; }
+}
 /* O globo nunca encolhe abaixo de 460px: com Notícias e Bate Papo na mesma
    coluna, é a coluna que rola, não o globo que some. */
 .hg-globo-panel { flex: 1 0 auto; min-height: 460px; display: flex; flex-direction: column; padding: .7rem .8rem; }
@@ -107,6 +127,9 @@ body[data-page="inicio"] .hg-ring-val .hg-glow-num { font-size: 1.6rem; }
   .hg-globo-dica { top: auto; bottom: 64px; }
   .hg-globo-painel { position: absolute; left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; max-height: 42%; margin: 0; padding: .7rem .8rem; }
   .hg-globo-zoom { bottom: calc(42% + 18px); }
+  /* Dashboard: com o globo mais alto a folha mostra o território inteiro, sem botão cortado ao meio */
+  body[data-page="inicio"] .hg-globo-painel { max-height: 56%; }
+  body[data-page="inicio"] .hg-globo-zoom { bottom: calc(56% + 18px); }
 }
 /* telas baixas (notebooks 768px): esconde subtítulos */
 @media (max-height: 820px) {
@@ -390,3 +413,17 @@ body[data-page="chat"] .hg-zap { flex: 1 1 0; min-height: 0; }
 /* Login real: faixa de conta aguardando aprovação e espera da sessão */
 .hg-aviso-aprovacao { margin: 0; padding: .55rem .9rem; border-radius: 12px; border: 1px solid rgba(255, 181, 71, .55); background: rgba(255, 181, 71, .08); color: var(--text); font-size: .82rem; }
 .hg-carregando-conta { margin: auto; color: var(--text-2); font-size: .9rem; }
+
+/* Dashboard, fileira de analytics: cada painel ocupa a altura da fileira (sem faixa vazia por
+   baixo). O corpo cresce, as barras se distribuem e o botão fica no rodapé. */
+body[data-page="inicio"] .hg-analytics > .hg-panel { display: flex; flex-direction: column; justify-content: space-between; }
+body[data-page="inicio"] .hg-analytics > .hg-panel > .hg-analise-corpo { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-between; gap: .8rem; margin-bottom: .8rem; }
+body[data-page="inicio"] .hg-analytics .hg-analise-corpo > .hg-linha-graf { flex: 1 1 150px; height: auto !important; min-height: 150px; }
+/* o gráfico estica com a folga: sem os pontos (que virariam ovais), só linha e área */
+body[data-page="inicio"] .hg-analytics .hg-analise-corpo .ponto { display: none; }
+body[data-page="inicio"] .hg-analytics .hg-analise-corpo > .hg-barras { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-between; }
+body[data-page="inicio"] .hg-analytics > .hg-panel > .hg-btn { margin-top: auto; flex: none; }
+.hg-resumo-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; padding-top: .7rem; border-top: 1px solid var(--border-soft); }
+.hg-resumo-3 > div { display: grid; gap: .15rem; min-width: 0; }
+.hg-resumo-3 .hg-sub { font-size: .7rem; }
+.hg-resumo-3 b { font: 700 1.05rem var(--font-d); color: var(--text-strong); }

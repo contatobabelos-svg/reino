@@ -178,3 +178,10 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] AA4 Seção principal do Dashboard = Tecnologia (pedido `tema: "tecnologia"`)
 - [x] AA5 Novo bloco "Ranking de afiliados" na coluna da direita (top 5 pela função ranking_afiliados, a própria conta em dourado, widget ocultável em Personalizar)
 - [ ] AA6 Decisão do fundador: Conquistas fica no centro ou some do Dashboard?
+
+## AB — "no dashboard não ter buracos, todos os espaços são preenchidos com uma informação." (21/09)
+- [x] AB1 Painéis redistribuídos nas 3 colunas (esquerda: Rede social, Conquistas, Bate Papo; centro: Mapa, Música, Assistente; direita: Notícias, Ranking, Match) e o último painel de cada coluna estica até o fim; o mapa cresce com a folga
+- [x] AB2 Se alguém oculta painéis em Personalizar, a distribuição se refaz sozinha (altura estimada por painel)
+- [x] AB3 Fileira de baixo: Bolsa ganha resumo calculado (total, média, melhor dia) e gráfico que cresce; Vendas distribui as barras; botões no rodapé
+- [x] AB4 Bate Papo mostra 3 conversas; gaveta do território do mapa mostra o conteúdo inteiro
+- [ ] AB5 Pendente: cenário "ocultar Rede social + Conquistas" foi corrigido (painel de lista vai por último) mas não foi retestado — o fundador pediu para parar os testes

@@ -76,7 +76,7 @@ const painelPorTitulo = (page, texto) => page.evaluate((t) => {
   const servidor = await servir(pasta);
   const navegador = await chromium.launch({ channel: 'chrome', args: ['--disable-dev-shm-usage'] });
   try {
-    for (const [w, h, nome] of [[1440, 900, 'pc'], [768, 1024, 'tablet'], [390, 844, 'celular']]) {
+    for (const [w, h, nome] of [[1440, 900, 'pc'], [1280, 800, 'pc-1280'], [1920, 1080, 'pc-1920'], [768, 1024, 'tablet'], [390, 844, 'celular']]) {
       const ctx = await navegador.newContext({ viewport: { width: w, height: h } });
       await preparar(ctx);
       const page = await ctx.newPage(); const saco = [];
@@ -93,14 +93,30 @@ const painelPorTitulo = (page, texto) => page.evaluate((t) => {
       ok(`[${nome}] bloco de notícias é o de Tecnologia`, !!nt && ctx.temas.indexOf('tecnologia') >= 0, 'temas pedidos: ' + ctx.temas.join(','));
       ok(`[${nome}] ranking de afiliados aparece com as linhas`, (await page.locator('.hg-rank-lista li').count()) === 5, await page.locator('.hg-rank-lista li').allInnerTexts().then((t) => t.slice(0, 2).join(' | ').replace(/\n/g, ' ')));
       ok(`[${nome}] a própria conta aparece marcada "(você)"`, (await page.locator('.hg-rank-lista .hg-gold').innerText().catch(() => '')).indexOf('você') >= 0);
-      if (w >= 1100) {
+      if (w >= 1100) {  // colunas lado a lado
         ok(`[${nome}] notícias e ranking ficam na coluna da direita`, nt && rk && nt.zona === 'direita' && rk.zona === 'direita', `${nt && nt.zona}/${rk && rk.zona}`);
-        ok(`[${nome}] Conquistas saiu da direita (foi para o centro)`, cq && cq.zona === 'centro', cq && cq.zona);
+        ok(`[${nome}] Conquistas está na coluna da esquerda`, cq && cq.zona === 'esquerda', cq && cq.zona);
         ok(`[${nome}] notícias ocupam o topo da coluna direita (onde ficava Conquistas)`, nt && nt.y < (rk ? rk.y : 9e9), `notícias y=${nt && nt.y}, ranking y=${rk && rk.y}`);
         console.log('ALTURA do bloco de notícias:', nt && nt.h, 'px (antes: 481 px no centro)');
         ok(`[${nome}] bloco de notícias tem no máximo ~55% da altura de antes (481 px)`, nt && nt.h <= 270, nt && nt.h + ' px');
         globalThis.__alturaNoticias = nt && nt.h;
       }
+      // sem buraco: colunas lado a lado terminam juntas e nenhum painel tem faixa vazia por dentro
+      const oco = await page.evaluate(() => {
+        const ops = document.querySelector('.hg-ops'); const fim = ops.getBoundingClientRect().bottom;
+        const cols = [...ops.querySelectorAll(':scope > .hg-col')].filter((c) => c.querySelector('.hg-panel') && getComputedStyle(c).display !== 'contents');
+        const lado = cols.length > 1 && new Set(cols.map((c) => Math.round(c.getBoundingClientRect().top))).size === 1;
+        const abaixo = lado ? cols.map((c) => { const u = [...c.querySelectorAll(':scope > .hg-panel')].pop(); return { zona: c.dataset.zona, vazio: Math.round(fim - u.getBoundingClientRect().bottom) }; }) : [];
+        const internos = [...document.querySelectorAll('.hg-ops .hg-panel, .hg-analytics .hg-panel')].filter((pn) => !pn.classList.contains('hg-globo-panel')).map((pn) => {
+          const r = pn.getBoundingClientRect(); const cs = getComputedStyle(pn);
+          const ultimo = Math.max(...[...pn.children].map((c) => c.getBoundingClientRect().bottom));
+          return { t: ((pn.querySelector('h2,h3') || {}).textContent || '?').trim().slice(0, 24), vazio: Math.round(r.bottom - ultimo - parseFloat(cs.paddingBottom) - parseFloat(cs.borderBottomWidth)) };
+        });
+        return { lado, abaixo, internos };
+      });
+      ok(`[${nome}] colunas lado a lado terminam juntas (sem buraco no fim de coluna)`, !oco.lado || oco.abaixo.every((c) => Math.abs(c.vazio) <= 2), JSON.stringify(oco.abaixo));
+      const folgas = oco.internos.filter((x) => x.vazio > 40);
+      ok(`[${nome}] nenhum painel com faixa vazia por dentro (mais de 40 px)`, folgas.length === 0, folgas.length ? JSON.stringify(folgas) : 'maior folga: ' + Math.max(...oco.internos.map((x) => x.vazio)) + ' px');
       const rol = await page.evaluate(() => { const d = document.documentElement; const c = document.querySelector('.hg-content') || d; return d.scrollWidth <= d.clientWidth + 1 && c.scrollWidth <= c.clientWidth + 1; });
       ok(`[${nome}] sem rolagem horizontal`, rol);
       await page.screenshot({ path: `${PRINTS}/dashboard-${nome}.png` });
@@ -116,6 +132,27 @@ const painelPorTitulo = (page, texto) => page.evaluate((t) => {
       ok(`[${nome}] Notícias: a manchete tem foto`, ordem.length > 0 && ordem[0].foto);
       await page.screenshot({ path: `${PRINTS}/noticias-${nome}.png` });
       ok(`[${nome}] sem erro de JavaScript`, erroDeJs(saco).length === 0, erroDeJs(saco).join(' | '));
+      await ctx.close();
+    }
+    // widgets ocultos em "Personalizar": a distribuição se refaz e continua sem buraco
+    for (const ocultos of [['match'], ['mapa'], ['noticias', 'ranking'], ['musica', 'assistente', 'chat'], ['social', 'conquistas'], ['noticias']]) {
+      const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 } });
+      await preparar(ctx);
+      await ctx.addInitScript((lista) => { try { localStorage.setItem('reino.widgets.ocultos', JSON.stringify(lista)); } catch (e) { /* bloqueado */ } }, ocultos);
+      const page = await ctx.newPage(); const saco = [];
+      page.on('pageerror', (e) => saco.push(e.message));
+      await page.goto(SITE + '/', { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.hg-ops', { timeout: 60000 });
+      await espera(2500);
+      const r = await page.evaluate(() => {
+        const ops = document.querySelector('.hg-ops'); const fim = ops.getBoundingClientRect().bottom;
+        const cols = [...ops.querySelectorAll(':scope > .hg-col')].filter((c) => c.querySelector('.hg-panel'));
+        return { n: cols.length, abaixo: cols.map((c) => { const u = [...c.querySelectorAll(':scope > .hg-panel')].pop(); return c.dataset.zona + ':' + Math.round(fim - u.getBoundingClientRect().bottom); }), internos: [...ops.querySelectorAll('.hg-panel')].filter((pn) => !pn.classList.contains('hg-globo-panel')).map((pn) => { const q = pn.getBoundingClientRect(); const cs = getComputedStyle(pn); return { t: ((pn.querySelector('h2,h3') || {}).textContent || '?').trim().slice(0, 22), v: Math.round(q.bottom - Math.max(...[...pn.children].map((c) => c.getBoundingClientRect().bottom)) - parseFloat(cs.paddingBottom) - parseFloat(cs.borderBottomWidth)) }; }) };
+      });
+      const folgas = r.internos.filter((x) => x.v > 90);
+      ok(`ocultando [${ocultos.join(', ')}]: colunas terminam juntas`, r.abaixo.every((x) => Math.abs(Number(x.split(':')[1])) <= 2), r.abaixo.join(' '));
+      ok(`ocultando [${ocultos.join(', ')}]: nenhum painel com faixa vazia grande por dentro (>90 px)`, folgas.length === 0, folgas.length ? JSON.stringify(folgas) : 'maior folga: ' + Math.max(...r.internos.map((x) => x.v)) + ' px');
+      ok(`ocultando [${ocultos.join(', ')}]: sem erro de JavaScript`, saco.length === 0, saco.join(' | '));
       await ctx.close();
     }
     // ranking vazio e offline

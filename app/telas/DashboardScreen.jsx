@@ -113,6 +113,39 @@ function RankingWidget({ onClose, ir, meuCodigo }) {
   );
 }
 
+/* Distribuição dos painéis nas três colunas, sem buraco no fim de nenhuma delas.
+   Cada painel tem uma altura estimada (o mapa conta a altura que ele cresce até ocupar a
+   sobra). O desenho padrão já fica equilibrado; se alguém ocultar painéis, o último painel da
+   coluna mais alta passa para a mais baixa enquanto isso deixar as colunas mais parecidas.
+   O último painel de cada coluna estica até o fim da grade (app-shell.css). */
+const ALTURA_PAINEL = { social: 465, conquistas: 392, chat: 440, mapa: 620, musica: 367, assistente: 239, noticias: 246, ranking: 372, match: 620 };
+const COLUNAS_PADRAO = { esquerda: ["social", "conquistas", "chat"], centro: ["mapa", "musica", "assistente"], direita: ["noticias", "ranking", "match"] };
+const ZONAS = ["esquerda", "centro", "direita"];
+/* quem se adapta melhor à folga do fim da coluna (lista que se distribui): fica por último */
+const ESTICA = { match: 9, chat: 8, ranking: 7, musica: 5, social: 4, conquistas: 3, assistente: 2, noticias: 1, mapa: 0 };
+function distribuirPaineis(visivel) {
+  const cols = {};
+  ZONAS.forEach((z) => { cols[z] = COLUNAS_PADRAO[z].filter(visivel); });
+  const alt = (ids) => ids.reduce((t, id) => t + ALTURA_PAINEL[id], 0) + Math.max(0, ids.length - 1) * 13;
+  for (let i = 0; i < 8; i++) {
+    const ordem = ZONAS.slice().sort((a, b) => alt(cols[b]) - alt(cols[a]));
+    const alta = ordem[0], baixa = ordem[2];
+    const movivel = cols[alta].filter((id) => id !== "mapa");
+    if (!movivel.length) break;
+    const mover = movivel[movivel.length - 1];
+    if (alt(cols[alta]) - alt(cols[baixa]) <= ALTURA_PAINEL[mover] + 13) break;
+    cols[alta] = cols[alta].filter((id) => id !== mover);
+    cols[baixa] = cols[baixa].concat(mover);
+  }
+  ZONAS.forEach((z) => {
+    const ids = cols[z];
+    if (ids.length < 2 || ids.indexOf("mapa") >= 0) return;   // na coluna do mapa, é o mapa que absorve a folga
+    const melhor = ids.reduce((a, b) => (ESTICA[b] > ESTICA[a] ? b : a));
+    cols[z] = ids.filter((id) => id !== melhor).concat(melhor);
+  });
+  return cols;
+}
+
 const SUGESTOES_MUSICA_MINI = ["samba", "lo-fi para trabalhar", "sertanejo"];
 /* Bloco Música: mini player com um único <audio> — some quando o Dashboard
    desmonta (troca de tela) ou quando o bloco é fechado. */
@@ -265,13 +298,82 @@ function DashboardScreen({ ir, usuario }) {
   const alcance = d.regras.alcanceMapa[d.perfil.titulo] || d.regras.alcanceMapaPadrao;
 
   /* colunas de operação: só as que têm algum widget visível entram na grade */
-  const colEsq = w.ve("social");
-  const colCentro = w.ve("mapa") || w.ve("conquistas") || w.ve("chat") || w.ve("musica") || w.ve("assistente");
-  const colDir = w.ve("noticias") || w.ve("ranking") || w.ve("match");
-  const colunas = [colEsq && "esquerda", colCentro && "centro", colDir && "direita"].filter(Boolean).join(" ");
+  const cols = distribuirPaineis(w.ve);
+  const colunas = ZONAS.filter((z) => cols[z].length).join(" ");
   const kpis = ["kpi-afiliados", "kpi-bonus", "kpi-negocios", "kpi-cidades"].filter(w.ve);
   const analytics = ["reputacao", "bolsa", "vendas"].filter(w.ve);
   const escondidos = [...w.ocultos].filter((id) => WIDGETS[id]);
+
+  /* resumo do gráfico da Bolsa, calculado dos próprios pontos: enche o painel com informação */
+  const resumoBolsa = (() => {
+    const pts = d.negociosSemana.pontos, rot = d.negociosSemana.rotulos, soma = pts.reduce((t, v) => t + v, 0);
+    return { total: soma.toLocaleString("pt-BR"), media: Math.round(soma / pts.length).toLocaleString("pt-BR"), melhor: rot[pts.indexOf(Math.max(...pts))] };
+  })();
+
+  const paineis = {
+    social: () => (
+      <Panel tone="social" fill title="Rede social e feed de negócios" subtitle="Publicações do seu grupo de título" onClose={() => w.esconder("social")}
+        actions={SeletorGrupo}>
+        <div className={"hg-timeline hg-rolar" + (preCadastro ? " is-bloqueada" : "")} key={grupo} aria-hidden={preCadastro || undefined}>
+          {feedGrupo.length ? feedGrupo.slice(0, 4).map((p) => <PostRS key={p.autor} {...p} titulo={TITULO_AUTOR[p.autor]} />)
+            : <p className="hg-sub" style={{ padding: "1.2rem .6rem", textAlign: "center" }}>Ninguém do grupo de {tituloGrupo} publicou ainda. Seja o primeiro na rede social.</p>}
+        </div>
+        {preCadastro ? (
+          <div className="hg-pre-aviso" role="note">
+            <span className="hg-pre-aviso-ico"><Icon name="coroa" /></span>
+            <strong>Seu ingresso está em análise</strong>
+            <p>Você está no pré-cadastro: já reservou {escolhido ? <b>{escolhido}</b> : "seu título"} e o território. A rede social, as guildas e o Match abrem quando seu ingresso no Reino for confirmado.</p>
+            <Button variant="cyan" block icon="coroa" onClick={() => ir("pre-cadastro.html")}>Concluir meu ingresso</Button>
+            <span className="hg-sub">Enquanto isso, você pode explorar o mapa e acompanhar a bolsa.</span>
+          </div>
+        ) : <Button block onClick={() => ir("rede-social.html")}>Abrir rede social</Button>}
+      </Panel>
+    ),
+    conquistas: () => (
+      <Panel tone="conquistas" title="Conquistas" subtitle="Sua evolução no Reino" onClose={() => w.esconder("conquistas")}>
+        <ProgressRing value={64} label="até Príncipe" />
+        {d.metricas.map((m) => <MetricRow key={m.nome} name={m.nome} label={m.rotulo} value={m.percentual} />)}
+        <Button variant="ghost" block onClick={() => ir("conquistas.html")}>Ver conquistas</Button>
+      </Panel>
+    ),
+    chat: () => (
+      <Panel title="Bate Papo do Reino" subtitle="Só Marquês para cima envia mensagem" headingLevel={3} onClose={() => w.esconder("chat")}>
+        <ul className="hg-list">
+          {d.conversas.slice(0, 3).map((c) => (
+            <ListRow key={c.nome} title={c.nome} subtitle={c.ultima} avatar={c.nome}
+              right={c.naoLidas ? <Pill>{c.naoLidas}</Pill> : <time>{c.quando}</time>} />
+          ))}
+        </ul>
+        <Button variant="ghost" block onClick={() => ir("chat.html")}>Abrir o Bate Papo</Button>
+      </Panel>
+    ),
+    mapa: () => <MapaPanel usuario={usuario} subtitle={"Seu título mostra: " + alcance + ". Desça até o bairro para ver a rede de empresas."} onClose={() => w.esconder("mapa")} />,
+    musica: () => <MusicaWidget ir={ir} onClose={() => w.esconder("musica")} />,
+    assistente: () => <AssistenteWidget ir={ir} onClose={() => w.esconder("assistente")} />,
+    noticias: () => <NoticiasWidget ir={ir} onClose={() => w.esconder("noticias")} />,
+    ranking: () => <RankingWidget ir={ir} meuCodigo={window.ReinoAfiliados ? window.ReinoAfiliados.meuCodigo(d.perfil.nome) : ""} onClose={() => w.esconder("ranking")} />,
+    match: () => (
+      <Panel tone="match" fill title="Match e alertas" subtitle="Empresas complementares e o que pede atenção" onClose={() => w.esconder("match")}>
+        <div className="hg-rolar">
+          <ul className="hg-list">
+            {d.match.slice(0, 2).map((m) => (
+              <ListRow key={m.nome} title={m.nome} subtitle={m.nicho + " · " + m.cidade} avatarGradient="match" right={<Pill>{m.compatibilidade}%</Pill>} />
+            ))}
+            {d.alertas.map((al) => (
+              <li className="hg-row" key={al.titulo}>
+                <span className="hg-avatar" style={{ background: al.tipo === "alta" ? "linear-gradient(135deg,#ff4d7a,#e04bff)" : "linear-gradient(135deg,#3b82ff,#8b5cff)" }}>
+                  <Icon name={al.tipo === "alta" ? "alerta" : "agenda"} />
+                </span>
+                <div><strong>{al.titulo}</strong><span>{al.texto}</span></div>
+                <time>{al.quando}</time>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <Button block onClick={() => ir("match.html")}>Ver todos os matches</Button>
+      </Panel>
+    ),
+  };
 
   return (
     <>
@@ -307,80 +409,11 @@ function DashboardScreen({ ir, usuario }) {
 
       {colunas ? (
         <section className="hg-ops" data-colunas={colunas}>
-          {colEsq ? (
-            <div className="hg-col" data-zona="esquerda">
-              <Panel tone="social" fill title="Rede social e feed de negócios" subtitle="Publicações do seu grupo de título" onClose={() => w.esconder("social")}
-                actions={SeletorGrupo}>
-                <div className={"hg-timeline hg-rolar" + (preCadastro ? " is-bloqueada" : "")} key={grupo} aria-hidden={preCadastro || undefined}>
-                  {feedGrupo.length ? feedGrupo.slice(0, 4).map((p) => <PostRS key={p.autor} {...p} titulo={TITULO_AUTOR[p.autor]} />)
-                    : <p className="hg-sub" style={{ padding: "1.2rem .6rem", textAlign: "center" }}>Ninguém do grupo de {tituloGrupo} publicou ainda. Seja o primeiro na rede social.</p>}
-                </div>
-                {preCadastro ? (
-                  <div className="hg-pre-aviso" role="note">
-                    <span className="hg-pre-aviso-ico"><Icon name="coroa" /></span>
-                    <strong>Seu ingresso está em análise</strong>
-                    <p>Você está no pré-cadastro: já reservou {escolhido ? <b>{escolhido}</b> : "seu título"} e o território. A rede social, as guildas e o Match abrem quando seu ingresso no Reino for confirmado.</p>
-                    <Button variant="cyan" block icon="coroa" onClick={() => ir("pre-cadastro.html")}>Concluir meu ingresso</Button>
-                    <span className="hg-sub">Enquanto isso, você pode explorar o mapa e acompanhar a bolsa.</span>
-                  </div>
-                ) : <Button block onClick={() => ir("rede-social.html")}>Abrir rede social</Button>}
-              </Panel>
+          {ZONAS.filter((z) => cols[z].length).map((z) => (
+            <div className="hg-col" data-zona={z} key={z}>
+              {cols[z].map((id) => <React.Fragment key={id}>{paineis[id]()}</React.Fragment>)}
             </div>
-          ) : null}
-
-          {colCentro ? (
-            <div className="hg-col" data-zona="centro">
-              {w.ve("mapa") ? <MapaPanel usuario={usuario} subtitle={"Seu título mostra: " + alcance + ". Desça até o bairro para ver a rede de empresas."} onClose={() => w.esconder("mapa")} /> : null}
-              {w.ve("conquistas") ? (
-                <Panel tone="conquistas" title="Conquistas" subtitle="Sua evolução no Reino" onClose={() => w.esconder("conquistas")}>
-                  <ProgressRing value={64} label="até Príncipe" />
-                  {d.metricas.map((m) => <MetricRow key={m.nome} name={m.nome} label={m.rotulo} value={m.percentual} />)}
-                  <Button variant="ghost" block onClick={() => ir("conquistas.html")}>Ver conquistas</Button>
-                </Panel>
-              ) : null}
-              {w.ve("chat") ? (
-                <Panel title="Bate Papo do Reino" subtitle="Só Marquês para cima envia mensagem" headingLevel={3} onClose={() => w.esconder("chat")}>
-                  <ul className="hg-list">
-                    {d.conversas.slice(0, 2).map((c) => (
-                      <ListRow key={c.nome} title={c.nome} subtitle={c.ultima} avatar={c.nome}
-                        right={c.naoLidas ? <Pill>{c.naoLidas}</Pill> : <time>{c.quando}</time>} />
-                    ))}
-                  </ul>
-                  <Button variant="ghost" block onClick={() => ir("chat.html")}>Abrir o Bate Papo</Button>
-                </Panel>
-              ) : null}
-              {w.ve("musica") ? <MusicaWidget ir={ir} onClose={() => w.esconder("musica")} /> : null}
-              {w.ve("assistente") ? <AssistenteWidget ir={ir} onClose={() => w.esconder("assistente")} /> : null}
-            </div>
-          ) : null}
-
-          {colDir ? (
-            <div className="hg-col" data-zona="direita">
-              {w.ve("noticias") ? <NoticiasWidget ir={ir} onClose={() => w.esconder("noticias")} /> : null}
-              {w.ve("ranking") ? <RankingWidget ir={ir} meuCodigo={window.ReinoAfiliados ? window.ReinoAfiliados.meuCodigo(d.perfil.nome) : ""} onClose={() => w.esconder("ranking")} /> : null}
-              {w.ve("match") ? (
-                <Panel tone="match" fill title="Match e alertas" subtitle="Empresas complementares e o que pede atenção" onClose={() => w.esconder("match")}>
-                  <div className="hg-rolar">
-                    <ul className="hg-list">
-                      {d.match.slice(0, 2).map((m) => (
-                        <ListRow key={m.nome} title={m.nome} subtitle={m.nicho + " · " + m.cidade} avatarGradient="match" right={<Pill>{m.compatibilidade}%</Pill>} />
-                      ))}
-                      {d.alertas.map((al) => (
-                        <li className="hg-row" key={al.titulo}>
-                          <span className="hg-avatar" style={{ background: al.tipo === "alta" ? "linear-gradient(135deg,#ff4d7a,#e04bff)" : "linear-gradient(135deg,#3b82ff,#8b5cff)" }}>
-                            <Icon name={al.tipo === "alta" ? "alerta" : "agenda"} />
-                          </span>
-                          <div><strong>{al.titulo}</strong><span>{al.texto}</span></div>
-                          <time>{al.quando}</time>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <Button block onClick={() => ir("match.html")}>Ver todos os matches</Button>
-                </Panel>
-              ) : null}
-            </div>
-          ) : null}
+          ))}
         </section>
       ) : null}
 
@@ -397,7 +430,14 @@ function DashboardScreen({ ir, usuario }) {
           ) : null}
           {w.ve("bolsa") ? (
             <Panel title="Bolsa de Valores" subtitle="Negócios fechados por dia" headingLevel={3} onClose={() => w.esconder("bolsa")}>
-              <div className={preCadastro ? "hg-trava-conteudo" : undefined}><LineChart points={d.negociosSemana.pontos} labels={d.negociosSemana.rotulos} highlight="342" /></div>
+              <div className={"hg-analise-corpo" + (preCadastro ? " hg-trava-conteudo" : "")}>
+                <LineChart points={d.negociosSemana.pontos} labels={d.negociosSemana.rotulos} highlight="342" />
+                <div className="hg-resumo-3">
+                  <div><span className="hg-sub">Total da semana</span><b>{resumoBolsa.total}</b></div>
+                  <div><span className="hg-sub">Média por dia</span><b>{resumoBolsa.media}</b></div>
+                  <div><span className="hg-sub">Melhor dia</span><b>{resumoBolsa.melhor}</b></div>
+                </div>
+              </div>
               {preCadastro
                 ? <Button variant="ghost" block className="is-travado" icon="coroa" onClick={travar("A Bolsa de Valores")}>Desbloqueado ao ingressar no Reino</Button>
                 : <Button variant="ghost" block onClick={() => ir("bolsa.html")}>Abrir a Bolsa</Button>}
@@ -405,7 +445,7 @@ function DashboardScreen({ ir, usuario }) {
           ) : null}
           {w.ve("vendas") ? (
             <Panel tone="afiliado" title="Vendas" subtitle="Faturamento e eficiência de aquisição" headingLevel={3} onClose={() => w.esconder("vendas")}>
-              <div className={preCadastro ? "hg-trava-conteudo" : undefined}><BarMetric items={d.vendas} /></div>
+              <div className={"hg-analise-corpo" + (preCadastro ? " hg-trava-conteudo" : "")}><BarMetric items={d.vendas} /></div>
               {preCadastro
                 ? <Button variant="green" block className="is-travado" icon="coroa" onClick={travar("Suas vendas e estatísticas")}>Desbloqueado ao ingressar no Reino</Button>
                 : <Button variant="green" block onClick={() => ir("meus-acessos.html")}>Meus acessos e estatísticas</Button>}
