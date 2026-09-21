@@ -71,6 +71,10 @@ Deno.serve(async (req) => {
   if (!tipo) return erro("campo_invalido", "A foto precisa ser WebP ou JPEG.", "foto");
 
   const admin = createClient(SUPABASE_URL, SERVICE, sem);
+  // CNPJ único: uma empresa, um cadastro (o índice perfis_cnpj_unico cobre a corrida entre dois envios)
+  const { data: cnpjJa, error: eCnpj } = await admin.rpc("reino_cnpj_existe", { p_cnpj: cnpj });
+  if (eCnpj) { console.error("reino_cnpj_existe", eCnpj); return erro("servidor", "Não foi possível conferir o CNPJ agora. Tente de novo.", undefined, 500); }
+  if (cnpjJa === true) return erro("cnpj_em_uso", "Esse CNPJ já tem cadastro no Reino. Se a empresa é sua, use \"Já tenho conta\".", "cnpj");
   const { data: livre, error: eLivre } = await admin.rpc("usuario_disponivel", { p_usuario: usuario });
   if (eLivre) { console.error("usuario_disponivel", eLivre); return erro("servidor", "Não foi possível conferir o usuário agora. Tente de novo.", undefined, 500); }
   if (livre !== true) return erro("usuario_indisponivel", "Esse usuário já existe. Escolha outro.", "usuario");
@@ -88,7 +92,12 @@ Deno.serve(async (req) => {
   if (error) {
     const m = `${error.code || ""} ${error.message || ""}`;
     if (/already|registered|exists/i.test(m)) return erro("email_em_uso", "Esse e-mail já tem conta no Reino. Use \"Já tenho conta\".", "email");
-    if (/database error/i.test(m)) return erro("usuario_indisponivel", "Esse usuário acabou de ser escolhido por outra pessoa. Escolha outro.", "usuario");
+    if (/database error/i.test(m)) {
+      // o banco recusou o perfil: ou o usuário ou o CNPJ acabou de ser ocupado por outro envio
+      const { data: cnpjAgora } = await admin.rpc("reino_cnpj_existe", { p_cnpj: cnpj });
+      if (cnpjAgora === true) return erro("cnpj_em_uso", "Esse CNPJ acabou de ser cadastrado por outra pessoa. Se a empresa é sua, use \"Já tenho conta\".", "cnpj");
+      return erro("usuario_indisponivel", "Esse usuário acabou de ser escolhido por outra pessoa. Escolha outro.", "usuario");
+    }
     if (/rate|too many|over_email/i.test(m)) return erro("limite", "Muitos cadastros seguidos agora. Aguarde alguns minutos e tente de novo.", undefined, 429);
     if (/weak|password/i.test(m)) return erro("campo_invalido", "Essa senha é fraca demais. Escolha outra.", "senha");
     if (/email/i.test(m)) return erro("campo_invalido", "Esse e-mail não foi aceito. Confira e tente de novo.", "email");

@@ -216,3 +216,11 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] AF9 **Decisão do fundador (21/09): "incluir cidade e UF"** — feito no AF11
 - [x] AF11 Cidade e UF no cadastro: etapa nova no carrossel do login imersivo ("Em que cidade a empresa fica?", uma linha do tipo "Campinas, SP"), nome conferido na lista de municípios do IBGE com sugestão quando não bate; `contas.js` envia cidade/uf; a função `reino-cadastro` valida os dois; migração `supabase/2026-09-21_cadastro_cidade_uf.sql` faz `privado.criar_perfil` limpar cidade e UF (quem chama o signup direto não grava lixo)
 - [x] AF12 **Publicado (21/09, a pedido do fundador "publique pelo 1 depois o 2")**: 1) banco — `empresas_do_mapa` conferida no ar e `cadastro_cidade_uf` aplicada; função `reino-cadastro` na versão 2 (testada em produção: exige cidade e UF, nenhuma conta criada). 2) site — o mapa já tinha subido no commit `f12a80c`; o cadastro com cidade/UF vai no commit seguinte
+
+## AD — decisões do fundador sobre as pendências (21/09) — "2 unico - 3 como esta agora - 4 manter - nos dois"
+- [x] AD1 CNPJ único: índice perfis_cnpj_unico + public.reino_cnpj_existe (só servidor) + checagem na função reino-cadastro (mensagem "Esse CNPJ já tem cadastro no Reino…", volta à etapa do CNPJ). Em produção: banco e função aplicados; testado sem criar conta (CNPJ novo passa; existente com e sem máscara é barrado)
+- [x] AD2 Letreiro do login no celular: fica como está (inteiro no alto, fundo desfocado embaixo — FUNDO_REINO.retrato = "encaixar")
+- [x] AD3 Lista dos 14 veículos de notícias: mantida
+- [x] AD4 Card Conquistas: mantido onde está (coluna do centro do Dashboard) — leitura de "nos dois"
+- [ ] AD5 Aberto: SMTP próprio (Resend etc.) — o fundador não respondeu; o Supabase padrão manda só 2 e-mails/hora
+- [ ] AD6 Aberto: CNPJ repetido barra também quem já tem conta em outro e-mail; falta fluxo de suporte para "o CNPJ é meu mas o cadastro é de outra pessoa"
