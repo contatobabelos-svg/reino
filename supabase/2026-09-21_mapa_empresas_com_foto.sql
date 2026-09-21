@@ -1,5 +1,10 @@
 -- AC · Mapa do Reino: só empresas cadastradas COM foto (21/09).
 --
+-- ATENÇÃO: SUBSTITUÍDA por supabase/2026-09-21_mapa_por_cidade_paginado.sql (C8 do Parecer 1).
+-- Não rode este arquivo de novo: ele recria a versão sem argumentos, com `limit 2000`, que o
+-- PostgREST corta em 1.000 (max_rows) — passando de mil empresas as UFs do fim do alfabeto somem
+-- do mapa sem erro nenhum. A versão nova recebe uf, cidade, limite (teto 500) e página.
+--
 -- Pedido do fundador: "mostrar apenas empresas cadastradas que tem foto, os demais
 -- pontos aleatorios pode remover". O mapa deixou de usar dados de demonstração e
 -- passa a ler esta função.

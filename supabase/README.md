@@ -19,6 +19,30 @@ Migrações aplicadas, em ordem:
    - e-mail dos cadastros só pela função `admin_cadastros()`; ranking só pela função `ranking_afiliados()` (código + total);
    - o clique vira "cadastrou" por trigger quando entra um cadastro com `visita_id`.
 5. `2026-09-21_trigger_ao_criar_usuario.sql` — o gatilho de `auth.users` que cria o perfil (já existia; o dump não o exporta).
+6. `2026-09-21_cadastro_cidade_uf.sql` — cidade e UF no cadastro (o lugar da empresa no mapa).
+7. `2026-09-21_cnpj_unico.sql` — índice único parcial em `perfis.cnpj` + `reino_cnpj_existe` (só service_role).
+8. `2026-09-21_mapa_empresas_com_foto.sql` — primeira versão de `empresas_do_mapa()`. **Substituída pela 12**; não rode de novo.
+
+### Rodada do Parecer 1 (Analista Cético), 21/09 — o que o Salvador aplicou
+
+9. `2026-09-21_fotos_so_logado_com_limite.sql` — **C3**: `public.fotos` não aceita mais INSERT/UPDATE de
+   `anon` (com a chave publicável qualquer pessoa gravava linha sem teto de tamanho e enchia o disco).
+   Gravar exige conta e `dono = auth.uid()`; `url` limitada a 20 kB e `chave` a 200. Ler continua público.
+10. `2026-09-21_cadastros_so_servidor.sql` — **C6**: `public.cadastros` só recebe INSERT do `service_role`,
+    ou seja, da `reino-cadastro`, depois que o Auth criou a conta (a linha usa o próprio `user.id` como
+    chave primária). Antes qualquer um forjava indicação, e é daí que saem ranking e comissão.
+    Em `cliques` (que continua aberto, é o link de afiliado) entra o gatilho `cliques_limpar`, que **corta**
+    em vez de recusar: código limpo (40), origem 300, cidade 80, uf 8, e `criado_em`/`cadastrou` do servidor.
+11. `2026-09-21_email_existe_usa_indice.sql` — **C9**: `reino_email_existe` filtra `instance_id` e passa a
+    usar `users_instance_id_email_idx` em vez de varrer `auth.users` a cada cadastro.
+12. `2026-09-21_mapa_por_cidade_paginado.sql` — **C8**: `empresas_do_mapa(p_uf, p_cidade, p_limite, p_pagina)`.
+    A versão anterior tinha `limit 2000`, mas o PostgREST corta em `max_rows = 1000`: passando de mil
+    empresas as UFs do fim do alfabeto sumiam do mapa em silêncio. Agora o limite tem teto de 500 por
+    página e o mapa pede só a cidade em que o globo está. Todos os parâmetros têm padrão, então a chamada
+    antiga (`{}`) continua valendo. Auxiliar `privado.chave_cidade` + índice `perfis_mapa_lugar`.
+
+Ordem obrigatória do item 10, para não derrubar o cadastro ao vivo: publicar a `reino-cadastro` com o
+insert no servidor → publicar o site sem o insert no navegador → só então rodar a migração.
 
 Backup: `~/Backups/reino/` (fora do git, tem dado pessoal), com `COMO-RESTAURAR.md`.
 Testes: `supabase/testes/` (sempre no Supabase local).
