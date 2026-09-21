@@ -34,6 +34,14 @@ export function cnpjValido(c: string): boolean {
 export const nomeValido = (n: string) =>
   n.length >= 5 && n.length <= 80 && /^[\p{L}][\p{L}'’.\- ]+$/u.test(n) && n.split(/\s+/).filter((p) => p.length >= 2).length >= 2;
 export const empresaValida = (e: string) => e.length >= 2 && e.length <= 120 && /[\p{L}\p{N}]/u.test(e);
+
+// Cidade e UF (AF9): sem elas a empresa não tem lugar no mapa do Reino.
+export const UFS = new Set(["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA",
+  "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"]);
+export const limparUf = (s: unknown) => String(s ?? "").trim().toUpperCase();
+export const ufValida = (u: string) => UFS.has(u);
+// o nome vem do IBGE (o app confere na lista de municípios); aqui só o formato
+export const cidadeValida = (c: string) => c.length >= 2 && c.length <= 80 && /^[\p{L}][\p{L}'’.\-/ ]*$/u.test(c);
 export const senhaValida = (s: string) => s.length >= 8 && s.length <= 72;
 export const emailValido = (e: string) => e.length <= 254 && EMAIL_RE.test(e);
 

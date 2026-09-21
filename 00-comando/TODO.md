@@ -186,17 +186,6 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] AB4 Bate Papo mostra 3 conversas; gaveta do território do mapa mostra o conteúdo inteiro
 - [ ] AB5 Pendente: cenário "ocultar Rede social + Conquistas" foi corrigido (painel de lista vai por último) mas não foi retestado — o fundador pediu para parar os testes
 
-## AC — "não ter botao de ir pro brasil. o globo agora é todo clicavel. manter apenas os botoes laterais e o card que mostra as cidades e bairros ficam abaixo do globo em horizontal. mostrar apenas empresas cadastradas que tem foto, os demais pontos aleatorios pode remover. quero que o pinos no modo bairro girem e o fio de coneçao entre eles ser igual do cerebro da babel." (21/09)
-- [ ] AC1 Folha sobre o globo sai: nada de "Ir para X", "Ver o Brasil inteiro", "Entrar no Brasil", "Visitar a torre Babel na Lua", "Voltar para a Terra". Ficam os botões laterais (`.hg-globo-zoom`) e o voltar/trilha do topo
-- [ ] AC2 Globo inteiro clicável: toque na Terra entra no território do título (Imperador/Rei → Brasil, Príncipe → estado, demais → cidade/endereço), toque na Lua abre a torre Babel; clique separado do arrasto por 5 px, cursor, brilho no hover, Enter no canvas e `prefers-reduced-motion`
-- [ ] AC3 Faixa horizontal abaixo do globo (`.hg-globo-faixa`, ~112 px): cabeçalho curto + cartões lado a lado com scroll-snap, um por nível (terra: seu território; brasil: estados; estado: cidades; cidade: bairros; bairro: empresas com foto)
-- [ ] AC4 Só empresas cadastradas com foto no mapa: saem os nós de demonstração (`BABEL_DEMO.rede`), os empresários orbitando sem foto e os marcadores do Google sem foto
-- [ ] AC5 Migração `supabase/2026-09-21_mapa_empresas_com_foto.sql` com `public.empresas_do_mapa()` (só perfis com foto + empresa e situação aprovada; devolve id, empresa, foto, cidade, uf, titulo) e serviço `app/servicos/empresas.js`
-- [ ] AC6 Pinos do modo bairro giram em torno do eixo vertical (rotateY 360°, 7–9 s, duas faces legíveis, mais lento no hover, parados com `prefers-reduced-motion`)
-- [ ] AC7 Fios como os do Cérebro Babel: fio fino ciano semitransparente, sem halo grosso, 2 partículas por fio animadas por `requestAnimationFrame` sobre as coordenadas reprojetadas; cada empresa liga nas 2 vizinhas mais próximas
-- [ ] AC8 **Publicar (Vyra):** primeiro a migração no Supabase, depois o site. Enquanto a função não existir, o mapa mostra só a empresa da própria conta
-- [ ] AC9 **Decisão do fundador:** o cadastro não pede cidade/UF, então empresa sem localização não aparece no mapa. Incluir cidade e UF no cadastro?
-
 ## AD — "pode subir o cerebro pra produção" (21/09)
 - [x] AD1 Cérebro do Reino (grafo 3D das tabelas do banco) publicado: tela `telas/CerebroReinoScreen.jsx` + `estilos/cerebro-reino.css`, rota `cerebro.html` no menu
 - [x] AD2 Decisão do fundador: **só conta admin** vê o item no menu e abre a tela; membro cai em "Em breve"
@@ -206,3 +195,24 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 
 ## AE — "remova de lá. vamos iniciar outro projeto." (21/09)
 - [x] AE1 Cérebro do Reino fora do ar: rota, item do menu e scripts saem do app; tela, estilo e bibliotecas vão para `arquivo/cerebro-reino/` (guardados, não publicados). O ícone `brain` fica no bundle, sem uso
+
+## AC — "ao criar minha conta, esta aparecendo 'Olá, Marcelo' precisa mostrar meu nome. o scroll está bugado, nao rola a tela toda. Match e alertas esta com espaço muito longo entre eles, crie mais. não ter botao de ir pro brasil. o globo agora é todo clicavel. manter apenas os botoes laterais e o card que mostra as cidades e bairros ficam abaixo do globo em horizontal. mostrar apenas empresas cadastradas que tem foto, os demais pontos aleatorios pode remover. quero que o pinos no modo bairro girem e o fio de coneçao entre eles ser igual do cerebro da babel." (21/09)
+- [x] AC1 Cumprimento e código de afiliado usam o nome da conta logada (antes: perfil de demonstração "Marcelo"); o código guardado no navegador só vale para a conta dona (reino.meuCodigo.dono)
+- [x] AC2 Rolagem "bugada": NÃO reproduzida no Chrome nem no Firefox 155 (roda do mouse em 8 tamanhos de janela, modo App, conta "aguardando", cadastro em 1366×768, menu lateral). Falta o fundador dizer onde/como trava (aparelho, navegador, tamanho, mouse/touchpad/toque)
+- [x] AC3 Match e alertas: lista mede a altura livre e mostra só as linhas inteiras que cabem (ListaQueEnche), matches e alertas intercalados; mais dados de demonstração (matches 9, alertas 6, conversas 7); Bate Papo e Match usam o mesmo mecanismo
+- [x] AC3b Colunas: esquerda = Rede social, Música, Bate Papo; centro = Mapa, Conquistas, Assistente; direita = Notícias, Ranking, Match
+- [x] AC4 (agente do mapa) sem botões "Ir para…"; globo todo clicável; faixa horizontal abaixo do globo; só empresas cadastradas com foto; pinos girando e fios estilo Cérebro Babel no modo bairro — entregue pelo Ourives na seção AF
+
+## AF — "não ter botao de ir pro brasil. o globo agora é todo clicavel. manter apenas os botoes laterais e o card que mostra as cidades e bairros ficam abaixo do globo em horizontal. mostrar apenas empresas cadastradas que tem foto, os demais pontos aleatorios pode remover. quero que o pinos no modo bairro girem e o fio de coneçao entre eles ser igual do cerebro da babel." (21/09)
+- [x] AF1 Folha sobre o globo sai: nada de "Ir para X", "Ver o Brasil inteiro", "Entrar no Brasil", "Visitar a torre Babel na Lua", "Voltar para a Terra". Ficam os botões laterais (`.hg-globo-zoom`) e o voltar/trilha do topo
+- [x] AF2 Globo inteiro clicável: toque na Terra entra no território do título (Imperador/Rei → Brasil, Príncipe → estado, demais → cidade/endereço), toque na Lua abre a torre Babel; clique separado do arrasto por 5 px, cursor, brilho no hover, Enter no canvas e `prefers-reduced-motion`
+- [x] AF3 Faixa horizontal abaixo do globo (`.hg-globo-faixa`, ~112 px): cabeçalho curto + cartões lado a lado com scroll-snap, um por nível (terra: seu território; brasil: estados; estado: cidades; cidade: bairros; bairro: empresas com foto)
+- [x] AF4 Só empresas cadastradas com foto no mapa: saem os nós de demonstração (`BABEL_DEMO.rede`), os empresários orbitando sem foto e os marcadores do Google sem foto
+- [x] AF5 Migração `supabase/2026-09-21_mapa_empresas_com_foto.sql` com `public.empresas_do_mapa()` (só perfis com foto + empresa e situação aprovada; devolve id, empresa, foto, cidade, uf, titulo) e serviço `app/servicos/empresas.js`
+- [x] AF6 Pinos do modo bairro giram em torno do eixo vertical (rotateY 360°, 7–9 s, duas faces legíveis, mais lento no hover, parados com `prefers-reduced-motion`)
+- [x] AF7 Fios como os do Cérebro Babel: fio fino ciano semitransparente, sem halo grosso, 2 partículas por fio animadas por `requestAnimationFrame` sobre as coordenadas reprojetadas; cada empresa liga nas 2 vizinhas mais próximas
+- [x] AF10 Achado: do Brasil para baixo a cartografia ReinoMapa (MapLibre, vem no `_ds_bundle.js`) escondia o globo inteiro — as listas de estados/cidades/bairros e a rede de raios estavam mortas no produto. Agora o MapLibre entra por portal dentro do palco, a faixa continua visível e navega, e no nível bairro o globo reassume (é nele que os pinos e os fios se apoiam)
+- [ ] AF8 **Publicar (Vyra):** primeiro a migração no Supabase, depois o site. Enquanto a função não existir, o mapa mostra só a empresa da própria conta
+- [x] AF9 **Decisão do fundador (21/09): "incluir cidade e UF"** — feito no AF11
+- [x] AF11 Cidade e UF no cadastro: etapa nova no carrossel do login imersivo ("Em que cidade a empresa fica?", uma linha do tipo "Campinas, SP"), nome conferido na lista de municípios do IBGE com sugestão quando não bate; `contas.js` envia cidade/uf; a função `reino-cadastro` valida os dois; migração `supabase/2026-09-21_cadastro_cidade_uf.sql` faz `privado.criar_perfil` limpar cidade e UF (quem chama o signup direto não grava lixo)
+- [x] AF12 **Publicado (21/09, a pedido do fundador "publique pelo 1 depois o 2")**: 1) banco — `empresas_do_mapa` conferida no ar e `cadastro_cidade_uf` aplicada; função `reino-cadastro` na versão 2 (testada em produção: exige cidade e UF, nenhuma conta criada). 2) site — o mapa já tinha subido no commit `f12a80c`; o cadastro com cidade/UF vai no commit seguinte

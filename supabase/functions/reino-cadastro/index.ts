@@ -1,5 +1,5 @@
 // Reino · cadastro do login imersivo (W). Recebe multipart/form-data:
-//   nome, empresa, cnpj, email, usuario, senha, foto (arquivo webp/jpeg), indicado_por?, titulo?, redirecionar?
+//   nome, empresa, cnpj, cidade, uf, email, usuario, senha, foto (arquivo webp/jpeg), indicado_por?, titulo?, redirecionar?
 // Valida tudo de novo aqui (o navegador não é confiável), cria a conta pelo signup normal do Auth
 // (o Supabase manda o e-mail de confirmação), grava a foto no Storage em avatares/<user_id>.webp
 // e o link em perfis.foto. Nada de base64 em coluna.
@@ -10,8 +10,8 @@
 // Chamada com a chave publicável (verify_jwt = false no gateway): é cadastro, não há login ainda.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
-  cnpjValido, CORS, emailValido, empresaValida, ipDe, limparUsuario, mascararEmail, nomeValido, resposta,
-  senhaValida, soDigitos, urlVolta, usuarioValido,
+  cidadeValida, cnpjValido, CORS, emailValido, empresaValida, ipDe, limparUf, limparUsuario, mascararEmail,
+  nomeValido, resposta, senhaValida, soDigitos, ufValida, urlVolta, usuarioValido,
 } from "../_shared/reino-validar.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -46,6 +46,8 @@ Deno.serve(async (req) => {
   const nome = txt("nome").replace(/\s+/g, " ");
   const empresa = txt("empresa").replace(/\s+/g, " ");
   const cnpj = soDigitos(form.get("cnpj"));
+  const cidade = txt("cidade").replace(/\s+/g, " ");
+  const uf = limparUf(form.get("uf"));
   const email = txt("email").toLowerCase();
   const usuario = limparUsuario(form.get("usuario"));
   const senha = String(form.get("senha") ?? "");
@@ -56,6 +58,8 @@ Deno.serve(async (req) => {
   if (!nomeValido(nome)) return erro("campo_invalido", "Digite seu nome completo (nome e sobrenome).", "nome");
   if (!empresaValida(empresa)) return erro("campo_invalido", "Digite o nome da sua empresa.", "empresa");
   if (!cnpjValido(cnpj)) return erro("campo_invalido", "Esse CNPJ não é válido. Confira os números.", "cnpj");
+  if (!cidadeValida(cidade)) return erro("campo_invalido", "Digite a cidade da sua empresa.", "cidade");
+  if (!ufValida(uf)) return erro("campo_invalido", "Escreva a cidade e a UF, assim: Campinas, SP.", "cidade");
   if (!(foto instanceof File) || foto.size === 0) return erro("campo_invalido", "Envie uma foto de perfil.", "foto");
   if (foto.size > FOTO_MAX) return erro("campo_invalido", "A foto passou de 2 MB. Escolha outra.", "foto");
   if (!emailValido(email)) return erro("campo_invalido", "Digite um e-mail válido.", "email");
@@ -79,7 +83,7 @@ Deno.serve(async (req) => {
   const publico = createClient(SUPABASE_URL, ANON, { ...sem, global: { headers: { "X-Forwarded-For": ip, "sb-forwarded-for": ip } } });
   const { data, error } = await publico.auth.signUp({
     email, password: senha,
-    options: { emailRedirectTo: urlVolta(form.get("redirecionar")), data: { nome, empresa, cnpj, usuario, titulo, indicado_por: indicadoPor } },
+    options: { emailRedirectTo: urlVolta(form.get("redirecionar")), data: { nome, empresa, cnpj, cidade, uf, usuario, titulo, indicado_por: indicadoPor } },
   });
   if (error) {
     const m = `${error.code || ""} ${error.message || ""}`;

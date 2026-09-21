@@ -1,9 +1,10 @@
 /* LoginImersivo — entrada do Reino no estilo da barra de comando do Babel OS (TODO W).
    Nada de caixa: fundo "Reino Animado" em tela cheia, conversa com bolhas e uma barra de
    comando embaixo, uma pergunta por vez.
-   - Sempre abre no CADASTRO (carrossel): nome → empresa → CNPJ → foto → e-mail → usuário →
-     senha → confirmação → resumo → criar conta. Tudo obrigatório; validado aqui e de novo
-     no servidor (função reino-cadastro).
+   - Sempre abre no CADASTRO (carrossel): nome → empresa → CNPJ → cidade/UF → foto → e-mail →
+     usuário → senha → confirmação → resumo → criar conta. Tudo obrigatório; validado aqui e de
+     novo no servidor (função reino-cadastro). A cidade e a UF (AF11) são o lugar da empresa no
+     mapa do Reino — o nome é conferido na lista de municípios do IBGE.
    - "Já tenho conta": usuário → enviar → senha → enviar (aceita o e-mail no lugar do usuário,
      porque contas antigas não têm usuário). Função reino-login.
    - E-mail não validado (depois do cadastro ou no login com a senha certa): "valide seu
@@ -45,6 +46,32 @@
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const nomeOk = (n) => n.length >= 5 && n.length <= 80 && /^[\p{L}][\p{L}'’.\- ]+$/u.test(n) && n.split(/\s+/).filter((p) => p.length >= 2).length >= 2;
   const primeiroNome = (n) => String(n || "").trim().split(/\s+/)[0] || "";
+
+  /* ---------------------------------------------------------------- cidade e UF (AF11)
+     A empresa só aparece no mapa do Reino com cidade e UF. A pessoa escreve tudo
+     numa linha ("Campinas, SP", "Campinas - SP" ou "Campinas SP") e conferimos o
+     nome na lista de municípios do IBGE (dados/municipios-tudo.js): é dela que sai
+     a posição no mapa. Sem a lista carregada, aceita o que foi escrito. */
+  const UFS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA",
+    "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
+  const semAcento = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  function lerCidadeUf(valor) {
+    const bruto = String(valor || "").replace(/\s+/g, " ").trim();
+    if (!bruto) return { erro: "Escreva a cidade e a UF, assim: Campinas, SP." };
+    const m = bruto.match(/^(.*?)[\s,;/•-]+([A-Za-z]{2})$/);
+    if (!m) return { erro: "Falta a UF. Escreva assim: Campinas, SP." };
+    const uf = m[2].toUpperCase();
+    const cidade = m[1].replace(/[,;/-]+$/, "").trim();
+    if (!UFS.includes(uf)) return { erro: `"${uf}" não é uma UF do Brasil. Escreva assim: Campinas, SP.` };
+    if (cidade.length < 2) return { erro: "Faltou o nome da cidade. Escreva assim: Campinas, SP." };
+    const lista = window.REINO_MUNICIPIOS && window.REINO_MUNICIPIOS[uf] && window.REINO_MUNICIPIOS[uf].cidades;
+    if (!lista || !lista.length) return { cidade, uf };
+    const alvo = semAcento(cidade);
+    const exata = lista.find((c) => semAcento(c.nome) === alvo);
+    if (exata) return { cidade: exata.nome, uf };
+    const perto = lista.filter((c) => semAcento(c.nome).startsWith(alvo.slice(0, 4))).slice(0, 3).map((c) => c.nome);
+    return { erro: `Não achei "${cidade}" em ${uf}.` + (perto.length ? ` Você quis dizer ${perto.join(", ")}?` : " Confira o nome da cidade.") };
+  }
 
   /* ---------------------------------------------------------------- ícones (traço, herdam a cor) */
   const Svg = ({ children, size = 18 }) => (
@@ -134,7 +161,7 @@
     const [modo, setModo] = React.useState(recuperacao ? "nova-senha" : "cadastro");
     const [etapa, setEtapa] = React.useState(0);
     const [dir, setDir] = React.useState(1);
-    const [dados, setDados] = React.useState({ nome: "", empresa: "", cnpj: "", email: "", usuario: "", senha: "", senha2: "", afiliado: "" });
+    const [dados, setDados] = React.useState({ nome: "", empresa: "", cnpj: "", cidade: "", uf: "", email: "", usuario: "", senha: "", senha2: "", afiliado: "" });
     const [texto, setTexto] = React.useState("");
     const [ver, setVer] = React.useState(false);
     const [erro, setErro] = React.useState(erroInicial || "");
@@ -170,7 +197,7 @@
 
     /* ---------- roteiro de cada modo ---------- */
     const ROTEIRO = {
-      cadastro: ["nome", "empresa", "cnpj", "foto", "email", "usuario", "senha", "senha2", "resumo"],
+      cadastro: ["nome", "empresa", "cnpj", "cidade", "foto", "email", "usuario", "senha", "senha2", "resumo"],
       entrar: ["l-usuario", "l-senha"],
       esqueci: ["e-email"],
       "nova-senha": ["n-senha", "n-senha2"],
@@ -183,6 +210,7 @@
       nome: { chave: "nome", auto: "name", ph: "Nome e sobrenome", rotulo: "Nome completo" },
       empresa: { chave: "empresa", auto: "organization", ph: "Nome da empresa", rotulo: "Empresa" },
       cnpj: { chave: "cnpj", auto: "off", ph: "00.000.000/0000-00", modo: "numeric", rotulo: "CNPJ" },
+      cidade: { chave: "cidade", auto: "address-level2", ph: "Campinas, SP", rotulo: "Cidade e UF" },
       email: { chave: "email", auto: "email", ph: "voce@empresa.com.br", tipo: "email", modo: "email", rotulo: "E-mail" },
       usuario: { chave: "usuario", auto: "username", ph: "seu.usuario", rotulo: "Usuário de login" },
       senha: { chave: "senha", auto: "new-password", ph: "Mínimo de 8 caracteres", rotulo: "Senha" },
@@ -201,6 +229,7 @@
         case "nome": return ["Bem-vindo ao Reino. Vamos criar sua conta — é rapidinho.", "Qual é o seu nome completo?"];
         case "empresa": return [`Prazer, ${pn}. Qual é o nome da sua empresa?`];
         case "cnpj": return ["Qual é o CNPJ da empresa?"];
+        case "cidade": return ["Em que cidade a empresa fica?", "Escreva a cidade e a UF — é daí que sai o seu lugar no mapa do Reino. Ex.: Campinas, SP."];
         case "foto": return ["Agora uma foto de perfil. Ela aparece no mapa, no feed e na rede.", ehToque ? "Tire uma foto ou escolha da galeria." : "Use a câmera ou escolha um arquivo."];
         case "email": return ["Qual é o seu e-mail? Vamos mandar um link para validar."];
         case "usuario": return ["Escolha o seu usuário de login.", "Letras minúsculas, números, ponto ou sublinhado — de 3 a 24."];
@@ -226,6 +255,7 @@
       if (/senha/.test(p)) return { texto: "••••••••" };
       if (p === "l-usuario") return { texto: "usuário: " + credRef.current.usuario };
       const v = dados[p];
+      if (p === "cidade") return dados.cidade ? { texto: dados.cidade + (dados.uf ? " · " + dados.uf : "") } : null;
       return v ? { texto: p === "cnpj" ? mascaraCnpj(v) : p === "usuario" ? "@" + v : v } : null;
     };
 
@@ -242,6 +272,7 @@
       const k = CAMPO && CAMPO.chave;
       if (!k) { setTexto(""); return; }
       if (k === "cnpj") setTexto(mascaraCnpj(dados.cnpj));
+      else if (k === "cidade") setTexto(dados.cidade ? dados.cidade + (dados.uf ? ", " + dados.uf : "") : "");
       else if (k in dados) setTexto(dados[k]);
       else if (k === "l-usuario") setTexto(credRef.current.usuario);
       else setTexto("");
@@ -373,6 +404,11 @@
           if (!cnpjValido(d)) return setErro("Esse CNPJ não é válido. Confira os números.");
           gravar("cnpj", d); return avancar();
         }
+        case "cidade": {
+          const r = lerCidadeUf(v);
+          if (r.erro) return setErro(r.erro);
+          gravar("cidade", r.cidade); gravar("uf", r.uf); return avancar();
+        }
         case "foto": {
           if (camera) return tirarFoto();
           if (fonteFoto) return confirmarRecorte();
@@ -476,8 +512,8 @@
     }
 
     async function criarConta() {
-      const faltando = ["nome", "empresa", "cnpj", "email", "usuario", "senha"].find((k) => !dados[k]) || (!foto ? "foto" : null);
-      if (faltando) { setErro("Falta preencher: " + ({ nome: "nome", empresa: "empresa", cnpj: "CNPJ", email: "e-mail", usuario: "usuário", senha: "senha", foto: "foto" }[faltando]) + "."); editandoRef.current = true; irPara("cadastro", passos.indexOf(faltando), -1); return; }
+      const faltando = ["nome", "empresa", "cnpj", "cidade", "uf", "email", "usuario", "senha"].find((k) => !dados[k]) || (!foto ? "foto" : null);
+      if (faltando) { setErro("Falta preencher: " + ({ nome: "nome", empresa: "empresa", cnpj: "CNPJ", cidade: "cidade e UF", uf: "cidade e UF", email: "e-mail", usuario: "usuário", senha: "senha", foto: "foto" }[faltando]) + "."); editandoRef.current = true; irPara("cadastro", passos.indexOf(faltando === "uf" ? "cidade" : faltando), -1); return; }
       if (dados.senha !== dados.senha2) { editandoRef.current = true; irPara("cadastro", passos.indexOf("senha2"), -1); setTimeout(() => setErro("Confirme a senha de novo."), 0); return; }
       setIndo(true); setErro("");
       if (codigo) { try { localStorage.setItem("reino.indicadoPor", codigo); sessionStorage.setItem("reino.ref", codigo); } catch (e) { /* sem armazenamento */ } }
@@ -552,6 +588,7 @@
 
     const resumoLinhas = [
       ["nome", "Nome", dados.nome], ["empresa", "Empresa", dados.empresa], ["cnpj", "CNPJ", mascaraCnpj(dados.cnpj)],
+      ["cidade", "Cidade", dados.cidade ? dados.cidade + (dados.uf ? " · " + dados.uf : "") : ""],
       ["email", "E-mail", dados.email], ["usuario", "Usuário", dados.usuario ? "@" + dados.usuario : ""], ["senha", "Senha", dados.senha ? "••••••••" : ""],
     ];
 

@@ -178,7 +178,8 @@
      → { confirmar: true, emailMascarado } ou { conta } (projeto sem confirmação de e-mail) */
   async function cadastrarCompleto(d) {
     const f = new FormData();
-    ["nome", "empresa", "cnpj", "email", "usuario", "senha"].forEach((k) => f.append(k, d[k] == null ? "" : String(d[k])));
+    /* cidade e uf entram no cadastro desde AF11: sem elas a empresa não tem lugar no mapa */
+    ["nome", "empresa", "cnpj", "cidade", "uf", "email", "usuario", "senha"].forEach((k) => f.append(k, d[k] == null ? "" : String(d[k])));
     if (d.indicadoPor) f.append("indicado_por", d.indicadoPor);
     if (d.titulo) f.append("titulo", d.titulo);
     f.append("redirecionar", location.origin + "/");
