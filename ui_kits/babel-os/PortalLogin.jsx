@@ -12,7 +12,7 @@
    e cole aqui a lista que ele imprime (um vídeo só toca em loop; dois ou mais, em sequência). */
 const VIDEO_LOGIN = {
   lista: [
-    { webm: "assets/login/fundo-login.webm", mp4: "assets/login/fundo-login.mp4" },
+    { webm: "assets/login/fundo-login.webm?v=juntos7", mp4: "assets/login/fundo-login.mp4?v=juntos7" },
   ],
   final: "assets/login/fundo-login-final.jpg", // último quadro: movimento reduzido e card direto
   subidaDur: 1.2,     // s — subida do card e entrada do desfoque, depois do clique
