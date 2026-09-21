@@ -101,9 +101,12 @@ body[data-page="inicio"] .hg-ops > .hg-col[data-zona="centro"] > .hg-panel:not(.
   body[data-page="inicio"] .hg-ops > .hg-col[data-zona="centro"] > .hg-panel.hg-globo-panel { flex: 1 0 auto; }
   /* na coluna do globo, quem absorve a folga é o globo: o último painel dela não estica */
   body[data-page="inicio"] .hg-ops > .hg-col:has(> .hg-globo-panel) > .hg-panel:last-child:not(.hg-globo-panel) { flex: none; }
-  body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel:last-child:not(.hg-globo-panel) > :is(.hg-list, .hg-rolar, .hg-titulos, .hg-nt) { flex: 1 1 auto; align-content: space-between; }
-  body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel:last-child:not(.hg-globo-panel) > .hg-rolar { display: flex; flex-direction: column; }
-  body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel:last-child:not(.hg-globo-panel) > .hg-rolar > .hg-list { flex: 1 1 auto; align-content: space-between; }
+  body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel:last-child:not(.hg-globo-panel) > :is(.hg-list, .hg-rolar, .hg-titulos, .hg-nt):not(.hg-lista-enche) { flex: 1 1 auto; align-content: space-between; }
+  /* lista que mede a altura livre e mostra só as linhas inteiras que cabem (ListaQueEnche) */
+  body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel:last-child:not(.hg-globo-panel) > .hg-lista-enche { flex: 1 1 0; min-height: 0; overflow: hidden; align-content: space-between; }
+  /* altura mínima dos painéis de lista: sempre cabem algumas linhas */
+  body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel.hg-painel-chat { min-height: 430px; }
+  body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel.hg-painel-match { min-height: 480px; }
   body[data-page="inicio"] .hg-ops > .hg-col > .hg-panel:last-child:not(.hg-globo-panel) > .hg-btn { margin-top: auto; flex: none; }
 }
 /* O globo nunca encolhe abaixo de 460px: com Notícias e Bate Papo na mesma

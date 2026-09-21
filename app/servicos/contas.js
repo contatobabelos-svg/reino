@@ -95,6 +95,7 @@
     const v = await codigoLivre(codigo);
     if (!v.ok) return v;
     localStorage.setItem("reino.meuCodigo", v.codigo);
+    if (sessao && sessao.id) localStorage.setItem("reino.meuCodigo.dono", String(sessao.id));
     if (CFG() && sessao) { try { await rest("codigos", "POST", [{ codigo: v.codigo, user_id: sessao.id, nome: sessao.nome || null }]); } catch (e) {} }
     return { ok: true, codigo: v.codigo };
   }

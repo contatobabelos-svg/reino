@@ -109,9 +109,18 @@
 
   /* ---------- meu link ---------- */
   function meuCodigo(nome) {
+    /* Com conta logada o código é DESTA conta: o nome vem da sessão (não do perfil de demonstração
+       que algumas telas ainda passam) e o código guardado no navegador só vale se for dela — sem
+       isso, quem entra com outra conta no mesmo navegador herdaria o link de indicação da anterior. */
+    const C = window.ReinoContas;
+    const s = C && C.sessao ? C.sessao() : null;
+    const dono = s && s.id ? String(s.id) : "";
+    if (dono) nome = String(s.nome || "").trim() || (s.email ? String(s.email).split("@")[0] : nome);
     // o código escolhido em "Minha conta" tem prioridade
     let c = localStorage.getItem("reino.meuCodigo");
+    if (c && dono && localStorage.getItem("reino.meuCodigo.dono") !== dono) c = null;
     if (!c) { c = slug(nome); localStorage.setItem("reino.meuCodigo", c); }
+    if (dono) localStorage.setItem("reino.meuCodigo.dono", dono);
     return c;
   }
 

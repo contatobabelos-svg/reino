@@ -113,13 +113,44 @@ function RankingWidget({ onClose, ir, meuCodigo }) {
   );
 }
 
+/* Lista que ocupa a altura livre do painel: renderiza todas as linhas, mede quantas cabem
+   inteiras e mostra só essas (nada cortado ao meio, sem espaço enorme entre linhas). Onde o
+   painel não estica (telas estreitas) a lista não é limitada e mostra tudo. */
+function ListaQueEnche({ itens, tag = "ul", className = "hg-list" }) {
+  const ref = React.useRef(null);
+  const [n, setN] = React.useState(null);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    let t = 0, ultimo = Math.round(el.clientHeight);
+    const ro = new ResizeObserver(() => {
+      const h = Math.round(el.clientHeight);
+      if (h === ultimo) return;
+      ultimo = h; clearTimeout(t); t = setTimeout(() => setN(null), 80);
+    });
+    ro.observe(el);
+    return () => { ro.disconnect(); clearTimeout(t); };
+  }, []);
+  React.useLayoutEffect(() => {
+    if (n !== null) return;
+    const el = ref.current;
+    if (!el) return;
+    const fim = el.getBoundingClientRect().bottom + 1;
+    let cabem = 0;
+    for (const f of el.children) { if (f.getBoundingClientRect().bottom <= fim) cabem++; else break; }
+    setN(Math.max(1, cabem));
+  }, [n, itens.length]);
+  const Tag = tag;
+  return <Tag ref={ref} className={className + " hg-lista-enche"}>{n === null ? itens : itens.slice(0, n)}</Tag>;
+}
+
 /* Distribuição dos painéis nas três colunas, sem buraco no fim de nenhuma delas.
    Cada painel tem uma altura estimada (o mapa conta a altura que ele cresce até ocupar a
    sobra). O desenho padrão já fica equilibrado; se alguém ocultar painéis, o último painel da
    coluna mais alta passa para a mais baixa enquanto isso deixar as colunas mais parecidas.
    O último painel de cada coluna estica até o fim da grade (app-shell.css). */
 const ALTURA_PAINEL = { social: 465, conquistas: 392, chat: 440, mapa: 620, musica: 367, assistente: 239, noticias: 246, ranking: 372, match: 620 };
-const COLUNAS_PADRAO = { esquerda: ["social", "conquistas", "chat"], centro: ["mapa", "musica", "assistente"], direita: ["noticias", "ranking", "match"] };
+const COLUNAS_PADRAO = { esquerda: ["social", "musica", "chat"], centro: ["mapa", "conquistas", "assistente"], direita: ["noticias", "ranking", "match"] };
 const ZONAS = ["esquerda", "centro", "direita"];
 /* quem se adapta melhor à folga do fim da coluna (lista que se distribui): fica por último */
 const ESTICA = { match: 9, chat: 8, ranking: 7, musica: 5, social: 4, conquistas: 3, assistente: 2, noticias: 1, mapa: 0 };
@@ -268,8 +299,11 @@ function useWidgets() {
   return { ocultos, ve, esconder, mostrar, restaurar };
 }
 
-function DashboardScreen({ ir, usuario }) {
+function DashboardScreen({ ir, usuario, conta }) {
   const d = window.BABEL_DEMO;
+  /* quem está logado: o nome (e o código de afiliado que sai dele) vem da conta, não do perfil de demonstração */
+  const nomeConta = (conta && String(conta.nome || "").trim()) || (conta && conta.email ? String(conta.email).split("@")[0] : "");
+  const perfil = { ...d.perfil, nome: nomeConta || d.perfil.nome };
   const a = d.afiliado;
   const w = useWidgets();
   const [grupo, setGrupo] = React.useState(d.gruposFeed[0]);
@@ -310,6 +344,23 @@ function DashboardScreen({ ir, usuario }) {
     return { total: soma.toLocaleString("pt-BR"), media: Math.round(soma / pts.length).toLocaleString("pt-BR"), melhor: rot[pts.indexOf(Math.max(...pts))] };
   })();
 
+  /* matches e alertas intercalados: mesmo com poucas linhas visíveis aparece um pouco de cada */
+  const linhasMatch = (() => {
+    const m = d.match.map((x) => <ListRow key={"m" + x.nome} title={x.nome} subtitle={x.nicho + " · " + x.cidade} avatarGradient="match" right={<Pill>{x.compatibilidade}%</Pill>} />);
+    const a = d.alertas.map((al) => (
+      <li className="hg-row" key={"a" + al.titulo}>
+        <span className="hg-avatar" style={{ background: al.tipo === "alta" ? "linear-gradient(135deg,#ff4d7a,#e04bff)" : "linear-gradient(135deg,#3b82ff,#8b5cff)" }}>
+          <Icon name={al.tipo === "alta" ? "alerta" : "agenda"} />
+        </span>
+        <div><strong>{al.titulo}</strong><span>{al.texto}</span></div>
+        <time>{al.quando}</time>
+      </li>
+    ));
+    const out = [];
+    for (let k = 0; k < Math.max(m.length, a.length); k++) { if (m[k]) out.push(m[k]); if (a[k]) out.push(a[k]); }
+    return out;
+  })();
+
   const paineis = {
     social: () => (
       <Panel tone="social" fill title="Rede social e feed de negócios" subtitle="Publicações do seu grupo de título" onClose={() => w.esconder("social")}
@@ -337,13 +388,11 @@ function DashboardScreen({ ir, usuario }) {
       </Panel>
     ),
     chat: () => (
-      <Panel title="Bate Papo do Reino" subtitle="Só Marquês para cima envia mensagem" headingLevel={3} onClose={() => w.esconder("chat")}>
-        <ul className="hg-list">
-          {d.conversas.slice(0, 3).map((c) => (
-            <ListRow key={c.nome} title={c.nome} subtitle={c.ultima} avatar={c.nome}
-              right={c.naoLidas ? <Pill>{c.naoLidas}</Pill> : <time>{c.quando}</time>} />
-          ))}
-        </ul>
+      <Panel className="hg-painel-chat" title="Bate Papo do Reino" subtitle="Só Marquês para cima envia mensagem" headingLevel={3} onClose={() => w.esconder("chat")}>
+        <ListaQueEnche itens={d.conversas.map((c) => (
+          <ListRow key={c.nome} title={c.nome} subtitle={c.ultima} avatar={c.nome}
+            right={c.naoLidas ? <Pill>{c.naoLidas}</Pill> : <time>{c.quando}</time>} />
+        ))} />
         <Button variant="ghost" block onClick={() => ir("chat.html")}>Abrir o Bate Papo</Button>
       </Panel>
     ),
@@ -351,25 +400,10 @@ function DashboardScreen({ ir, usuario }) {
     musica: () => <MusicaWidget ir={ir} onClose={() => w.esconder("musica")} />,
     assistente: () => <AssistenteWidget ir={ir} onClose={() => w.esconder("assistente")} />,
     noticias: () => <NoticiasWidget ir={ir} onClose={() => w.esconder("noticias")} />,
-    ranking: () => <RankingWidget ir={ir} meuCodigo={window.ReinoAfiliados ? window.ReinoAfiliados.meuCodigo(d.perfil.nome) : ""} onClose={() => w.esconder("ranking")} />,
+    ranking: () => <RankingWidget ir={ir} meuCodigo={window.ReinoAfiliados ? window.ReinoAfiliados.meuCodigo(perfil.nome) : ""} onClose={() => w.esconder("ranking")} />,
     match: () => (
-      <Panel tone="match" fill title="Match e alertas" subtitle="Empresas complementares e o que pede atenção" onClose={() => w.esconder("match")}>
-        <div className="hg-rolar">
-          <ul className="hg-list">
-            {d.match.slice(0, 2).map((m) => (
-              <ListRow key={m.nome} title={m.nome} subtitle={m.nicho + " · " + m.cidade} avatarGradient="match" right={<Pill>{m.compatibilidade}%</Pill>} />
-            ))}
-            {d.alertas.map((al) => (
-              <li className="hg-row" key={al.titulo}>
-                <span className="hg-avatar" style={{ background: al.tipo === "alta" ? "linear-gradient(135deg,#ff4d7a,#e04bff)" : "linear-gradient(135deg,#3b82ff,#8b5cff)" }}>
-                  <Icon name={al.tipo === "alta" ? "alerta" : "agenda"} />
-                </span>
-                <div><strong>{al.titulo}</strong><span>{al.texto}</span></div>
-                <time>{al.quando}</time>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <Panel className="hg-painel-match" tone="match" fill title="Match e alertas" subtitle="Empresas complementares e o que pede atenção" onClose={() => w.esconder("match")}>
+        <ListaQueEnche itens={linhasMatch} />
         <Button block onClick={() => ir("match.html")}>Ver todos os matches</Button>
       </Panel>
     ),
@@ -377,7 +411,7 @@ function DashboardScreen({ ir, usuario }) {
 
   return (
     <>
-      <PageHead title={"Olá, " + d.perfil.nome.split(" ")[0]} subtitle="Veja o que está acontecendo no seu Reino hoje.">
+      <PageHead title={"Olá, " + perfil.nome.split(" ")[0]} subtitle="Veja o que está acontecendo no seu Reino hoje.">
         <div className="hg-head-acoes">
           <AffiliateLevel level={a.nivel} indicados={a.indicados} proximo={a.proximo} progress={a.progresso} compact />
           <Button variant={personalizando ? "cyan" : "ghost"} icon="visao" onClick={() => setPersonalizando((v) => !v)} aria-expanded={personalizando}>
@@ -454,7 +488,7 @@ function DashboardScreen({ ir, usuario }) {
         </section>
       ) : null}
 
-      {w.ve("afiliado") ? <AffiliateLink link={window.ReinoAfiliados ? window.ReinoAfiliados.linkDe(window.ReinoAfiliados.meuCodigo(d.perfil.nome)) : a.link} indicados={a.indicados} comissoes={a.comissoesPendentes} onCopy={() => { const l = window.ReinoAfiliados.linkDe(window.ReinoAfiliados.meuCodigo(d.perfil.nome)); navigator.clipboard && navigator.clipboard.writeText(l).catch(() => {}); }} onClose={() => w.esconder("afiliado")} /> : null}
+      {w.ve("afiliado") ? <AffiliateLink link={window.ReinoAfiliados ? window.ReinoAfiliados.linkDe(window.ReinoAfiliados.meuCodigo(perfil.nome)) : a.link} indicados={a.indicados} comissoes={a.comissoesPendentes} onCopy={() => { const l = window.ReinoAfiliados.linkDe(window.ReinoAfiliados.meuCodigo(perfil.nome)); navigator.clipboard && navigator.clipboard.writeText(l).catch(() => {}); }} onClose={() => w.esconder("afiliado")} /> : null}
       {travaAviso ? (
         <div className="hg-trava-toast" role="status">
           <span className="hg-pre-aviso-ico"><Icon name="coroa" /></span>

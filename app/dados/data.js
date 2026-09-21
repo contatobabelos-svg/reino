@@ -22,6 +22,11 @@ window.BABEL_DEMO = {
     { nome: "Balanço Fiel Contadores", nicho: "Contabilidade", cidade: "Uberlândia", compatibilidade: 88 },
     { nome: "Lar Ideal Imóveis", nicho: "Imobiliária", cidade: "Ribeirão Preto", compatibilidade: 88 },
     { nome: "Capixaba Imóveis", nicho: "Imobiliária", cidade: "Vitória", compatibilidade: 76 },
+    { nome: "Vale Norte Logística", nicho: "Logística", cidade: "Goiânia", compatibilidade: 84 },
+    { nome: "Sul Design Studio", nicho: "Design", cidade: "Curitiba", compatibilidade: 81 },
+    { nome: "Prisma Seguros", nicho: "Seguros", cidade: "Belo Horizonte", compatibilidade: 79 },
+    { nome: "Maré Alta Turismo", nicho: "Turismo", cidade: "Salvador", compatibilidade: 74 },
+    { nome: "Cerrado Energia Solar", nicho: "Energia", cidade: "Brasília", compatibilidade: 72 },
   ],
   metricas: [
     { nome: "Avaliações feitas", rotulo: "14 / 25", percentual: 56 },
@@ -134,6 +139,9 @@ window.BABEL_DEMO = {
     { tipo: "alta", titulo: "Proposta expirando", texto: "Conta Certa Contabilidade · vence hoje", quando: "5 min" },
     { tipo: "agenda", titulo: "Reunião remarcada", texto: "Pinheiro Tech Solutions · quinta, 14h", quando: "25 min" },
     { tipo: "alta", titulo: "Indicado sem contato", texto: "3 indicados aguardam retorno", quando: "1 h" },
+    { tipo: "agenda", titulo: "Evento no Reino", texto: "Encontro da Guilda Paulista · sexta, 19h", quando: "2 h" },
+    { tipo: "alta", titulo: "Match novo", texto: "Prisma Seguros quer conversar", quando: "3 h" },
+    { tipo: "agenda", titulo: "Aula disponível", texto: "Reino Academy · módulo 2 liberado", quando: "ontem" },
   ],
   beneficios: [
     { nome: "Contabilidade Conta Certa", oferta: "20% na abertura de empresa", nicho: "Contabilidade", validade: "até 30/09" },
@@ -164,6 +172,9 @@ window.BABEL_DEMO = {
     { nome: "Guilda Paulista", empresa: "4 membros", ultima: "Diego: alguém atende Sorocaba?", quando: "18 min", naoLidas: 5 },
     { nome: "Conta Certa Contabilidade", empresa: "Match 96%", ultima: "Podemos conversar amanhã?", quando: "1 h" },
     { nome: "Camila Duarte", empresa: "Pinheiro Tech Solutions", ultima: "Obrigada pela indicação!", quando: "ontem" },
+    { nome: "Rafael Moura", empresa: "Vale Norte Logística", ultima: "Consigo atender Goiânia na semana que vem.", quando: "ontem", naoLidas: 1 },
+    { nome: "Bianca Lopes", empresa: "Sul Design Studio", ultima: "Mando o portfólio por aqui.", quando: "ontem" },
+    { nome: "Guilda Sul", empresa: "6 membros", ultima: "Marcos: reunião na terça, 10h.", quando: "2 dias" },
   ],
   mensagens: [
     { de: "Ana Ribeiro", texto: "Oi Marcelo! Vi que você entrou na Guilda Paulista.", quando: "09:12" },
