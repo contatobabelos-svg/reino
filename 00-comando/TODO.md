@@ -185,3 +185,21 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] AB3 Fileira de baixo: Bolsa ganha resumo calculado (total, média, melhor dia) e gráfico que cresce; Vendas distribui as barras; botões no rodapé
 - [x] AB4 Bate Papo mostra 3 conversas; gaveta do território do mapa mostra o conteúdo inteiro
 - [ ] AB5 Pendente: cenário "ocultar Rede social + Conquistas" foi corrigido (painel de lista vai por último) mas não foi retestado — o fundador pediu para parar os testes
+
+## AC — "não ter botao de ir pro brasil. o globo agora é todo clicavel. manter apenas os botoes laterais e o card que mostra as cidades e bairros ficam abaixo do globo em horizontal. mostrar apenas empresas cadastradas que tem foto, os demais pontos aleatorios pode remover. quero que o pinos no modo bairro girem e o fio de coneçao entre eles ser igual do cerebro da babel." (21/09)
+- [ ] AC1 Folha sobre o globo sai: nada de "Ir para X", "Ver o Brasil inteiro", "Entrar no Brasil", "Visitar a torre Babel na Lua", "Voltar para a Terra". Ficam os botões laterais (`.hg-globo-zoom`) e o voltar/trilha do topo
+- [ ] AC2 Globo inteiro clicável: toque na Terra entra no território do título (Imperador/Rei → Brasil, Príncipe → estado, demais → cidade/endereço), toque na Lua abre a torre Babel; clique separado do arrasto por 5 px, cursor, brilho no hover, Enter no canvas e `prefers-reduced-motion`
+- [ ] AC3 Faixa horizontal abaixo do globo (`.hg-globo-faixa`, ~112 px): cabeçalho curto + cartões lado a lado com scroll-snap, um por nível (terra: seu território; brasil: estados; estado: cidades; cidade: bairros; bairro: empresas com foto)
+- [ ] AC4 Só empresas cadastradas com foto no mapa: saem os nós de demonstração (`BABEL_DEMO.rede`), os empresários orbitando sem foto e os marcadores do Google sem foto
+- [ ] AC5 Migração `supabase/2026-09-21_mapa_empresas_com_foto.sql` com `public.empresas_do_mapa()` (só perfis com foto + empresa e situação aprovada; devolve id, empresa, foto, cidade, uf, titulo) e serviço `app/servicos/empresas.js`
+- [ ] AC6 Pinos do modo bairro giram em torno do eixo vertical (rotateY 360°, 7–9 s, duas faces legíveis, mais lento no hover, parados com `prefers-reduced-motion`)
+- [ ] AC7 Fios como os do Cérebro Babel: fio fino ciano semitransparente, sem halo grosso, 2 partículas por fio animadas por `requestAnimationFrame` sobre as coordenadas reprojetadas; cada empresa liga nas 2 vizinhas mais próximas
+- [ ] AC8 **Publicar (Vyra):** primeiro a migração no Supabase, depois o site. Enquanto a função não existir, o mapa mostra só a empresa da própria conta
+- [ ] AC9 **Decisão do fundador:** o cadastro não pede cidade/UF, então empresa sem localização não aparece no mapa. Incluir cidade e UF no cadastro?
+
+## AD — "pode subir o cerebro pra produção" (21/09)
+- [x] AD1 Cérebro do Reino (grafo 3D das tabelas do banco) publicado: tela `telas/CerebroReinoScreen.jsx` + `estilos/cerebro-reino.css`, rota `cerebro.html` no menu
+- [x] AD2 Decisão do fundador: **só conta admin** vê o item no menu e abre a tela; membro cai em "Em breve"
+- [x] AD3 three.js e 3d-force-graph saem do unpkg (o endereço do three dava 404) e passam a vir de `app/vendor/`, baixados só quando o Cérebro abre (~1,3 MB a menos para todo mundo)
+- [x] AD4 Ícone `brain` incluído no `_ds_bundle.js` (antes só estava no fonte `Icon.jsx`)
+- [ ] AD5 O esquema mostrado é fixo no código (10 tabelas); não acompanha migrações novas sozinho

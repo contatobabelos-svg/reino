@@ -114,7 +114,8 @@ const BABEL_ICON_PATHS = {
   estrela: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/>',
   guilda: '<path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="M9 8v7l3-2 3 2V8"/>',
   link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
-  bolsa: '<path d="M3 3v18h18"/><path d="M7 14v3M7 9v2M11 8v8M15 11v4M15 5v3M19 7v6"/><path d="M6 11h2v3H6zM10 10h2v4h-2zM14 8h2v3h-2zM18 9h2v2h-2z"/>'
+  bolsa: '<path d="M3 3v18h18"/><path d="M7 14v3M7 9v2M11 8v8M15 11v4M15 5v3M19 7v6"/><path d="M6 11h2v3H6zM10 10h2v4h-2zM14 8h2v3h-2zM18 9h2v2h-2z"/>',
+  brain: '<path d="M12 2a7 7 0 0 0-4.6 12.3c.5.5.8 1.1.9 1.7H12h3.7c.1-.6.4-1.2.9-1.7A7 7 0 0 0 12 2z"/><path d="M10 18v2a2 2 0 0 0 4 0v-2"/><path d="M9.5 8.5C10 7 11 6 12 6s2.5 1 2.5 2.5S13 11 12 11s-2.5-.5-2.5-2.5z"/>'
 };
 function Icon({
   name,
