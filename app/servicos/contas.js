@@ -27,8 +27,21 @@
     try { return await fetch(url, opcoes); } catch (e) { throw erroRede(); }
   }
 
+  /* ---------- CAPTCHA (C2 do Parecer 1) ----------
+     Um token NOVO por pedido (o Turnstile só aceita cada token uma vez). Sem captcha.js, sem
+     Site Key ou com a Cloudflare fora do ar, devolve null e o pedido vai sem token: as portas
+     que ainda não exigem continuam funcionando, as que exigem respondem com mensagem clara. */
+  async function captcha() {
+    const c = window.ReinoCaptcha;
+    if (!c || !c.ativo || !c.ativo()) return null;
+    try { return await c.token(); } catch (e) { return null; }
+  }
+  /* o Auth só lê o token neste lugar do corpo (gotrue: captchaRequest) */
+  const comCaptcha = (corpo, t) => (t ? { ...corpo, gotrue_meta_security: { captcha_token: t } } : corpo);
+
   const erroDe = (j, r) => {
     const m = (j && (j.error_description || j.msg || j.message || j.error)) || "";
+    if (/captcha/i.test(m)) return "Não deu para confirmar que você é uma pessoa. Recarregue a página e tente de novo.";
     if (/invalid login/i.test(m)) return "E-mail ou senha não conferem.";
     if (/not confirmed/i.test(m)) return "Confirme seu e-mail antes de entrar — o link está na sua caixa de entrada.";
     if (/rate limit|too many/i.test(m)) return "Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.";
@@ -111,7 +124,8 @@
   /* ---------- entrar / cadastrar / sair ---------- */
   async function entrar(email, senha) {
     if (!CFG()) throw new Error(SEM_BANCO);
-    const j = await auth("token?grant_type=password", { email, password: senha });
+    /* porta direta do Auth: quem valida o CAPTCHA aqui é o próprio Auth */
+    const j = await auth("token?grant_type=password", comCaptcha({ email, password: senha }, await captcha()));
     if (!j.access_token || !j.user || !j.user.id) throw new Error("O banco não confirmou o login. Tente de novo.");
     sessao = { id: j.user && j.user.id, email, token: j.access_token, refresh: j.refresh_token, nome: (j.user && j.user.user_metadata && j.user.user_metadata.nome) || email.split("@")[0], situacao: "aguardando" }; /* a situação real vem do perfil no banco, logo abaixo */
     gravarSessao(sessao);
@@ -123,7 +137,7 @@
   async function cadastrar({ nome, email, senha, titulo, cidade, uf, indicadoPor, situacao }) {
     const sit = situacao || "aguardando";
     if (!CFG()) throw new Error(SEM_BANCO);
-    const j = await auth("signup", { email, password: senha, data: { nome, titulo: titulo || null, cidade: cidade || null, uf: uf || null, indicado_por: indicadoPor || null } });
+    const j = await auth("signup", comCaptcha({ email, password: senha, data: { nome, titulo: titulo || null, cidade: cidade || null, uf: uf || null, indicado_por: indicadoPor || null } }, await captcha()));
     const confirmar = !j.access_token;
     sessao = { id: (j.user && j.user.id) || (j.id), email, nome, token: j.access_token || null, refresh: j.refresh_token || null, titulo, cidade, uf, situacao: "aguardando", confirmar };
     gravarSessao(sessao);
@@ -159,14 +173,16 @@
   /* usuário (ou e-mail, para contas antigas) + senha.
      → { conta } entrou · { confirmar: true, emailMascarado } falta validar o e-mail · erro genérico se não confere */
   async function entrarUsuario(usuario, senha) {
-    const j = await funcao("reino-login", { usuario: String(usuario || "").trim(), senha });
+    /* o token vai para a FUNÇÃO, que valida na Cloudflare e fala com o Auth pela chave secreta
+       (isenta de CAPTCHA): uma porta, uma validação — repetir o mesmo token daria duplicado */
+    const j = await funcao("reino-login", { usuario: String(usuario || "").trim(), senha, captcha_token: await captcha() });
     if (j.ok) return { conta: await abrirSessao(j) };
     if (j.codigo === "email_nao_confirmado") return { confirmar: true, emailMascarado: j.email_mascarado };
     throw erroFuncao(j, "Usuário ou senha não conferem.");
   }
   /* reenvia o link de confirmação (confere a senha no servidor; se já validou, entra) */
   async function reenviarConfirmacao(usuario, senha) {
-    const j = await funcao("reino-login", { usuario: String(usuario || "").trim(), senha, acao: "reenviar", redirecionar: location.origin + "/" });
+    const j = await funcao("reino-login", { usuario: String(usuario || "").trim(), senha, acao: "reenviar", redirecionar: location.origin + "/", captcha_token: await captcha() });
     if (j.ok) return { conta: await abrirSessao(j) };
     if (j.codigo === "email_nao_confirmado") {
       if (j.reenviado === false) throw erroFuncao(j, "Não foi possível reenviar agora. Aguarde um minuto e tente de novo.");
@@ -189,19 +205,26 @@
       if (c) { if (c.visitaId) f.append("visita_id", c.visitaId); f.append("dispositivo", c.dispositivo); }
     } catch (e) { /* sem afiliados.js: o servidor usa o afiliado padrão */ }
     f.append("redirecionar", location.origin + "/");
+    /* C2: o token do CAPTCHA acompanha o cadastro; quem valida é a própria reino-cadastro */
+    const t = await captcha();
+    if (t) f.append("captcha_token", t);
     if (d.foto) f.append("foto", d.foto, "foto." + (d.foto.type === "image/jpeg" ? "jpg" : "webp"));
     const j = await funcao("reino-cadastro", f);
     if (!j.ok) throw erroFuncao(j, "Não foi possível criar a conta agora. Tente de novo.");
     if (!j.confirmar && j.access_token) return { conta: await abrirSessao(j) };
     return { confirmar: true, emailMascarado: j.email_mascarado, foto: j.foto };
   }
-  /* true = livre. Só responde sim/não (RPC usuario_disponivel). null = não deu para conferir. */
+  /* true = livre. Só responde sim/não. null = não deu para conferir.
+     C12 do Parecer 1: a RPC `usuario_disponivel` deixou de ser pública (dava para varrer a lista de
+     usuários do Reino com a chave publicável, uma chamada por nome). Agora a pergunta passa pela
+     `reino-cadastro`, que limita por IP (60 checagens em 5 minutos — folgado para quem digita, curto
+     para quem enumera). Sem CAPTCHA de propósito: é uma consulta por tecla, com debounce. */
   async function usuarioDisponivel(usuario) {
     if (!CFG()) return null;
     try {
-      const r = await fetch(base() + "/rest/v1/rpc/usuario_disponivel", { method: "POST", headers: cab({ Authorization: "Bearer " + CFG().anon }), body: JSON.stringify({ p_usuario: usuario }) });
-      if (!r.ok) return null;
-      return (await r.json()) === true;
+      const j = await funcao("reino-cadastro", { acao: "usuario_disponivel", usuario });
+      if (!j || typeof j.disponivel !== "boolean") return null;
+      return j.disponivel;
     } catch (e) { return null; }
   }
 
@@ -256,7 +279,9 @@
 
   async function recuperarSenha(email) {
     if (!CFG()) throw new Error(SEM_BANCO);
-    const r = await chamar(base() + "/auth/v1/recover?redirect_to=" + encodeURIComponent(location.origin + "/"), { method: "POST", headers: cab(), body: JSON.stringify({ email }) });
+    /* porta direta do Auth: o CAPTCHA vai no corpo e quem valida é o Auth */
+    const corpo = comCaptcha({ email }, await captcha());
+    const r = await chamar(base() + "/auth/v1/recover?redirect_to=" + encodeURIComponent(location.origin + "/"), { method: "POST", headers: cab(), body: JSON.stringify(corpo) });
     if (!r.ok) throw new Error(erroDe(await r.json().catch(() => ({})), r));
     return true;
   }

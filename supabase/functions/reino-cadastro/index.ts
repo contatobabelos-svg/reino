@@ -1,6 +1,8 @@
 // Reino · cadastro do login imersivo (W). Recebe multipart/form-data:
 //   nome, empresa, cnpj, cidade, uf, email, usuario, senha, foto (arquivo webp/jpeg),
-//   indicado_por?, titulo?, redirecionar?, visita_id?, dispositivo?
+//   indicado_por?, titulo?, redirecionar?, visita_id?, dispositivo?, captcha_token?
+// Também atende, em JSON, a checagem do carrossel (C12 do Parecer 1):
+//   POST { acao: "usuario_disponivel", usuario } → { ok: true, disponivel: boolean }
 // Valida tudo de novo aqui (o navegador não é confiável), cria a conta pelo signup normal do Auth
 // (o Supabase manda o e-mail de confirmação), grava a foto no Storage em avatares/<user_id>.webp
 // e o link em perfis.foto. Nada de base64 em coluna.
@@ -14,10 +16,16 @@ import {
   cidadeValida, cnpjValido, CORS, emailValido, empresaValida, ipDe, limparUf, limparUsuario, mascararEmail,
   nomeValido, resposta, senhaValida, soDigitos, ufValida, urlVolta, usuarioValido,
 } from "../_shared/reino-validar.ts";
+import { conferirCaptcha, MENSAGEM_CAPTCHA } from "../_shared/reino-captcha.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+// C5 do Parecer 1: o Auth só aceita o cabeçalho Sb-Forwarded-For (o IP real de quem está cadastrando)
+// quando a chamada usa uma chave SECRETA nova (sb_secret_...). Com a chave publicável, ou com a
+// service_role legada, o limite por IP do Auth conta o IP de SAÍDA DESTA FUNÇÃO — ou seja, vira um
+// limite do projeto inteiro. Sem o segredo configurado, cai na service_role legada (comportamento de
+// antes, só que sem o X-Forwarded-For forjável).
+const SECRETA = Deno.env.get("REINO_SECRET_KEY") || SERVICE;
 // endereço que o navegador enxerga (no local o SUPABASE_URL de dentro do contêiner é http://kong:8000)
 const URL_PUBLICA = (Deno.env.get("REINO_URL_PUBLICA") || SUPABASE_URL).replace(/\/$/, "");
 const FOTO_MAX = 2 * 1024 * 1024;
@@ -44,6 +52,32 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return erro("metodo", "Use POST.", undefined, 405);
 
+  const ip = ipDe(req);
+  const admin = createClient(SUPABASE_URL, SERVICE, sem);
+  // true = pode seguir; false = estourou o limite da janela
+  const cabe = async (chave: string, max: number, janela = 300) => {
+    const { data, error } = await admin.rpc("reino_limite_login", { p_chave: chave, p_max: max, p_janela_seg: janela });
+    if (error) { console.error("reino_limite_login", error); return true; } // limite quebrado não pode barrar cadastro
+    return data !== false;
+  };
+
+  // ---------------------------------------------------------------- checagem do usuário (JSON)
+  // C12 do Parecer 1: a RPC usuario_disponivel deixou de ser pública (com a chave publicável dava
+  // para varrer a lista de usuários do Reino). A pergunta passa por aqui, com limite por IP: 60
+  // checagens em 5 minutos — folgado para quem digita com debounce, curto para quem enumera.
+  if ((req.headers.get("content-type") || "").includes("application/json")) {
+    const corpo = await req.json().catch(() => ({}));
+    if (corpo?.acao !== "usuario_disponivel") return erro("acao", "Ação desconhecida.");
+    if (!(await cabe(`chk:${ip}`, 60))) {
+      return resposta({ ok: false, codigo: "muitas_tentativas", mensagem: "Muitas checagens seguidas. Aguarde um minuto." }, 429);
+    }
+    const u = limparUsuario(corpo?.usuario);
+    if (!usuarioValido(u)) return resposta({ ok: true, disponivel: false });
+    const { data, error } = await admin.rpc("usuario_disponivel", { p_usuario: u });
+    if (error) { console.error("usuario_disponivel", error); return erro("servidor", "Não foi possível conferir agora.", undefined, 500); }
+    return resposta({ ok: true, disponivel: data === true });
+  }
+
   let form: FormData;
   try { form = await req.formData(); } catch { return erro("corpo", "Envio inválido. Recarregue a página e tente de novo."); }
   const txt = (k: string) => String(form.get(k) ?? "").trim();
@@ -63,6 +97,25 @@ Deno.serve(async (req) => {
   const visitaId = UUID_RE.test(txt("visita_id")) ? txt("visita_id") : null;
   const dispositivo = txt("dispositivo") === "celular" ? "celular" : "computador";
 
+  // C2 do Parecer 1: limite por IP e por e-mail ANTES de qualquer trabalho (banco, Storage, Auth).
+  // 10 cadastros por IP em 5 minutos: nenhuma pessoa real faz isso; um script faz em segundos.
+  // 5 tentativas com o MESMO e-mail em 5 minutos: trava o uso do cadastro para encher a caixa de
+  // entrada de outra pessoa. O limite vem antes do CAPTCHA porque é mais barato.
+  if (!(await cabe(`cad:ip:${ip}`, 10))) {
+    return erro("muitas_tentativas", "Muitos cadastros seguidos deste acesso. Aguarde alguns minutos e tente de novo.", undefined, 429);
+  }
+  if (email && !(await cabe(`cad:email:${email}`, 5))) {
+    return erro("muitas_tentativas", "Já tentamos esse e-mail várias vezes agora há pouco. Aguarde alguns minutos.", "email", 429);
+  }
+  // CAPTCHA: enquanto o segredo TURNSTILE_SECRET não existir, passa sem token (fase tolerante).
+  {
+    const v = await conferirCaptcha(form.get("captcha_token"), ip);
+    if (!v.ok) {
+      console.error("captcha recusado no cadastro:", v.codigos.join(","));
+      return erro("captcha", MENSAGEM_CAPTCHA, undefined, 403);
+    }
+  }
+
   if (!nomeValido(nome)) return erro("campo_invalido", "Digite seu nome completo (nome e sobrenome).", "nome");
   if (!empresaValida(empresa)) return erro("campo_invalido", "Digite o nome da sua empresa.", "empresa");
   if (!cnpjValido(cnpj)) return erro("campo_invalido", "Esse CNPJ não é válido. Confira os números.", "cnpj");
@@ -78,7 +131,6 @@ Deno.serve(async (req) => {
   const tipo = tipoDaFoto(bytes);
   if (!tipo) return erro("campo_invalido", "A foto precisa ser WebP ou JPEG.", "foto");
 
-  const admin = createClient(SUPABASE_URL, SERVICE, sem);
   // CNPJ único: uma empresa, um cadastro (o índice perfis_cnpj_unico cobre a corrida entre dois envios)
   const { data: cnpjJa, error: eCnpj } = await admin.rpc("reino_cnpj_existe", { p_cnpj: cnpj });
   if (eCnpj) { console.error("reino_cnpj_existe", eCnpj); return erro("servidor", "Não foi possível conferir o CNPJ agora. Tente de novo.", undefined, 500); }
@@ -90,10 +142,13 @@ Deno.serve(async (req) => {
   if (eExiste) { console.error("reino_email_existe", eExiste); return erro("servidor", "Não foi possível conferir o e-mail agora. Tente de novo.", undefined, 500); }
   if (existe === true) return erro("email_em_uso", "Esse e-mail já tem conta no Reino. Use \"Já tenho conta\".", "email");
 
-  // signup normal com a chave pública: o Auth aplica as regras dele e manda o e-mail de confirmação
-  const ip = ipDe(req);
-  const publico = createClient(SUPABASE_URL, ANON, { ...sem, global: { headers: { "X-Forwarded-For": ip, "sb-forwarded-for": ip } } });
-  const { data, error } = await publico.auth.signUp({
+  // signup com a chave SECRETA e o IP real de quem está cadastrando (C5): o Auth aplica as regras
+  // dele, manda o e-mail de confirmação e conta o limite por IP na conta de quem pediu, não da
+  // função. Só o Sb-Forwarded-For vai — o X-Forwarded-For do cliente é forjável e a plataforma o
+  // reescreve de qualquer jeito. Com chave secreta o Auth pula o CAPTCHA dele, e está certo: quem
+  // já validou o token foi esta função, logo acima (o token do Turnstile é de uso único).
+  const servidor = createClient(SUPABASE_URL, SECRETA, { ...sem, global: { headers: { "Sb-Forwarded-For": ip } } });
+  const { data, error } = await servidor.auth.signUp({
     email, password: senha,
     options: { emailRedirectTo: urlVolta(form.get("redirecionar")), data: { nome, empresa, cnpj, cidade, uf, usuario, titulo, indicado_por: indicadoPor } },
   });

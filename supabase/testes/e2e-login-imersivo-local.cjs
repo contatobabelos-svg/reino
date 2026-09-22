@@ -8,6 +8,14 @@
 //   REINO_TESTE_PRINTS=/pasta/fora/do/git  (padrão /tmp/claude-1000/reino-login-prints)
 //   REINO_PLAYWRIGHT=/caminho/do/playwright
 // Só contas fictícias @teste.local.
+//
+// Atualizado em 2026-09-21 (Parecer 1) para:
+//   · a etapa de cidade/UF do carrossel (AF11), que antes travava o teste na etapa da foto;
+//   · o CAPTCHA (C2): o navegador usa a Site Key de TESTE da Cloudflare com um dublê local do
+//     api.js (o desafio de verdade não fecha em navegador de teste) e as chamadas diretas às
+//     funções mandam o token de teste, que a secret de teste aceita;
+//   · a checagem de usuário pela função (C12), no lugar da RPC pública.
+// Para isso, o supabase/functions/.env local precisa de TURNSTILE_SECRET=1x0000000000000000000000000000000AA.
 const PW = process.env.REINO_PLAYWRIGHT || '/home/marcos/.npm/_npx/e41f203b7505f1fb/node_modules/playwright';
 const { chromium } = require(PW);
 const { execSync, spawn } = require('child_process');
@@ -66,13 +74,36 @@ function fotoTeste() {
   if (!fs.existsSync(f)) execSync(`ffmpeg -loglevel error -y -f lavfi -i "testsrc2=s=900x600" -frames:v 1 ${f}`);
   return f;
 }
+// token de teste da Cloudflare: a secret de teste (1x0000...AA) aceita, a de produção rejeita
+const TOKEN_CAPTCHA = 'XXXX.DUMMY.TOKEN.XXXX';
+/* CNPJ válido e diferente a cada chamada: desde 2026-09-21 o cadastro exige CNPJ único
+   (migração 2026-09-21_cnpj_unico.sql), então repetir o mesmo trava o teste no CNPJ */
+function cnpjNovo() {
+  const base = String(Math.floor(Math.random() * 1e12)).padStart(12, '0');
+  const dv = (b, pesos) => { const s = pesos.reduce((t, p, i) => t + Number(b[i]) * p, 0) % 11; return s < 2 ? 0 : 11 - s; };
+  const d1 = dv(base, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const d2 = dv(base + d1, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  return base + d1 + d2;
+}
 async function cadastroDireto(n, usuario) {
   const f = new FormData();
-  Object.entries({ nome: 'Dono Teste', empresa: 'Empresa Dono', cnpj: '11222333000181', email: `dono${n}@teste.local`, usuario, senha: 'SenhaForte123' })
+  Object.entries({ nome: 'Dono Teste', empresa: 'Empresa Dono', cnpj: cnpjNovo(), cidade: 'Campinas', uf: 'SP', email: `dono${n}@teste.local`, usuario, senha: 'SenhaForte123', captcha_token: TOKEN_CAPTCHA })
     .forEach(([k, v]) => f.append(k, v));
   f.append('foto', new Blob([fs.readFileSync(fotoTeste())], { type: 'image/jpeg' }), 'f.jpg');
   const r = await fetch(API + '/functions/v1/reino-cadastro', { method: 'POST', headers: { apikey: ANON }, body: f });
   return r.json();
+}
+/* dublê do Turnstile: mesma interface do api.js da Cloudflare, sem depender da rede dela */
+async function dublarCaptcha(ctx) {
+  await ctx.addInitScript(() => { window.REINO_CAPTCHA = { siteKey: '1x00000000000000000000AA' }; });
+  await ctx.route('https://challenges.cloudflare.com/turnstile/v0/api.js*', (r) => r.fulfill({
+    status: 200, contentType: 'application/javascript',
+    body: `window.turnstile = {
+      render: function (el, opcoes) { this._o = opcoes; return 'dublê'; },
+      execute: function () { var o = this._o; setTimeout(function () { o.callback('XXXX.DUMMY.TOKEN.XXXX'); }, 30); },
+      reset: function () {}, remove: function () {},
+    };`,
+  }));
 }
 async function linkConfirmacao(email) {
   for (let i = 0; i < 30; i++) {
@@ -125,15 +156,31 @@ async function layout(p, nome) {
   }, nome);
 }
 // a imagem da cena carregou (se falhasse, a tela cairia no fundo de reserva)
+/* desde 2026-09-19 o fundo do login é um VÍDEO pré-renderizado (reino-fundo.webm) com poster;
+   antes era uma imagem. Vale qualquer um dos dois: o que não pode é cair na cena de reserva. */
 async function cenaCarregada(p) {
   return p.evaluate(() => {
-    const img = document.querySelector('.hg-fundo-reino-palco img');
-    return !!(img && img.complete && img.naturalWidth > 0);
+    const palco = document.querySelector('.hg-fundo-reino-palco');
+    if (!palco) return false;
+    const img = palco.querySelector('img');
+    if (img && img.complete && img.naturalWidth > 0) return true;
+    const v = palco.querySelector('video');
+    return !!(v && (v.videoWidth > 0 || v.readyState >= 1 || v.poster));
   });
 }
 
 // ---------------------------------------------------------------- fluxo completo num tamanho de tela
 async function fluxo(b, [w, h], rotulo) {
+  // no local TUDO sai do mesmo IP (o do Docker), então o limite por IP do cadastro (10 em 5 min,
+  // C2 do Parecer 1) se esgota com as cenas do servidor. Zera antes de cada fluxo de navegador.
+  psql('delete from privado.tentativas_login');
+  // o carrossel digita sempre o mesmo CNPJ e o cadastro exige CNPJ único desde 2026-09-21:
+  // solta o CNPJ do teste antes de rodar, senão a segunda execução para em "CNPJ já tem cadastro".
+  // Apaga também o PERFIL solto: `public.perfis` não tem chave estrangeira para `auth.users`, então
+  // apagar a conta deixa o perfil (e o CNPJ, e o usuário) preso para sempre — achado do Salvador em
+  // 2026-09-21, devolvido ao Cético; aqui é só higiene do teste.
+  psql("delete from auth.users where id in (select id from public.perfis where cnpj = '11222333000181')");
+  psql("delete from public.perfis where cnpj = '11222333000181'");
   const n = Date.now().toString(36) + rotulo;
   const cod = 'luz' + n;
   psql(`insert into public.codigos (codigo, user_id, nome) select '${cod}', id, 'Luz' from auth.users where email like '%@teste.local' limit 1 on conflict do nothing`);
@@ -142,6 +189,7 @@ async function fluxo(b, [w, h], rotulo) {
   ok(`[${rotulo}] conta de apoio criada pela função (usuário que já existe)`, rDono.ok === true, JSON.stringify(rDono));
 
   const ctx = await b.newContext({ viewport: { width: w, height: h }, hasTouch: w < 500 });
+  await dublarCaptcha(ctx);
   const p = await ctx.newPage();
   const erros = [], respostas = [];
   p.on('pageerror', (e) => erros.push('pageerror ' + e.message));
@@ -176,6 +224,11 @@ async function fluxo(b, [w, h], rotulo) {
   ok(`[${rotulo}] CNPJ com dígito errado bloqueia`, /não é válido/i.test(await erroVisivel(p)));
   await p.screenshot({ path: `${PRINTS}/${rotulo}-02-cnpj-invalido.png` });
   await digitarEnviar(p, '11222333000181');
+  // cidade e UF (AF11): é daí que sai o lugar da empresa no mapa
+  await p.waitForSelector(PASSO('cidade'), { timeout: 20000 });
+  await digitarEnviar(p, 'Campinas');
+  ok(`[${rotulo}] cidade sem UF bloqueia`, /UF/i.test(await erroVisivel(p)));
+  await digitarEnviar(p, 'campinas sp');
   await p.waitForSelector('.hg-li-slide[data-passo="foto"]');
   // foto
   await p.waitForTimeout(300);
@@ -233,7 +286,12 @@ async function fluxo(b, [w, h], rotulo) {
   await p.screenshot({ path: `${PRINTS}/${rotulo}-05-resumo.png` });
   // voltar etapa pelo botão e retornar
   await p.keyboard.press('Enter');
-  await p.waitForSelector('.hg-li-slide[data-passo="validar"]', { timeout: 20000 });
+  try {
+    await p.waitForSelector('.hg-li-slide[data-passo="validar"]', { timeout: 20000 });
+  } catch (e) {
+    ok(`[${rotulo}] o cadastro chegou à tela "valide seu e-mail"`, false, 'erro na tela: ' + (await erroVisivel(p)));
+    throw e;
+  }
   await p.waitForTimeout(600);
   const links = await p.$$eval('.hg-li-correios a', (as) => as.map((a) => [a.textContent.trim(), a.href, a.target, a.rel, !!a.querySelector('.hg-li-correio-seta svg')]));
   ok(`[${rotulo}] cadastro completo → "valide seu e-mail" com Gmail, Yahoo e Outlook (nova aba, com seta)`,
@@ -299,11 +357,15 @@ async function fluxo(b, [w, h], rotulo) {
   // login por usuário → entra
   const entrar = async (quem, senha, nomePrint) => {
     const c2 = await b.newContext({ viewport: { width: w, height: h }, hasTouch: w < 500 });
+    await dublarCaptcha(c2);
     const q = await c2.newPage();
     q.on('pageerror', (e) => erros.push('pageerror ' + e.message));
     q.on('console', (m) => { if (m.type() === 'error') erros.push(m.text().slice(0, 200)); });
     await q.goto(SITE + '/', { waitUntil: 'networkidle' });
-    await q.waitForSelector(PASSO('nome'));
+    /* 90 s: nesta altura do teste já há vários contextos abertos e o Docker do Supabase inteiro
+       na mesma máquina; a primeira pintura do app (9 MB de JSX compilado no navegador — a C7 do
+       Parecer 1) passa de 30 s sob carga. Não é o app em condições normais. */
+    await q.waitForSelector(PASSO('nome'), { timeout: 90000 });
     await q.click('.hg-li-pilula');
     await q.waitForSelector(PASSO('l-usuario'));
     await q.waitForTimeout(300);
@@ -337,16 +399,16 @@ async function fluxo(b, [w, h], rotulo) {
 // ---------------------------------------------------------------- servidor: regras que o navegador não alcança
 async function regrasServidor() {
   const n = Date.now().toString(36) + 'srv';
-  const post = async (corpo) => (await fetch(API + '/functions/v1/reino-login', { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) })).json();
+  const post = async (corpo) => (await fetch(API + '/functions/v1/reino-login', { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ captcha_token: TOKEN_CAPTCHA, ...corpo }) })).json();
   const t0 = Date.now(); await post({ usuario: 'nao.existe.' + n, senha: 'qualquer123' }); const t1 = Date.now() - t0;
   ok('[servidor] latência mínima no login (≥ 600 ms mesmo sem usuário)', t1 >= 600, t1 + ' ms');
   const f = new FormData();
-  Object.entries({ nome: 'Teste Servidor', empresa: 'X', cnpj: '11222333000181', email: `srv${n}@teste.local`, usuario: 'srv.' + n, senha: 'SenhaForte123' }).forEach(([k, v]) => f.append(k, v));
+  Object.entries({ nome: 'Teste Servidor', empresa: 'X', cnpj: cnpjNovo(), cidade: 'Campinas', uf: 'SP', email: `srv${n}@teste.local`, usuario: 'srv.' + n, senha: 'SenhaForte123', captcha_token: TOKEN_CAPTCHA }).forEach(([k, v]) => f.append(k, v));
   f.append('foto', new Blob(['nao sou imagem'], { type: 'image/webp' }), 'f.webp');
   const r = await (await fetch(API + '/functions/v1/reino-cadastro', { method: 'POST', headers: { apikey: ANON }, body: f })).json();
   ok('[servidor] cadastro recusa empresa curta / arquivo que não é imagem', r.ok === false, JSON.stringify(r));
   const g = new FormData();
-  Object.entries({ nome: 'Teste Servidor', empresa: 'Empresa Srv', cnpj: '11222333000181', email: `srv${n}@teste.local`, usuario: 'srv.' + n, senha: 'SenhaForte123' }).forEach(([k, v]) => g.append(k, v));
+  Object.entries({ nome: 'Teste Servidor', empresa: 'Empresa Srv', cnpj: cnpjNovo(), cidade: 'Campinas', uf: 'SP', email: `srv${n}@teste.local`, usuario: 'srv.' + n, senha: 'SenhaForte123', captcha_token: TOKEN_CAPTCHA }).forEach(([k, v]) => g.append(k, v));
   g.append('foto', new Blob(['nao sou imagem, sou texto com tamanho'], { type: 'image/webp' }), 'f.webp');
   const r2 = await (await fetch(API + '/functions/v1/reino-cadastro', { method: 'POST', headers: { apikey: ANON }, body: g })).json();
   ok('[servidor] cadastro confere a assinatura do arquivo (não só o tipo declarado)', r2.ok === false && r2.campo === 'foto', JSON.stringify(r2));
@@ -355,22 +417,36 @@ async function regrasServidor() {
   const dup = await cadastroDireto(n, 'dup2.' + n);
   ok('[servidor] e-mail repetido (ainda não confirmado) é recusado', dono.ok === true && dup.ok === false && dup.codigo === 'email_em_uso', JSON.stringify(dup));
   // a conta não troca usuário nem cnpj sozinha
-  const s = await (await fetch(API + '/auth/v1/signup', { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `direto${n}@teste.local`, password: 'SenhaForte123', data: { nome: 'Direto', usuario: 'ADMIN', cnpj: '123' } }) })).json();
+  const s = await (await fetch(API + '/auth/v1/signup', { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `direto${n}@teste.local`, password: 'SenhaForte123', gotrue_meta_security: { captcha_token: TOKEN_CAPTCHA }, data: { nome: 'Direto', usuario: 'ADMIN', cnpj: '123' } }) })).json();
   const idDireto = (s.user && s.user.id) || s.id;
   ok('[servidor] signup direto com lixo nos metadados não grava usuario/cnpj', psql(`select coalesce(usuario,'-') || coalesce(cnpj,'-') from public.perfis where id='${idDireto}'`) === '--');
   psql(`update auth.users set email_confirmed_at=now() where id='${idDireto}'`);
-  const tk = (await (await fetch(API + '/auth/v1/token?grant_type=password', { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `direto${n}@teste.local`, password: 'SenhaForte123' }) })).json()).access_token;
+  const tk = (await (await fetch(API + '/auth/v1/token?grant_type=password', { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `direto${n}@teste.local`, password: 'SenhaForte123', gotrue_meta_security: { captcha_token: TOKEN_CAPTCHA } }) })).json()).access_token;
   await fetch(API + `/rest/v1/perfis?id=eq.${idDireto}`, { method: 'PATCH', headers: { apikey: ANON, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: 'tomado.' + n, cnpj: '11222333000181', empresa: 'Nova Empresa' }) });
   ok('[servidor] a conta troca a empresa mas NÃO troca usuario nem cnpj', psql(`select coalesce(usuario,'-') || '|' || coalesce(cnpj,'-') || '|' || coalesce(empresa,'-') from public.perfis where id='${idDireto}'`) === '-|-|Nova Empresa');
   const rpc = await fetch(API + '/rest/v1/rpc/reino_email_do_usuario', { method: 'POST', headers: { apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_usuario: 'dup.' + n }) });
   ok('[servidor] visitante NÃO resolve usuário → e-mail pela RPC', rpc.status >= 400, rpc.status + ' ' + (await rpc.text()).slice(0, 80));
+  // C12 do Parecer 1: a RPC saiu do alcance do visitante; a checagem passa pela função, com limite por IP
   const disp = await fetch(API + '/rest/v1/rpc/usuario_disponivel', { method: 'POST', headers: { apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_usuario: 'dup.' + n }) });
-  ok('[servidor] usuario_disponivel responde só boolean', (await disp.text()).trim() === 'false');
+  ok('[servidor] visitante NÃO chama mais a RPC usuario_disponivel', disp.status >= 400, disp.status + ' ' + (await disp.text()).slice(0, 80));
+  const chk = async (u) => (await (await fetch(API + '/functions/v1/reino-cadastro', { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'usuario_disponivel', usuario: u }) })).json());
+  ok('[servidor] a função responde só sim/não na checagem de usuário', JSON.stringify(await chk('dup.' + n)) === '{"ok":true,"disponivel":false}' && (await chk('livre.' + n)).disponivel === true);
+  // C2 do Parecer 1: sem o token do CAPTCHA, a porta não abre
+  const semToken = new FormData();
+  Object.entries({ nome: 'Sem Captcha', empresa: 'Empresa X', cnpj: '11222333000181', cidade: 'Campinas', uf: 'SP', email: `semcap${n}@teste.local`, usuario: 'semcap.' + n, senha: 'SenhaForte123' }).forEach(([k, v]) => semToken.append(k, v));
+  semToken.append('foto', new Blob([fs.readFileSync(fotoTeste())], { type: 'image/jpeg' }), 'f.jpg');
+  const rSem = await fetch(API + '/functions/v1/reino-cadastro', { method: 'POST', headers: { apikey: ANON }, body: semToken });
+  ok('[servidor] cadastro SEM token do CAPTCHA é recusado', rSem.status === 403 && (await rSem.json()).codigo === 'captcha', rSem.status);
+  const rLoginSem = await fetch(API + '/functions/v1/reino-login', { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: 'dup.' + n, senha: 'SenhaForte123' }) });
+  ok('[servidor] login SEM token do CAPTCHA é recusado', rLoginSem.status === 403 && (await rLoginSem.json()).codigo === 'captcha', rLoginSem.status);
+  const rAuth = await fetch(API + '/auth/v1/signup', { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `porta${n}@teste.local`, password: 'SenhaForte123' }) });
+  ok('[servidor] porta direta /auth/v1/signup sem token é recusada pelo Auth', rAuth.status === 400 && /captcha/i.test(await rAuth.text()), rAuth.status);
 }
 
 // ---------------------------------------------------------------- movimento reduzido
 async function movimentoReduzido(b) {
   const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+  await dublarCaptcha(ctx);
   const p = await ctx.newPage();
   await p.goto(SITE + '/', { waitUntil: 'networkidle' });
   await p.waitForSelector(PASSO('nome'));

@@ -1,6 +1,6 @@
 // Reino · login do login imersivo (W), baseado na login-commandbar do Babel OS.
-//   POST { usuario, senha }                       → entra (usuario pode ser o usuário ou o e-mail)
-//   POST { usuario, senha, acao: "reenviar", redirecionar? } → reenvia o e-mail de confirmação
+//   POST { usuario, senha, captcha_token? }       → entra (usuario pode ser o usuário ou o e-mail)
+//   POST { usuario, senha, acao: "reenviar", redirecionar?, captcha_token? } → reenvia a confirmação
 // Segurança:
 //   - latência mínima + jitter em TODA resposta (não dá para medir se o usuário existe);
 //   - erro genérico { ok:false, codigo:"nao_confere" } para usuário inexistente OU senha errada;
@@ -11,10 +11,14 @@
 //   { ok:true, access_token, refresh_token, user:{ id, email } }
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { CORS, EMAIL_RE, ipDe, limparUsuario, mascararEmail, resposta, urlVolta, USUARIO_RE } from "../_shared/reino-validar.ts";
+import { conferirCaptcha, MENSAGEM_CAPTCHA } from "../_shared/reino-captcha.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+// C5 do Parecer 1: só com chave secreta nova (sb_secret_...) o Auth honra o Sb-Forwarded-For e conta
+// o limite por IP de quem está entrando, não o IP de saída desta função. Sem o segredo, cai na
+// service_role legada (que ao menos já isenta esta chamada do CAPTCHA do Auth, validado aqui).
+const SECRETA = Deno.env.get("REINO_SECRET_KEY") || SERVICE;
 const LATENCIA_MINIMA_MS = 600;
 const JITTER_MAX_MS = 50;
 const sem = { auth: { persistSession: false, autoRefreshToken: false } };
@@ -52,6 +56,18 @@ Deno.serve(async (req) => {
       return responder({ ok: false, codigo: "muitas_tentativas", mensagem: "Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo." }, 429);
     }
 
+    // C2 do Parecer 1: esta função é a porta (verify_jwt = false) e fala com o Auth pela chave
+    // secreta, que é isenta do CAPTCHA do Auth — então quem valida o token é ela, aqui, uma vez só
+    // (o token do Turnstile é de uso único; "entrar" e "reenviar" usam o mesmo token porque as duas
+    // chamadas ao Auth saem daqui). Sem TURNSTILE_SECRET configurado, passa sem token.
+    {
+      const v = await conferirCaptcha(corpo?.captcha_token, ip);
+      if (!v.ok) {
+        console.error("captcha recusado no login:", v.codigos.join(","));
+        return responder({ ok: false, codigo: "captcha", mensagem: MENSAGEM_CAPTCHA }, 403);
+      }
+    }
+
     let email = ehEmail ? bruto : null;
     if (!ehEmail) {
       const { data } = await admin.rpc("reino_email_do_usuario", { p_usuario: bruto });
@@ -60,16 +76,17 @@ Deno.serve(async (req) => {
     // usuário inexistente também passa pelo Auth (com um e-mail que não existe) para o tempo ser igual
     const emailAuth = email || `naoexiste-${bruto.replace(/[^a-z0-9._]/g, "")}@reino.invalido`;
 
-    // cliente com a chave pública; o IP de quem chamou vai junto para o Auth limitar por pessoa
-    const publico = createClient(SUPABASE_URL, ANON, { ...sem, global: { headers: { "X-Forwarded-For": ip, "sb-forwarded-for": ip } } });
-    const { data: ses, error } = await publico.auth.signInWithPassword({ email: emailAuth, password: senha });
+    // cliente com a chave SECRETA e só o Sb-Forwarded-For: é o formato que a documentação exige para
+    // o Auth contar o limite por IP de quem está entrando (C5), e não o da função.
+    const servidor = createClient(SUPABASE_URL, SECRETA, { ...sem, global: { headers: { "Sb-Forwarded-For": ip } } });
+    const { data: ses, error } = await servidor.auth.signInWithPassword({ email: emailAuth, password: senha });
 
     if (error) {
       const m = `${error.code || ""} ${error.message || ""}`;
       if (email && /email_not_confirmed|not confirmed/i.test(m)) {
         // a senha conferiu (o Auth só diz "não confirmado" depois de conferir a senha)
         if (acao === "reenviar") {
-          const { error: eR } = await publico.auth.resend({ type: "signup", email, options: { emailRedirectTo: urlVolta(corpo?.redirecionar) } });
+          const { error: eR } = await servidor.auth.resend({ type: "signup", email, options: { emailRedirectTo: urlVolta(corpo?.redirecionar) } });
           if (eR) console.error("resend", eR.message);
           return responder({ ok: false, codigo: "email_nao_confirmado", email_mascarado: mascararEmail(email), reenviado: !eR,
             mensagem: eR ? "Não foi possível reenviar agora. Aguarde um minuto e tente de novo." : undefined });

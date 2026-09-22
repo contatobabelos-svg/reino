@@ -300,6 +300,19 @@
 
     React.useEffect(() => { if (recuperacao) irPara("nova-senha", 0, 1); }, [recuperacao]); // eslint-disable-line react-hooks/exhaustive-deps
     React.useEffect(() => { if (avisoInicial) setAviso(avisoInicial); }, [avisoInicial]);
+
+    /* CAPTCHA (C2 do Parecer 1): o desafio da Cloudflare é invisível quase sempre. Quando ela pede
+       um clique, o widget aparece no centro da tela e a conversa explica o que está acontecendo —
+       sem isso a pessoa vê a tela "travar" no meio do cadastro. */
+    React.useEffect(() => {
+      const aoCaptcha = (e) => {
+        const d = e && e.detail;
+        if (d && d.estado === "desafio") setAviso("Confirme que você é humano — o Reino pediu uma checagem rápida.");
+        else setAviso((a) => (/humano/.test(a || "") ? "" : a));
+      };
+      window.addEventListener("reino-captcha", aoCaptcha);
+      return () => window.removeEventListener("reino-captcha", aoCaptcha);
+    }, []);
     React.useEffect(() => { if (erroInicial) setErro(erroInicial); }, [erroInicial]);
 
     /* teclado virtual no celular: a barra sobe junto */

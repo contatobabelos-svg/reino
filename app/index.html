@@ -21,6 +21,10 @@ window.REINO_SUPABASE = {
 window.REINO_DOMINIO = ""; /* vazio = usa o domínio onde o app está aberto (o-reino.vercel.app ou o domínio próprio) */
 window.REINO_GOOGLE = "AIzaSyClc0RGBDX7iUhhm_sMs7iukIOX4SP-Zhk"; /* Places (New) + Geocoding */
 window.REINO_ROTA_R = false; /* true só quando o servidor reescreve /r/* para o app (vercel.json) */
+/* CAPTCHA (C2 do Parecer 1): Site Key do Cloudflare Turnstile — pública por natureza, como a chave
+   publicável acima. A secret fica só no Supabase (Auth) e no segredo da Edge Function. Sem esta
+   linha o app funciona igual, só sem CAPTCHA. */
+window.REINO_CAPTCHA = { siteKey: "0x4AAAAAAE_VWgCH0dB6d3Jq" };
 </script>
 <script>window.onProfile = undefined; /* compatibilidade: versões antigas do pacote citavam esta variável */</script>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -32,7 +36,8 @@ window.REINO_ROTA_R = false; /* true só quando o servidor reescreve /r/* para o
      se carregasse por último, apagava a versão real — por exemplo, ReinoContas.token() sumia e
      todo recurso que precisa do token do login (Contas no banco, Academy) parava de
      funcionar mesmo com o usuário logado de verdade. Carregando por último, a versão certa vence. -->
-<script src="servicos/afiliados.js?v=2"></script>
+<script src="servicos/afiliados.js?v=3"></script>
+<script src="servicos/captcha.js"></script>
 <script src="servicos/contas.js"></script>
 <script src="servicos/fotos.js"></script>
 <script src="servicos/noticias.js"></script>

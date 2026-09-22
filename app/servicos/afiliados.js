@@ -54,22 +54,16 @@
     return metodo === "GET" ? r.json() : null; /* gravações não pedem a linha de volta: o e-mail de cadastros não é legível para o público */
   }
 
-  /* ---------- localização real (cidade/UF por IP) ----------
-     O Osiris (/api/geo) não libera acesso de outros sites, então usamos o
-     ipwho.is, que permite e devolve cidade, UF e coordenadas sem chave. */
-  let geoCache = null;
-  try { geoCache = JSON.parse(sessionStorage.getItem("reino.geo") || "null"); } catch (e) {}
-  async function geo() {
-    if (geoCache) return geoCache;
-    try {
-      const r = await fetch("https://ipwho.is/");
-      const j = await r.json();
-      if (!j || j.success === false) return null;
-      geoCache = { cidade: j.city || null, uf: j.region_code || null, estado: j.region || null, lat: j.latitude, lng: j.longitude, pais: j.country_code || null };
-      try { sessionStorage.setItem("reino.geo", JSON.stringify(geoCache)); } catch (e) {}
-      return geoCache;
-    } catch (e) { return null; }
-  }
+  /* ---------- localização do visitante: NÃO fazemos mais ----------
+     C12 do Parecer 1 (LGPD). Até 21/09/2026 este arquivo mandava o navegador de CADA visitante
+     chamar https://ipwho.is/ só para gravar cidade/UF no clique. Isso entrega o IP do titular
+     (dado pessoal) a um terceiro, sem aviso, sem base legal escrita e sem contrato — por uma
+     informação que o próprio cadastro pergunta duas telas depois. A chamada saiu.
+     Consequência: `cliques.cidade` e `cliques.uf` nascem nulos; a tela "Meus acessos" já omite o
+     que é nulo (AcessosScreen.jsx usa filter(Boolean)) e o mapa usa a cidade do CADASTRO, que a
+     pessoa digita. Quem precisar de lugar no clique, pergunte — não deduza pelo IP. */
+  async function geo() { return null; }
+  try { sessionStorage.removeItem("reino.geo"); } catch (e) {} /* apaga o que ficou de antes */
 
   /* ---------- clique ---------- */
   let visitaId = sessionStorage.getItem("reino.visitaId") || "";
@@ -79,17 +73,12 @@
     localStorage.setItem("reino.indicadoPor", codigo);
     if (visitaId) return codigo;                       // já contou nesta sessão
     visitaId = uuid(); sessionStorage.setItem("reino.visitaId", visitaId);
-    const g = await geo();
+    /* sem cidade/UF: o clique guarda só o que o próprio pedido já diz (C12 do Parecer 1) */
     const linha = { id: visitaId, codigo, dispositivo: dispositivo(), origem: document.referrer || null, criado_em: agora(), cadastrou: false };
-    if (g) { linha.cidade = g.cidade; linha.uf = g.uf; }
     const local = () => { const d = ler(); (d.cliques = d.cliques || []).push(linha); gravar(d); };
     if (!CFG()) local();
     else try { await sb("cliques", "POST", linha); }
-    catch (e) {
-      // banco antigo (sem as colunas cidade/uf): grava sem elas
-      try { const { cidade, uf, ...base } = linha; await sb("cliques", "POST", base); }
-      catch (e2) { console.warn("[afiliados] clique não enviado, guardando local:", e2.message); local(); }
-    }
+    catch (e) { console.warn("[afiliados] clique não enviado, guardando local:", e.message); local(); }
     // limpa a URL (/r/x → /) sem recarregar, para o app rotear normalmente
     if (location.pathname.includes("/r/")) history.replaceState(null, "", location.pathname.replace(/\/r\/[^/]+\/?$/, "/") + location.hash);
     return codigo;
@@ -111,8 +100,7 @@
   }
   async function registrarCadastro({ nome, email, titulo, cidade, uf }) {
     const c = contexto();
-    if (!cidade || !uf) { const g = await geo(); if (g) { cidade = cidade || g.cidade; uf = uf || g.uf; } }
-    const linha = { id: uuid(), codigo: c.codigo, visita_id: c.visitaId || null, nome, email: email || null, titulo: titulo || null, cidade: cidade || null, uf: uf || null, dispositivo: c.dispositivo, criado_em: agora() };
+    const linha ={ id: uuid(), codigo: c.codigo, visita_id: c.visitaId || null, nome, email: email || null, titulo: titulo || null, cidade: cidade || null, uf: uf || null, dispositivo: c.dispositivo, criado_em: agora() };
     /* sem banco, o painel de demonstração continua funcionando pelo armazenamento local */
     if (!CFG()) { const d = ler(); (d.cadastros = d.cadastros || []).push(linha); (d.cliques || []).forEach((x) => { if (x.id === c.visitaId) x.cadastrou = true; }); gravar(d); }
     return linha;

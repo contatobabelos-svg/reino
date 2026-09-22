@@ -440,3 +440,21 @@ body:not(.is-imersivo) :is(.hg-top, .hg-tabbar, .hg-main *):not(.hg-story-view):
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
 }
 .hg-top { background: rgba(3, 8, 23, .88); }
+
+/* ---------------------------------------------------------------- CAPTCHA (Cloudflare Turnstile)
+   C2 do Parecer 1. O widget é invisível ("interaction-only"): só ganha corpo quando a Cloudflare
+   pede um clique. Fica fixo no centro da tela, ACIMA do login imersivo (que usa z-index 50) e de
+   qualquer painel, senão o desafio aparece atrás e a pessoa trava sem entender por quê. */
+.hg-captcha {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  z-index: 9000; display: flex; align-items: center; justify-content: center;
+  width: 0; height: 0; overflow: visible; pointer-events: none;
+}
+.hg-captcha.hg-captcha--ativo {
+  width: auto; height: auto; pointer-events: auto;
+  padding: 14px; border-radius: 16px;
+  background: rgba(3, 8, 23, .92);
+  border: 1px solid rgba(63, 227, 255, .28);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, .6), 0 0 0 100vmax rgba(3, 8, 23, .55);
+}
+.hg-captcha iframe { max-width: 100%; }

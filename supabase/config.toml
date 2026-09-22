@@ -210,10 +210,17 @@ token_verifications = 30
 web3 = 30
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
-# [auth.captcha]
-# enabled = true
-# provider = "hcaptcha"
-# secret = ""
+# C2 do Parecer 1: o Reino usa Cloudflare Turnstile. Aqui, no LOCAL, vai a chave de TESTE
+# oficial da Cloudflare (documentada e pública: "always passes"), NUNCA a secret de produção
+# — essa fica só no Supabase (security_captcha_secret) e no segredo TURNSTILE_SECRET da função.
+# Chaves de teste da Cloudflare (developers.cloudflare.com/turnstile/troubleshooting/testing/):
+#   site 1x00000000000000000000AA  + secret 1x0000000000000000000000000000000AA  → sempre passa
+#   site 2x00000000000000000000AB  + secret 2x0000000000000000000000000000000AA  → sempre falha
+#   site 3x00000000000000000000FF                                                → força interação
+[auth.captcha]
+enabled = true
+provider = "turnstile"
+secret = "1x0000000000000000000000000000000AA"
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.

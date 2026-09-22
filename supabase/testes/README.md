@@ -4,9 +4,9 @@ Rodam contra o Supabase **local** (portas 5436x, `supabase/config.toml`), nunca 
 
 1. `supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,storage-api,realtime,postgres-meta`
 2. Restaure o esquema do backup (`~/Backups/reino/reino-schema-*.sql`) e aplique as migrações novas de `supabase/`.
-3. `e2e-afiliados-local.cjs`: monta uma cópia do site apontando para o banco local (porta 8140) e confere
-   clique → cadastro → gatilho, o que visitante, afiliado e admin conseguem ler, o ranking e o painel "Meus acessos".
-   Usa só contas fictícias `@teste.local`.
+3. `e2e-afiliados-local.cjs` foi **aposentado em 2026-09-21** (está em `arquivo/testes-aposentados/`,
+   com o porquê no `LEIA-ME.md` de lá): dirigia a tela `PortalLogin`, que não é mais renderizada, e
+   provava o cadastro inserido pelo navegador, que a C6 do Parecer 1 fechou.
 4. `e2e-login-imersivo-local.cjs` (TODO W): precisa também de storage, edge-runtime e Mailpit, então suba com
    `supabase start -x studio,imgproxy,logflare,vector,supavisor,realtime,postgres-meta`, aplique
    `2026-09-21_login_imersivo_usuario_empresa_cnpj.sql` e rode as funções com
@@ -16,6 +16,14 @@ Rodam contra o Supabase **local** (portas 5436x, `supabase/config.toml`), nunca 
    cadastra pelo carrossel em 1440×900 e 390×844, confere banco/Storage/cadastros, confirma pelo Mailpit
    (porta 54364) e entra por usuário e por e-mail. Prints em `REINO_TESTE_PRINTS` (padrão
    `/tmp/claude-1000/reino-login-prints`, fora do git).
+   Desde 2026-09-21 ele também cobre a etapa de cidade/UF, o CAPTCHA (C2) e a checagem de usuário
+   pela função (C12). Para isso o `supabase/functions/.env` local precisa de
+   `TURNSTILE_SECRET=1x0000000000000000000000000000000AA` (chave de TESTE da Cloudflare, "sempre
+   passa" — a de produção NUNCA entra em arquivo do repositório) e o `config.toml` já sobe o Auth
+   local com `[auth.captcha]` ligado no provedor `turnstile` com a mesma chave de teste.
+   No navegador o teste troca o `api.js` da Cloudflare por um dublê com a mesma interface: o desafio
+   de verdade não fecha em navegador de teste. **A prova com o desafio real é humana**, no site
+   publicado.
 
 5. `e2e-noticias.cjs` (TODO Y): tela Notícias do Reino e bloco de notícias do Dashboard. **Não escreve nada**
    — a rota `noticias` da `reino-apis` é pública e só de leitura. Monta sozinho a cópia do site na porta 8152.
@@ -33,3 +41,11 @@ Rodam contra o Supabase **local** (portas 5436x, `supabase/config.toml`), nunca 
    REINO_FUNC_LOCAL=http://127.0.0.1:8153 node supabase/testes/e2e-noticias.cjs
    ```
    Prints em `REINO_TESTE_PRINTS` (padrão `/tmp/claude-1000/reino-noticias-prints`, fora do git).
+
+6. `e2e-cadastro-cidade-uf.cjs`: o carrossel do cadastro sem precisar de Docker nenhum — o banco e a
+   função são respondidos por `page.route`. Confere a etapa de cidade/UF, o token do CAPTCHA saindo
+   junto do cadastro (C2) e a checagem de usuário passando pela função em vez da RPC pública (C12).
+   ```sh
+   node supabase/testes/e2e-cadastro-cidade-uf.cjs
+   ```
+   Prints em `REINO_TESTE_PRINTS` (padrão `/tmp/claude-1000/reino-cadastro-prints`).
