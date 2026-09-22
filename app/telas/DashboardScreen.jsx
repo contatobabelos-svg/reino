@@ -436,8 +436,8 @@ function DashboardScreen({ ir, usuario, conta }) {
         <section className="hg-kpis" aria-label="Indicadores do Reino" data-itens={kpis.length}>
           {w.ve("kpi-afiliados") ? <KpiCard label="Afiliados ativos" value={String(a.indicados)} trend={12} foot="nesta semana" onClose={() => w.esconder("kpi-afiliados")} /> : null}
           {w.ve("kpi-bonus") ? <KpiCard label="Bônus acumulado" value={"R$ " + a.comissoesPendentes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} size="1.5rem" trend={8} foot="a receber" onClose={() => w.esconder("kpi-bonus")} /> : null}
-          {w.ve("kpi-negocios") ? <KpiCard label="Negócios fechados" value={(!window.ReinoDados || window.ReinoDados.ficticios()) ? "32" : "—"} trend={(!window.ReinoDados || window.ReinoDados.ficticios()) ? 6 : 0} foot={(!window.ReinoDados || window.ReinoDados.ficticios()) ? "nesta semana" : "sem dado real ainda"} onClose={() => w.esconder("kpi-negocios")} /> : null}
-          {w.ve("kpi-cidades") ? <KpiCard label="Cidades ativas" value={(!window.ReinoDados || window.ReinoDados.ficticios()) ? "346" : "—"} trend={(!window.ReinoDados || window.ReinoDados.ficticios()) ? 4 : 0} foot={(!window.ReinoDados || window.ReinoDados.ficticios()) ? "nesta semana" : "sem dado real ainda"} onClose={() => w.esconder("kpi-cidades")} /> : null}
+          {w.ve("kpi-negocios") ? <KpiCard label="Negócios fechados" value="—" trend={0} foot="sem dado real ainda" onClose={() => w.esconder("kpi-negocios")} /> : null}
+          {w.ve("kpi-cidades") ? <KpiCard label="Cidades ativas" value="—" trend={0} foot="sem dado real ainda" onClose={() => w.esconder("kpi-cidades")} /> : null}
         </section>
       ) : null}
 

@@ -84,5 +84,5 @@
   const podeFalarNoGrupo = (conta) => !!conta && (conta.situacao === "admin" || (conta.situacao === "membro" && !TITULOS_SO_LEEM.includes(conta.titulo)));
   const podeFazerNetwork = (conta) => !!conta && (conta.situacao === "admin" || conta.situacao === "membro");
 
-  window.ReinoChat = { SALA_GRUPO, salaPrivada, historico, enviar, pedidos, pedirNetwork, responder, assinar, podeFalarNoGrupo, podeFazerNetwork, disponivel: () => !!sb() };
+  window.ReinoChat = { cliente: sb, SALA_GRUPO, salaPrivada, historico, enviar, pedidos, pedirNetwork, responder, assinar, podeFalarNoGrupo, podeFazerNetwork, disponivel: () => !!sb() };
 })();

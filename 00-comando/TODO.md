@@ -237,3 +237,12 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] AH2 Desligado, `app/dados/modo-dados.js` esvazia `BABEL_DEMO` e as respostas de `BabelDemo` mantendo o formato; ficam títulos, regras e grupos do feed. Somem também os fixos no código: stories de exemplo, tendências da Rede social, KPIs "Negócios fechados"/"Cidades ativas", campos de exemplo em Configurações, território Campinas/Cambuí (vira a cidade da conta)
 - [x] AH3 `TelaSegura` no App: tela que quebra sem dado mostra estado vazio em vez de branco (hoje só a Bolsa de Valores cai nele)
 - [ ] AH4 Decisão do fundador: o padrão deve passar a ser "Só dados reais" para todo mundo?
+
+## AI — "quero que você primeiro exclua os dados mocados e apos isso, me gere 77 usuarios que usam o app de nivel moderado, chats geral, chat de network e status. ele não precisam de usuario e nem confirmação de email. espalhe eles pelo brasil. crie guildas, crie matchs e networks entre os 77. todos eles sao empresas reais, entao use mesmo os  dados dos 77 pesquisando no google maps e fazendo  uma varredura das empresas reis." (22/09)
+Decisão do fundador (pergunta da Vyra): as 77 são **fictícias** e marcadas como teste; empresas reais só como vitrine (empresas_reais, já no mapa). Mocados: **apagar de vez**.
+- [x] AI1 Dados de demonstração apagados do app: `dados-demo.js`, `demo-brasil.js`, `demo-municipios.js` (850 kB) → `arquivo/dados-demo/`; `data.js` só com regras + formato vazio; sai o interruptor AH; saem os exemplos fixos das telas
+- [x] AI2 Banco: `guildas`, `guilda_membros`, `matches`, `status` (24 h) + `privado.contas_teste`; membro real não vê nada de teste; admin vê tudo e lê os privados entre contas de teste (sem escrever)
+- [x] AI3 77 contas de teste em produção (27 UFs, 18 nichos, Barão→Rei), sem senha/usuário: 72 mensagens no grupo, 55 pedidos de network (38 aceitos, 217 mensagens privadas), 12 guildas, 150 matches, 45 status. Gerador: `supabase/semente-teste/gerar-contas-teste.py`; remoção: `remover-contas-teste.sql`
+- [x] AI4 Telas ligadas ao banco: Guildas, Match, Stories/status e "Quem combina com você" (Rede social); Bate Papo mostra ao admin as conversas de teste como só leitura
+- [ ] AI5 Os status da semente vencem em 24 h (regra do status); rodar o gerador de novo renova — ou pedir para eu gerar só status novos
+- [ ] AI6 Ainda sem tabela no banco (tela vazia): feed da Rede social, Vitrine, Revista, Eventos, Conquistas, Bolsa, Clube, Rede Completa, Busca

@@ -49,6 +49,12 @@ Migrações aplicadas, em ordem:
     `chat_pedir_network(p_para)` e `chat_responder_network(p_id, p_aceitar)`. Autor, nome, empresa e título
     preenchidos por gatilho a partir do perfil; 8 mensagens por conta a cada 30 s. `perfis` continua fechado.
 
+14. `2026-09-22_guildas_matches_status_e_contas_teste.sql` — `guildas` + `guilda_membros`, `matches`, `status`
+    (some em 24 h) e `privado.contas_teste`. Tudo que vem de conta de teste some para membro real
+    (`privado.vejo_teste()` = admin ou conta de teste); admin lê os privados entre contas de teste, sem escrever.
+    Semente das 77 contas fictícias: `semente-teste/gerar-contas-teste.py` (determinístico) e
+    `semente-teste/remover-contas-teste.sql` (apaga tudo delas). Aplicada em prod em 22/09.
+
 Ordem obrigatória do item 10, para não derrubar o cadastro ao vivo: publicar a `reino-cadastro` com o
 insert no servidor → publicar o site sem o insert no navegador → só então rodar a migração.
 

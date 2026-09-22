@@ -64,16 +64,21 @@ function ComporRS({ autor, onPublicar }) {
 const TITULO_POR_AUTOR = { "Ana Ribeiro": "Rei", "Camila Duarte": "Duque", "Eduarda Lopes": "Conde", "Henrique Alves": "Príncipe", "Gabriela Rocha": "Duque", "Felipe Nunes": "Duque" };
 const NAV_RS = [["inicio", "visao", "Início"], ["explorar", "busca", "Explorar"], ["notificacoes", "sino", "Notificações"], ["mensagens", "msg", "Mensagens"], ["guildas", "guilda", "Guildas"], ["perfil", "tecnicos", "Perfil"]];
 
-function RedeSocialScreen({ ir }) {
+function RedeSocialScreen({ ir, conta }) {
   const d = window.BABEL_DEMO;
-  const st = useStories(d.perfil.nome);
+  /* a conta logada (os dados de exemplo foram apagados, TODO AI) */
+  const eu = (conta && conta.nome) || "Você";
+  const meuTitulo = (conta && (conta.situacao === "admin" ? "Imperador" : conta.titulo)) || "";
+  const st = useStories(eu);
+  const [combina, setCombina] = React.useState([]);
+  React.useEffect(() => { if (window.ReinoRede) window.ReinoRede.matches(conta && conta.id).then((m) => setCombina(m.filter((x) => x.meu).slice(0, 3))).catch(() => {}); }, []);
   const empresasMarcaveis = React.useMemo(() => [...new Set([...d.feed.map((p) => p.empresa), ...d.match.map((m) => m.nome), ...d.guildas.map((g) => g.nome)].filter(Boolean))], []);
   const [aba, setAba] = React.useState("para-voce");
   const [nav, setNav] = React.useState("inicio");
   const [feed, setFeed] = React.useState(() => d.feed.map((p, i) => ({ ...p, titulo: TITULO_POR_AUTOR[p.autor], repostagens: [3, 5, 11, 1, 7, 2][i % 6] })));
-  const publicar = (texto) => setFeed((f) => [{ autor: d.perfil.nome, empresa: "Você", titulo: d.perfil.titulo, quando: "agora", texto, curtidas: 0, comentarios: 0, repostagens: 0 }, ...f]);
-  const lista = aba === "seguindo" ? feed.filter((p) => ["Ana Ribeiro", "Felipe Nunes", d.perfil.nome].includes(p.autor)) : aba === "grupo" ? feed.filter((p) => p.titulo === d.perfil.titulo) : feed;
-  const tendencias = !(!window.ReinoDados || window.ReinoDados.ficticios()) ? [] : [["Marketing · em alta", "#diagnosticogratis", "1.204 publicações"], ["Curitiba", "#parceriacontabil", "863 publicações"], ["Reino", "#guildaplanalto", "412 publicações"], ["Saúde", "#novaunidade", "377 publicações"]];
+  const publicar = (texto) => setFeed((f) => [{ autor: eu, empresa: "Você", titulo: meuTitulo, quando: "agora", texto, curtidas: 0, comentarios: 0, repostagens: 0 }, ...f]);
+  const lista = aba === "seguindo" ? feed.filter((p) => ["Ana Ribeiro", "Felipe Nunes", eu].includes(p.autor)) : aba === "grupo" ? feed.filter((p) => p.titulo === meuTitulo) : feed;
+  const tendencias = []; /* as tendências de exemplo foram apagadas (TODO AI); sem tabela de hashtags ainda */
   return (
     <div className="hg-social">
       <nav className="hg-social-nav" aria-label="Rede social">
@@ -91,11 +96,11 @@ function RedeSocialScreen({ ir }) {
           <div className="hg-social-abas" role="tablist">
             <button role="tab" aria-selected={aba === "para-voce"} onClick={() => setAba("para-voce")}>Para você</button>
             <button role="tab" aria-selected={aba === "seguindo"} onClick={() => setAba("seguindo")}>Seguindo</button>
-            <button role="tab" aria-selected={aba === "grupo"} onClick={() => setAba("grupo")}>Grupo de {d.perfil.titulo}</button>
+            <button role="tab" aria-selected={aba === "grupo"} onClick={() => setAba("grupo")}>Grupo de {meuTitulo}</button>
           </div>
         </div>
-        <StoriesBar stories={st.stories} eu={d.perfil.nome} onAbrir={st.abrir} onCriar={st.criar} />
-        <ComporRS autor={d.perfil.nome} onPublicar={publicar} />
+        <StoriesBar stories={st.stories} eu={eu} onAbrir={st.abrir} onCriar={st.criar} />
+        <ComporRS autor={eu} onPublicar={publicar} />
         <div className="hg-timeline">
           {lista.map((p, i) => <PostRS key={p.autor + i} {...p} />)}
           {lista.length === 0 ? <p className="hg-sub" style={{ padding: "2rem 1rem", textAlign: "center" }}>Ninguém do seu grupo publicou ainda. Seja o primeiro.</p> : null}
@@ -106,9 +111,10 @@ function RedeSocialScreen({ ir }) {
         <label className="hg-social-busca"><Icon name="busca" /><input type="search" placeholder="Buscar no Reino" /></label>
         <div className="hg-social-bloco">
           <h3>Quem combina com você</h3>
-          {d.match.slice(0, 3).map((m) => (
-            <ListRow key={m.nome} title={m.nome} subtitle={m.nicho + " · " + m.cidade} avatarGradient="match" right={<Button variant="ghost">Seguir</Button>} />
+          {combina.map((m) => (
+            <ListRow key={m.id} title={m.nome} subtitle={m.nicho + " · " + m.cidade} avatarGradient="match" right={<Button variant="ghost" onClick={() => ir("chat.html")}>Network</Button>} />
           ))}
+          {combina.length ? null : <p className="hg-sub">Seus matches aparecem aqui.</p>}
           <a href="#" onClick={(e) => { e.preventDefault(); ir("match.html"); }}>Ver todos os matches</a>
         </div>
         <div className="hg-social-bloco">
@@ -117,8 +123,8 @@ function RedeSocialScreen({ ir }) {
           <a href="#" onClick={(e) => { e.preventDefault(); ir("pesquisa.html"); }}>Mostrar mais</a>
         </div>
       </aside>
-      {st.aberto ? ReactDOM.createPortal(<StoryViewer stories={st.stories} autor={st.aberto} eu={d.perfil.nome} onFechar={st.fechar} onTrocarAutor={st.abrir} onVisto={st.visto} onCurtir={st.curtir} onResponder={st.responder} onRepostar={st.repostar} onApagar={st.apagar} />, document.body) : null}
-      {st.criando ? ReactDOM.createPortal(<StoryComposer eu={d.perfil.nome} empresas={empresasMarcaveis} inicial={st.criando.inicial} onPublicar={st.publicar} onFechar={st.cancelar} />, document.body) : null}
+      {st.aberto ? ReactDOM.createPortal(<StoryViewer stories={st.stories} autor={st.aberto} eu={eu} onFechar={st.fechar} onTrocarAutor={st.abrir} onVisto={st.visto} onCurtir={st.curtir} onResponder={st.responder} onRepostar={st.repostar} onApagar={st.apagar} />, document.body) : null}
+      {st.criando ? ReactDOM.createPortal(<StoryComposer eu={eu} empresas={empresasMarcaveis} inicial={st.criando.inicial} onPublicar={st.publicar} onFechar={st.cancelar} />, document.body) : null}
     </div>
   );
 }

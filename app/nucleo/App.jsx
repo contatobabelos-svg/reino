@@ -27,7 +27,6 @@ const TELAS = {
   "assistente.html": AssistenteScreen,
 };
 const PAGINA = { "index.html": "inicio", "bolsa.html": "bolsa" };
-const USUARIO = { ...(window.BABEL_DEMO ? window.BABEL_DEMO.perfil : {}), uf: "SP", cidade: "Campinas", bairro: "Cambuí" };
 
 function EmBreve({ titulo }) {
   return (
@@ -41,35 +40,21 @@ function EmBreve({ titulo }) {
   );
 }
 
-/* Com os dados fictícios desligados, uma tela que ainda não tem dado real pode quebrar ao
-   receber lista vazia. Em vez de tela em branco, mostra o estado vazio (TODO AH). */
+/* Tela que ainda não tem dado no banco pode quebrar ao receber lista vazia.
+   Em vez de tela em branco, mostra o estado vazio (TODO AH/AI). */
 class TelaSegura extends React.Component {
   constructor(p) { super(p); this.state = { erro: null }; }
   static getDerivedStateFromError(erro) { return { erro }; }
   componentDidCatch(erro) { try { console.warn("[Reino] tela sem dados:", erro && erro.message); } catch (e) {} }
   render() {
     if (!this.state.erro) return this.props.children;
-    const ficticios = !window.ReinoDados || window.ReinoDados.ficticios();
     return (
       <Panel fill>
-        <EmptyState icon="camadas" title={ficticios ? "Esta tela não abriu" : "Ainda não há dados reais aqui"}
-          description={ficticios ? "Recarregue a página. Se continuar, avise o administrador." : "Esta parte do Reino ainda mostra só exemplos. Ligue os dados fictícios no topo para ver como ela vai ficar."} />
+        <EmptyState icon="camadas" title="Ainda não há dados aqui"
+          description="Esta parte do Reino ainda não tem dados no banco. Assim que tiver, ela aparece aqui." />
       </Panel>
     );
   }
-}
-
-/* selo do topo: liga/desliga os dados fictícios (a troca recarrega a página) */
-function SeloDados() {
-  const R = window.ReinoDados;
-  const ligado = !R || R.ficticios();
-  return (
-    <button type="button" className={"hg-selo-demo is-cabecalho hg-selo-dados" + (ligado ? "" : " is-real")} aria-pressed={!ligado}
-      title={ligado ? "Toque para esconder os exemplos e ver só o que é real" : "Toque para voltar a ver os exemplos"}
-      onClick={() => R && R.alternar()}>
-      {ligado ? "Dados fictícios · ligado" : "Só dados reais"}
-    </button>
-  );
 }
 
 function App() {
@@ -175,12 +160,12 @@ function App() {
         <div className="hg-main">
           <TopBar user={conta.nome || conta.email} role={[ehAdm ? "Imperador" : conta.titulo || "Título a definir", conta.cidade].filter(Boolean).join(" · ")} notifications messages
             onMenu={() => setMenu((v) => !v)} onNotifications={() => setGaveta("notificacoes")} onMessages={() => ir("chat.html")}
-            actions={<>{SeloImperador}{Modo}<SeloDados /></>} />
+            actions={<>{SeloImperador}{Modo}</>} />
           <main className="hg-content">
             {conta.situacao !== "membro" && conta.situacao !== "admin" ? (
               <p className="hg-aviso-aprovacao" role="status">Sua conta aguarda a aprovação de um administrador. Enquanto isso, você já pode explorar o Reino.</p>
             ) : null}
-            {Tela ? <TelaSegura key={rota}><Tela ir={ir} usuario={(!window.ReinoDados || window.ReinoDados.ficticios()) ? USUARIO : { nome: conta.nome, titulo: conta.titulo, cidade: conta.cidade || "", uf: conta.uf || "", bairro: "" }} conta={conta} /></TelaSegura> : <EmBreve titulo={titulo} />}
+            {Tela ? <TelaSegura key={rota}><Tela ir={ir} usuario={{ nome: conta.nome, titulo: conta.titulo, cidade: conta.cidade || "", uf: conta.uf || "", bairro: "" }} conta={conta} /></TelaSegura> : <EmBreve titulo={titulo} />}
           </main>
         </div>
       </div>

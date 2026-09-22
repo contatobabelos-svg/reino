@@ -323,9 +323,9 @@ const podarVelhos = (grupos) => grupos.map((g) => ({ ...g, itens: g.itens.filter
 
 function useStories(eu) {
   const [stories, setStories] = React.useState(() => {
-    /* dados fictícios desligados (TODO AH): somem os stories de exemplo, ficam os da conta */
+    /* os stories de exemplo foram apagados (TODO AI): só aparecem os da conta */
     const exemplos = STORIES_INICIAIS.map((g) => g.autor);
-    const reais = (gs) => ((!window.ReinoDados || window.ReinoDados.ficticios()) ? gs : gs.filter((g) => !exemplos.includes(g.autor)));
+    const reais = (gs) => gs.filter((g) => !exemplos.includes(g.autor));
     try { const s = JSON.parse(sessionStorage.getItem("reino.stories") || "null"); if (s) return reais(podarVelhos(s)); } catch (e) {}
     return reais(STORIES_INICIAIS).map((g) => ({ ...g, itens: g.itens.map((it) => ({ ...it, criado_em: it.criado_em || Date.now() })) }));
   });
@@ -338,6 +338,20 @@ function useStories(eu) {
     const t = setInterval(() => setStories((s) => { const p = podarVelhos(s); return p.length === s.length && p.every((g, i) => g.itens.length === s[i].itens.length) ? s : p; }), 60000);
     return () => clearInterval(t);
   }, []);
+  /* status das outras contas, do banco (servicos/rede.js, TODO AI): entram como grupos marcados db */
+  React.useEffect(() => {
+    const R = window.ReinoRede; if (!R) return;
+    const quando = (iso) => { const m = Math.max(1, Math.round((Date.now() - Date.parse(iso)) / 60000)); return m < 60 ? m + " min" : Math.round(m / 60) + " h"; };
+    R.status().then((linhas) => {
+      const grupos = {};
+      linhas.filter((l) => l.autor_nome && l.autor_nome !== eu).forEach((l) => {
+        (grupos[l.autor_nome] ||= { autor: l.autor_nome, db: true, itens: [] }).itens.push({
+          id: "db-" + l.id, fundo: l.fundo, filtro: "nenhum", texto: l.texto, tx: 50, ty: 48, empresa: l.autor_empresa,
+          quando: quando(l.criado_em), curtidas: 0, visto: false, criado_em: Date.parse(l.criado_em) });
+      });
+      setStories((s) => [...s.filter((g) => !g.db && !grupos[g.autor]), ...Object.values(grupos)]);
+    }).catch(() => { /* sem banco: fica só o que é local */ });
+  }, [eu]);
   const [aberto, setAberto] = React.useState(null);
   const [criando, setCriando] = React.useState(null); // null | {} | {inicial}
   const mapItem = (id, fn) => setStories((s) => s.map((g) => ({ ...g, itens: g.itens.map((it) => (it.id === id ? fn(it) : it)) })));
@@ -350,7 +364,7 @@ function useStories(eu) {
     responder: (item, texto) => { window.__respostasStories = [...(window.__respostasStories || []), { para: item.id, texto }]; },
     repostar: (item, autor) => { setAberto(null); setCriando({ inicial: { ...item, texto: item.texto, empresa: item.empresa || autor, repost: autor } }); },
     apagar: (id) => setStories((s) => s.map((g) => ({ ...g, itens: g.itens.filter((it) => it.id !== id) }))),
-    publicar: (item) => { item.criado_em = Date.now(); window.__storyInicial = item.id; setStories((s) => { const tem = s.some((g) => g.autor === eu); const n = tem ? s.map((g) => (g.autor === eu ? { ...g, itens: [...g.itens, item] } : g)) : [{ autor: eu, itens: [item] }, ...s]; return n; }); setCriando(null); setAberto(eu); },
+    publicar: (item) => { if (item.texto && !item.midia && window.ReinoRede) window.ReinoRede.publicarStatus(item.texto, item.fundo).catch(() => {}); item.criado_em = Date.now(); window.__storyInicial = item.id; setStories((s) => { const tem = s.some((g) => g.autor === eu); const n = tem ? s.map((g) => (g.autor === eu ? { ...g, itens: [...g.itens, item] } : g)) : [{ autor: eu, itens: [item] }, ...s]; return n; }); setCriando(null); setAberto(eu); },
   };
   return api;
 }

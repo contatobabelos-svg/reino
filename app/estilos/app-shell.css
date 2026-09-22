@@ -459,6 +459,3 @@ body:not(.is-imersivo) :is(.hg-top, .hg-tabbar, .hg-main *):not(.hg-story-view):
 }
 .hg-captcha iframe { max-width: 100%; }
 
-/* selo liga/desliga dos dados fictícios (TODO AH) */
-.hg-selo-dados { cursor: pointer; border: 0; font-family: inherit; }
-.hg-selo-dados.is-real { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--green) 45%, transparent); }

@@ -22,13 +22,13 @@ function ConfiguracoesScreen() {
               <Input id="token" name="token" type="password" autoComplete="off" />
             </Field>
             <Field label="Seu nome" htmlFor="usuario">
-              <Input id="usuario" name="usuario" type="text" autoComplete="name" defaultValue={(!window.ReinoDados || window.ReinoDados.ficticios()) ? "Marcelo" : ""} />
+              <Input id="usuario" name="usuario" type="text" autoComplete="name" defaultValue="" />
             </Field>
             <Field label="Seu endereço no Reino" htmlFor="cidade" hint="Ao logar, o globo voa até o seu bairro.">
               <div style={{ display: "grid", gridTemplateColumns: "2fr 70px 2fr", gap: ".5rem" }}>
-                <Input id="cidade" name="cidade" placeholder="Cidade" autoComplete="address-level2" defaultValue={(!window.ReinoDados || window.ReinoDados.ficticios()) ? "Campinas" : ""} />
-                <Input id="uf" name="uf" placeholder="UF" maxLength={2} autoComplete="address-level1" defaultValue={(!window.ReinoDados || window.ReinoDados.ficticios()) ? "SP" : ""} />
-                <Input id="bairro" name="bairro" placeholder="Bairro" defaultValue={(!window.ReinoDados || window.ReinoDados.ficticios()) ? "Cambuí" : ""} />
+                <Input id="cidade" name="cidade" placeholder="Cidade" autoComplete="address-level2" defaultValue="" />
+                <Input id="uf" name="uf" placeholder="UF" maxLength={2} autoComplete="address-level1" defaultValue="" />
+                <Input id="bairro" name="bairro" placeholder="Bairro" defaultValue="" />
               </div>
             </Field>
             <Toolbar>

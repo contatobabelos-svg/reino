@@ -72,7 +72,8 @@ function ChatScreen({ conta }) {
   const outroDe = (p) => (p.de === euId
     ? { id: p.para, nome: p.para_nome || "Membro", empresa: p.para_empresa, titulo: p.para_titulo }
     : { id: p.de, nome: p.de_nome || "Membro", empresa: p.de_empresa, titulo: p.de_titulo });
-  const pedidoCom = (id) => pedidos.find((p) => p.de === id || p.para === id);
+  const souPonta = (p) => p.de === euId || p.para === euId;
+  const pedidoCom = (id) => pedidos.find((p) => souPonta(p) && (p.de === id || p.para === id));
 
   const fazerNetwork = async (m) => {
     setErro(""); /* o balão fica aberto e passa a mostrar "Pedido de network enviado" */
@@ -105,23 +106,29 @@ function ChatScreen({ conta }) {
   };
 
   const aceitos = pedidos.filter((p) => p.estado === "aceito");
-  const visiveis = pedidos.filter((p) => p.estado !== "recusado");
+  /* admin também recebe os pedidos entre contas de teste: só entram na lista de conversas, só leitura */
+  const visiveis = pedidos.filter((p) => p.estado !== "recusado" && souPonta(p));
   const pendentes = pedidos.filter((p) => p.estado === "pendente" && p.para === euId);
   const ultima = (ms) => ms[ms.length - 1];
   const participantes = new Set(grupo.map((m) => m.autor)).size;
   const conversas = [
     { id: CH.SALA_GRUPO, nome: "Bate Papo do Reino", sub: participantes ? `${participantes} participante${participantes > 1 ? "s" : ""} · todos os títulos` : "Todos os títulos", ultima: ultima(grupo), grupo: true },
-    ...aceitos.map((p) => { const o = outroDe(p); const s = CH.salaPrivada(p.de, p.para); const ms = privados[s] || []; return { id: s, nome: o.nome, sub: [o.titulo, o.empresa].filter(Boolean).join(" · ") || "Membro", ultima: ultima(ms) || null, pedido: p }; })
+    ...aceitos.map((p) => {
+      const s = CH.salaPrivada(p.de, p.para); const ms = privados[s] || [];
+      if (!souPonta(p)) return { id: s, nome: (p.de_nome || "Membro") + " ↔ " + (p.para_nome || "Membro"), sub: "Contas de teste · só leitura", ultima: ultima(ms) || null, pedido: p, leitura: true };
+      const o = outroDe(p); return { id: s, nome: o.nome, sub: [o.titulo, o.empresa].filter(Boolean).join(" · ") || "Membro", ultima: ultima(ms) || null, pedido: p };
+    })
       .sort((a, b) => ((b.ultima && b.ultima.id) || 0) - ((a.ultima && a.ultima.id) || 0)),
   ];
   const listadas = busca.trim() ? conversas.filter((c) => c.nome.toLowerCase().includes(busca.trim().toLowerCase())) : conversas;
   const noGrupo = aberto === CH.SALA_GRUPO;
   const msgs = noGrupo ? grupo : privados[aberto] || [];
   const conversaAtual = conversas.find((c) => c.id === aberto) || conversas[0];
-  const podeFalar = noGrupo ? CH.podeFalarNoGrupo(conta) : !!conversaAtual.pedido;
+  const podeFalar = noGrupo ? CH.podeFalarNoGrupo(conta) : !!conversaAtual.pedido && !conversaAtual.leitura;
   const podeNetwork = CH.podeFazerNetwork(conta);
 
-  const avisoSemFala = conta && conta.situacao !== "membro" && conta.situacao !== "admin"
+  const avisoSemFala = conversaAtual.leitura ? "Conversa entre contas de teste. Você acompanha, mas não escreve aqui."
+    : conta && conta.situacao !== "membro" && conta.situacao !== "admin"
     ? "Sua conta aguarda aprovação. Enquanto isso você acompanha o Bate Papo, e poderá falar quando for aprovada."
     : "Só Marquês para cima envia mensagem no Bate Papo. Suba de título para participar.";
 
@@ -148,7 +155,7 @@ function ChatScreen({ conta }) {
             </li>
           ))}
         </ul>
-        {aceitos.length ? null : <p className="hg-zap-dica"><Icon name="link" />Toque numa mensagem do grupo e escolha <b>Fazer network</b> para abrir um chat privado.</p>}
+        {aceitos.some(souPonta) ? null : <p className="hg-zap-dica"><Icon name="link" />Toque numa mensagem do grupo e escolha <b>Fazer network</b> para abrir um chat privado.</p>}
       </aside>
 
       {/* conversa */}

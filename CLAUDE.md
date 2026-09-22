@@ -70,7 +70,8 @@ app/                  o app do Reino — é o que vai ao ar
 ├─ servicos/          acesso ao banco: contas.js, afiliados.js, fotos.js
 ├─ estilos/           CSS do shell, do layout e dos logins
 ├─ dados/             geo-*, municipios-tudo.js, municipios/*.json, data.js
-│  └─ demo/           dados fictícios (saem quando cada tela ficar real)
+│                     (data.js = só regras do Reino + formato vazio; os dados fictícios foram
+│                     apagados em 22/09 e estão em arquivo/dados-demo/)
 └─ assets/            imagens e vídeos do login (assets/login/): `reino-fundo.webm`/`.mp4` +
                       `reino-fundo-poster.webp` são a cena do fundo já renderizada (o que toca
                       hoje); `reino-cena.webp`/`reino-neon.png` alimentam a cena JS de reserva,
