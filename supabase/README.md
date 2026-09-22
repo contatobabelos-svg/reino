@@ -41,6 +41,14 @@ Migrações aplicadas, em ordem:
     página e o mapa pede só a cidade em que o globo está. Todos os parâmetros têm padrão, então a chamada
     antiga (`{}`) continua valendo. Auxiliar `privado.chave_cidade` + índice `perfis_mapa_lugar`.
 
+### Bate Papo (22/09)
+
+13. `2026-09-22_chat_grupo_e_privado.sql` — `chat_mensagens` (sala `reino` = grupo único; `p:<uuid>:<uuid>` =
+    privado) e `network_pedidos` (pendente → aceito | recusado), ambas no Realtime. Leitura e escrita decididas
+    por `privado.chat_sala_liberada` / `chat_pode_falar_grupo`; pedir/responder só pelas RPCs
+    `chat_pedir_network(p_para)` e `chat_responder_network(p_id, p_aceitar)`. Autor, nome, empresa e título
+    preenchidos por gatilho a partir do perfil; 8 mensagens por conta a cada 30 s. `perfis` continua fechado.
+
 Ordem obrigatória do item 10, para não derrubar o cadastro ao vivo: publicar a `reino-cadastro` com o
 insert no servidor → publicar o site sem o insert no navegador → só então rodar a migração.
 

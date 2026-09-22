@@ -274,6 +274,7 @@ html.is-modo-app .hg-social-topo { top: 0; }
 /* ---------- 7. Bate Papo no modo App ---------- */
 .hg-zap-acoes { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
 .hg-zap-acoes .hg-btn { white-space: nowrap; flex: none; }
+.hg-zap-compor.is-sem-anexo { grid-template-columns: minmax(0, 1fr) 44px; } /* sem botão de anexo: o chat real ainda não manda arquivo */
 html.is-modo-app .hg-zap { grid-template-columns: minmax(0, 1fr) !important; min-height: 0; height: calc(100dvh - var(--tabbar) - 130px); border-radius: var(--r-14); }
 html.is-modo-app .hg-zap-lista { display: none; }
 html.is-modo-app .hg-zap.is-lista .hg-zap-lista { display: flex; }

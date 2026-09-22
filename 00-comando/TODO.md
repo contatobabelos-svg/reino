@@ -224,3 +224,10 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] AD4 Card Conquistas: mantido onde está (coluna do centro do Dashboard) — leitura de "nos dois"
 - [x] AD5 SMTP próprio: Resend, domínio babel-os.com (já verificado na conta), remetente Reino <nao-responda@babel-os.com>, limite 60 e-mails/h, e-mails de confirmação e de senha em português. Login e envio SMTP testados. Falta o teste de ponta a ponta com um cadastro real do fundador
 - [ ] AD6 Aberto: CNPJ repetido barra também quem já tem conta em outro e-mail; falta fluxo de suporte para "o CNPJ é meu mas o cadastro é de outra pessoa"
+
+## AG — "o sistema de chat esta funcional entre os chats?" → "pode montar e ogrupo tambem." (22/09)
+- [x] AG1 Bate Papo real: grupo único do Reino + pedido de network + chat privado 1:1, tudo no banco (`supabase/2026-09-22_chat_grupo_e_privado.sql`, `app/servicos/chat.js`, `ChatScreen.jsx`); sai a demonstração com respostas falsas por setTimeout
+- [x] AG2 Tempo real (Supabase Realtime, cliente oficial 2.116.0 via jsdelivr com SRI): mensagem, pedido e aceite chegam na hora para a outra conta
+- [x] AG3 Regras no banco: aguardando só lê o grupo; membro/admin falam; título Barão/Visconde/Conde só lê (regra `chatFala`); "título a definir" fala; privado só entre as duas pontas de um network aceito; 8 msgs/30 s por conta; nome/empresa/título do autor vêm do perfil
+- [ ] AG4 Decisão do fundador: manter "título a definir" falando no grupo até os títulos serem atribuídos? (hoje nenhum membro tem título; se aplicar a regra do Marquês à risca, só os 2 admins falam)
+- [ ] AG5 Sem anexo, sem apagar mensagem e sem contador de não lidas (o botão de anexo, que não fazia nada, saiu)
