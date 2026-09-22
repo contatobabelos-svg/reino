@@ -121,7 +121,7 @@
     const [modo, setModo] = React.useState(recuperacao ? "nova-senha" : "cadastro");
     const [etapa, setEtapa] = React.useState(0);
     const [dir, setDir] = React.useState(1);
-    const [dados, setDados] = React.useState({ nome: "", whatsapp: "", usuario: "", senha: "", senha2: "", afiliado: "" });
+    const [dados, setDados] = React.useState({ nome: "", whatsapp: "", empresa: "", cidade: "", nicho: "", usuario: "", senha: "", senha2: "", afiliado: "" });
     const [texto, setTexto] = React.useState("");
     const [ver, setVer] = React.useState(false);
     const [erro, setErro] = React.useState(erroInicial || "");
@@ -136,12 +136,14 @@
     const [validar, setValidar] = React.useState(null);  // { emailMascarado, origem, reenviado }
     const [mostraAfiliado, setMostraAfiliado] = React.useState(false);
     const [teclado, setTeclado] = React.useState(0);
+    const [faiscas, setFaiscas] = React.useState([]); // partículas de luz ao digitar
     const credRef = React.useRef({ usuario: "", senha: "" }); // só em memória, para "já validei" e "reenviar"
     const recorteRef = React.useRef(null);
     const editandoRef = React.useRef(false);
     const inputRef = React.useRef(null), acaoRef = React.useRef(null), videoRef = React.useRef(null);
-    const galeriaRef = React.useRef(null), cameraInputRef = React.useRef(null);
+    const galeriaRef = React.useRef(null), cameraInputRef = React.useRef(null), barraRef = React.useRef(null);
     const ehToque = React.useMemo(() => { try { return window.matchMedia("(pointer: coarse)").matches; } catch (e) { return false; } }, []);
+    const reduzMovimento = React.useMemo(() => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } }, []);
     const ladoRecorte = React.useMemo(() => (window.innerWidth < 480 ? 160 : 176), []);
 
     /* código de quem indicou: ?ref=, /r/código, localStorage reino.indicadoPor ou colado no resumo */
@@ -157,7 +159,7 @@
 
     /* ---------- roteiro de cada modo ---------- */
     const ROTEIRO = {
-      cadastro: ["nome", "whatsapp", "foto", "usuario", "senha", "senha2", "resumo"],
+      cadastro: ["nome", "whatsapp", "empresa", "cidade", "nicho", "foto", "usuario", "senha", "senha2", "resumo"],
       entrar: ["l-usuario", "l-senha"],
       esqueci: ["e-email"],
       "nova-senha": ["n-senha", "n-senha2"],
@@ -169,6 +171,9 @@
     const CAMPO = {
       nome: { chave: "nome", auto: "name", ph: "Nome e sobrenome", rotulo: "Nome completo" },
       whatsapp: { chave: "whatsapp", auto: "tel-national", ph: "(11) 91234-5678", tipo: "tel", modo: "tel", rotulo: "WhatsApp com DDD" },
+      empresa: { chave: "empresa", auto: "organization", ph: "Sua empresa ou negócio", rotulo: "Empresa" },
+      cidade: { chave: "cidade", auto: "address-level2", ph: "Sua cidade", rotulo: "Cidade" },
+      nicho: { chave: "nicho", auto: "off", ph: "Ex: tecnologia, saúde, educação", rotulo: "Nicho" },
       usuario: { chave: "usuario", auto: "username", ph: "seu.usuario", rotulo: "Usuário de login" },
       senha: { chave: "senha", auto: "new-password", ph: "Mínimo de 8 caracteres", rotulo: "Senha" },
       senha2: { chave: "senha2", auto: "new-password", ph: "Repita a senha", rotulo: "Confirmação da senha" },
@@ -185,11 +190,14 @@
       switch (passo) {
         case "nome": return ["Bem-vindo ao Reino. Vamos criar sua conta — é rapidinho.", "Qual é o seu nome completo?"];
         case "whatsapp": return [`Prazer, ${pn}. Qual é o seu WhatsApp?`, "Com DDD. É por ele que o Reino fala com você."];
+        case "empresa": return ["Qual é a sua empresa ou negócio?", "Você pode mudar isso depois."];
+        case "cidade": return ["Qual é a sua cidade?", "Usamos para conectar você com pessoas próximas."];
+        case "nicho": return ["Qual é o seu nicho?", "Tecnologia, saúde, educação, etc. Também dá para mudar depois."];
         case "foto": return ["Agora uma foto de perfil. Ela aparece no mapa, no feed e na rede.", ehToque ? "Tire uma foto ou escolha da galeria." : "Use a câmera ou escolha um arquivo."];
         case "usuario": return ["Escolha o seu usuário de login.", "Letras minúsculas, números, ponto ou sublinhado — de 3 a 24."];
         case "senha": return ["Crie uma senha com pelo menos 8 caracteres."];
         case "senha2": return ["Repita a senha para confirmar."];
-        case "resumo": return ["Confira seus dados antes de criar a conta.", "Empresa, CNPJ e cidade você completa depois, em Minha conta."];
+        case "resumo": return ["Confira seus dados antes de criar a conta.", "CNPJ e e-mail você completa depois, em Minha conta."];
         case "l-usuario": return ["Bem-vindo de volta ao Reino.", "Qual é o seu usuário? Se a conta é antiga, pode usar o e-mail."];
         case "l-senha": return ["Agora a sua senha."];
         case "e-email": return ["Sem problema. Se a sua conta tem e-mail, digite abaixo e mandamos um link para criar uma nova senha.", "Criou a conta só com WhatsApp? Peça a troca de senha a um administrador do Reino."];
@@ -363,6 +371,25 @@
           if (!w) return setErro("Digite o WhatsApp com DDD, assim: (11) 91234-5678.");
           gravar("whatsapp", w); return avancar();
         }
+        case "empresa": {
+          const e = v.trim();
+          if (!e) return setErro("Digite sua empresa ou negócio.");
+          if (e.length < 2) return setErro("Mínimo de 2 caracteres.");
+          if (e.length > 120) return setErro("Máximo de 120 caracteres.");
+          gravar("empresa", e); return avancar();
+        }
+        case "cidade": {
+          const c = v.trim();
+          if (!c) return setErro("Digite sua cidade.");
+          if (c.length < 2) return setErro("Mínimo de 2 caracteres.");
+          gravar("cidade", c); return avancar();
+        }
+        case "nicho": {
+          const n = v.trim();
+          if (!n) return setErro("Digite seu nicho.");
+          if (n.length < 2) return setErro("Mínimo de 2 caracteres.");
+          gravar("nicho", n); return avancar();
+        }
         case "foto": {
           if (camera) return tirarFoto();
           if (fonteFoto) return confirmarRecorte();
@@ -461,8 +488,8 @@
     }
 
     async function criarConta() {
-      const faltando = ["nome", "whatsapp", "usuario", "senha"].find((k) => !dados[k]) || (!foto ? "foto" : null);
-      if (faltando) { setErro("Falta preencher: " + ({ nome: "nome", whatsapp: "WhatsApp", usuario: "usuário", senha: "senha", foto: "foto" }[faltando]) + "."); editandoRef.current = true; irPara("cadastro", passos.indexOf(faltando), -1); return; }
+      const faltando = ["nome", "whatsapp", "empresa", "cidade", "nicho", "usuario", "senha"].find((k) => !dados[k]) || (!foto ? "foto" : null);
+      if (faltando) { setErro("Falta preencher: " + ({ nome: "nome", whatsapp: "WhatsApp", empresa: "empresa", cidade: "cidade", nicho: "nicho", usuario: "usuário", senha: "senha", foto: "foto" }[faltando]) + "."); editandoRef.current = true; irPara("cadastro", passos.indexOf(faltando), -1); return; }
       if (dados.senha !== dados.senha2) { editandoRef.current = true; irPara("cadastro", passos.indexOf("senha2"), -1); setTimeout(() => setErro("Confirme a senha de novo."), 0); return; }
       setIndo(true); setErro("");
       if (codigo) { try { localStorage.setItem("reino.indicadoPor", codigo); sessionStorage.setItem("reino.ref", codigo); } catch (e) { /* sem armazenamento */ } }
@@ -507,20 +534,40 @@
       focarBarra();
     };
 
+    /* faísca de luz ao digitar: nasce perto do cursor, sobe e apaga (puramente decorativo) */
+    const criarFaisca = React.useCallback(() => {
+      if (reduzMovimento) return;
+      const el = inputRef.current, base = barraRef.current;
+      if (!el || !base) return;
+      const rEl = el.getBoundingClientRect(), rBase = base.getBoundingClientRect();
+      const max = el.maxLength > 0 ? el.maxLength : 30;
+      const pos = el.selectionStart != null ? el.selectionStart : el.value.length;
+      const frac = Math.min(1, pos / max);
+      const x = (rEl.left - rBase.left) + Math.min(rEl.width - 6, Math.max(6, frac * rEl.width));
+      const y = (rEl.top - rBase.top) + rEl.height / 2;
+      const id = Math.random().toString(36).slice(2);
+      const dx = (Math.random() * 18 - 9).toFixed(1);
+      setFaiscas((fs) => [...fs.slice(-9), { id, x, y, dx }]);
+    }, [reduzMovimento]);
+    const removerFaisca = (id) => setFaiscas((fs) => fs.filter((f) => f.id !== id));
+    React.useEffect(() => { setFaiscas([]); }, [modo, etapa]);
+
     const aoDigitar = (e) => {
       let v = e.target.value;
+      const cresceu = v.length > texto.length;
       if (passo === "whatsapp") v = mascaraWhatsapp(v);
       if (passo === "usuario") v = limparUsuario(v);
       setTexto(v); setErro("");
+      if (cresceu) criarFaisca();
     };
 
     /* ---------- desenho ---------- */
     const bolhas = pergunta();
     const ant = anterior();
     const progresso = modo === "cadastro" ? 1 : -1;
-    const ROTULOS = ["Nome", "WhatsApp", "Foto", "Usuário", "Senha", "Resumo"];
+    const ROTULOS = ["Nome", "WhatsApp", "Empresa", "Cidade", "Nicho", "Foto", "Usuário", "Senha", "Resumo"];
     const TOTAL = ROTULOS.length - 1;
-    const passoCadastroIdx = { nome: 0, whatsapp: 1, foto: 2, usuario: 3, senha: 4, senha2: 4, resumo: 5 }[passo];
+    const passoCadastroIdx = { nome: 0, whatsapp: 1, empresa: 2, cidade: 3, nicho: 4, foto: 5, usuario: 6, senha: 7, senha2: 7, resumo: 8 }[passo];
     const semCampo = passo === "foto" || passo === "resumo" || passo === "validar";
     const podeVoltar = !saindo && (etapa > 0 || modo === "entrar" || modo === "esqueci" || !!fonteFoto || !!camera);
     const vazio = semCampo ? (passo === "foto" && !foto && !fonteFoto && !camera) : !texto.trim();
@@ -536,6 +583,7 @@
 
     const resumoLinhas = [
       ["nome", "Nome", dados.nome], ["whatsapp", "WhatsApp", mascaraWhatsapp(dados.whatsapp)],
+      ["empresa", "Empresa", dados.empresa], ["cidade", "Cidade", dados.cidade], ["nicho", "Nicho", dados.nicho],
       ["usuario", "Usuário", dados.usuario ? "@" + dados.usuario : ""], ["senha", "Senha", dados.senha ? "••••••••" : ""],
     ];
 
@@ -546,6 +594,7 @@
           ? <window.FundoReino onFalha={() => setFundo("reserva")} />
           : <FundoReserva />}
         <span className="hg-li-veu" aria-hidden="true" />
+        <span className="hg-li-portal" aria-hidden="true" />
 
         <header className="hg-li-topo">
           <span className="hg-li-marca" aria-label="REINO · Babel OS">
@@ -655,7 +704,10 @@
           </div>
 
           <form className="hg-li-barra" onSubmit={enviar} noValidate aria-busy={indo}>
-            <div className="hg-li-barra-dentro">
+            <div className="hg-li-barra-dentro" ref={barraRef}>
+              {faiscas.map((f) => (
+                <span key={f.id} className="hg-li-faisca" style={{ left: f.x, top: f.y, "--dx": f.dx + "px" }} onAnimationEnd={() => removerFaisca(f.id)} aria-hidden="true" />
+              ))}
               {podeVoltar ? (
                 <button type="button" className="hg-li-acao" onClick={voltar} aria-label="Voltar uma etapa" title="Voltar uma etapa" disabled={indo}><IcVoltar /></button>
               ) : null}

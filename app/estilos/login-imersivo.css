@@ -75,8 +75,12 @@
 .hg-li-progresso { align-self: flex-start; padding: 5px 12px; border-radius: var(--r-pill); background: rgba(3, 8, 23, .55); display: flex; align-items: center; gap: 12px; font: 600 11px var(--font-d); letter-spacing: .12em; text-transform: uppercase; color: var(--text-2); text-shadow: 0 1px 8px rgba(0, 0, 0, .6); }
 .hg-li-progresso-trilho { display: flex; gap: 5px; width: 160px; }
 .hg-li-progresso-trilho i { flex: 1; height: 3px; border-radius: 3px; background: rgba(186, 204, 240, .22); transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
-.hg-li-progresso-trilho i.is-feito { background: var(--cyan); opacity: .7; }
-.hg-li-progresso-trilho i.is-atual { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+.hg-li-progresso-trilho i.is-feito { background: linear-gradient(90deg, var(--cyan), var(--blue)); opacity: .8; box-shadow: 0 0 6px rgba(63, 227, 255, .35); }
+.hg-li-progresso-trilho i.is-atual { background: var(--cyan); animation: hg-li-progresso-pulso 1.6s ease-in-out infinite; }
+@keyframes hg-li-progresso-pulso {
+  0%, 100% { box-shadow: 0 0 6px var(--cyan); opacity: .85; }
+  50% { box-shadow: 0 0 14px var(--cyan), 0 0 4px #fff; opacity: 1; }
+}
 
 .hg-li-janela { position: relative; overflow: hidden; max-height: min(52vh, 460px); display: flex; flex-direction: column; justify-content: flex-end; }
 .hg-li-slide { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -208,10 +212,29 @@
 .hg-li-giro { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(3, 8, 23, .35); border-top-color: var(--bg); animation: hg-li-roda .8s linear infinite; }
 @keyframes hg-li-roda { to { transform: rotate(360deg); } }
 
+/* faísca de luz ao digitar: nasce no cursor, sobe e some */
+.hg-li-faisca {
+  position: absolute; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%;
+  background: var(--cyan); box-shadow: 0 0 6px var(--cyan), 0 0 2px #fff;
+  pointer-events: none; z-index: 1;
+  animation: hg-li-faisca-sobe .7s ease-out forwards;
+}
+@keyframes hg-li-faisca-sobe {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx, 0), -26px) scale(.3); }
+}
+
 .hg-li-dica { margin: 2px 0 0; text-align: center; font-size: 11.5px; letter-spacing: .02em; color: rgba(230, 239, 255, .62); text-shadow: 0 1px 8px rgba(0, 0, 0, .7); }
 
-/* saída depois do login: a conversa desce e some */
+/* saída depois do login: a conversa desce e some, e um portal de luz se abre atrás dela */
 .hg-li.is-saindo .hg-li-palco { transition: opacity .8s var(--ease), transform .8s var(--ease); opacity: 0; transform: translate(-50%, 24px); }
+.hg-li-portal { position: absolute; inset: 0; z-index: 45; pointer-events: none; opacity: 0; }
+.hg-li.is-saindo .hg-li-portal { animation: hg-li-portal-abre .9s var(--ease) forwards; }
+@keyframes hg-li-portal-abre {
+  0% { opacity: 0; background: radial-gradient(circle at 50% 64%, rgba(63, 227, 255, 0) 0%, transparent 40%); }
+  35% { opacity: 1; background: radial-gradient(circle at 50% 64%, #fff 0%, var(--cyan) 16%, rgba(139, 92, 255, .55) 36%, transparent 62%); }
+  100% { opacity: 1; background: radial-gradient(circle at 50% 64%, #fff 0%, var(--cyan) 30%, var(--violet) 62%, var(--bg) 100%); }
+}
 
 /* ---------------------------------------------------------------- celular */
 @media (max-width: 560px) {
@@ -231,4 +254,7 @@
 @media (prefers-reduced-motion: reduce) {
   .hg-li-slide.vem-da-direita, .hg-li-slide.vem-da-esquerda, .hg-li-bolha-in, .hg-li-bolha-out { animation: none; }
   .hg-li-palco, .hg-li.is-saindo .hg-li-palco { transition: none; }
+  .hg-li-progresso-trilho i.is-atual { animation: none; box-shadow: 0 0 8px var(--cyan); }
+  .hg-li-faisca { display: none; }
+  .hg-li.is-saindo .hg-li-portal { animation: none; opacity: 1; background: var(--bg); }
 }
