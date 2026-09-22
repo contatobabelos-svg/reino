@@ -246,3 +246,4 @@ Decisão do fundador (pergunta da Vyra): as 77 são **fictícias** e marcadas co
 - [x] AI4 Telas ligadas ao banco: Guildas, Match, Stories/status e "Quem combina com você" (Rede social); Bate Papo mostra ao admin as conversas de teste como só leitura
 - [ ] AI5 Os status da semente vencem em 24 h (regra do status); rodar o gerador de novo renova — ou pedir para eu gerar só status novos
 - [ ] AI6 Ainda sem tabela no banco (tela vazia): feed da Rede social, Vitrine, Revista, Eventos, Conquistas, Bolsa, Clube, Rede Completa, Busca
+- [x] AI7 "agora duplique o teste" (22/09): lote 2 com mais 77 contas de teste (teste-078 a teste-154), empresa com cidade no nome e pessoa com dois sobrenomes, 12 guildas próprias; total 154 contas, 147 msgs no grupo, 110 pedidos, 423 privadas, 24 guildas, 300 matches, 89 status. `gerar-contas-teste.py 2`

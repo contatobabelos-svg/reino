@@ -5,13 +5,16 @@ Empresas, pessoas e conversas são INVENTADAS (nomes combinados por sorteio fixo
 UFs e nichos são reais. Qualquer semelhança com empresa real é coincidência. As contas ficam em
 privado.contas_teste: membro real não vê nada delas; admin vê. Sem senha, sem usuário.
 
-Uso:  python3 supabase/semente-teste/gerar-contas-teste.py > semente.sql
+Uso:  python3 supabase/semente-teste/gerar-contas-teste.py [lote] > semente.sql
+      lote 1 (padrão) = as 77 primeiras; lote 2, 3... = mais 77 cada, com ids, e-mails, nomes
+      (empresa + cidade, pessoa com dois sobrenomes) e guildas próprios — não colidem com o lote 1.
       (rodar o SQL como postgres; apagar tudo com supabase/semente-teste/remover-contas-teste.sql)
 Sempre gera o mesmo resultado (random.seed fixo); os horários são relativos a now().
 """
-import random, uuid, json
+import random, uuid, json, sys
 
-random.seed(77)
+LOTE = int(sys.argv[1]) if len(sys.argv) > 1 else 1
+random.seed(77 if LOTE == 1 else 77 + LOTE)
 NS = uuid.UUID("7e57c0de-0000-4000-8000-000000000077")
 
 CIDADES = [  # (cidade, UF, região) — municípios reais, todas as 27 UFs
@@ -86,20 +89,22 @@ random.shuffle(nichos)
 palavras = random.sample(PALAVRAS, 77)
 pessoas, usados = [], set()
 while len(pessoas) < 77:
-    n = f"{random.choice(NOMES)} {random.choice(SOBRENOMES)}"
+    n = f"{random.choice(NOMES)} {random.choice(SOBRENOMES)}" + (f" {random.choice(SOBRENOMES)}" if LOTE > 1 else "")
     if n not in usados:
         usados.add(n); pessoas.append(n)
 E = []
 for i in range(77):
     cid, uf, reg = cidades[i]
     nicho = nichos[i]
-    E.append(dict(id=str(uuid.uuid5(NS, f"conta-{i}")), nome=pessoas[i], empresa=f"{palavras[i]} {random.choice(NICHOS[nicho][0])}",
+    chave = f"conta-{i}" if LOTE == 1 else f"conta-{LOTE}-{i}"
+    empresa = f"{palavras[i]} {random.choice(NICHOS[nicho][0])}" + (f" {cid}" if LOTE > 1 else "")
+    E.append(dict(id=str(uuid.uuid5(NS, chave)), nome=pessoas[i], empresa=empresa,
                   nicho=nicho, cidade=cid, uf=uf, regiao=reg, titulo=TITULOS[i],
-                  email=f"teste-{i + 1:03d}@contas-teste.reino.invalid"))
+                  email=f"teste-{(LOTE - 1) * 77 + i + 1:03d}@contas-teste.reino.invalid"))
 primeiro = lambda e: e["nome"].split()[0]
 procura = lambda e: NICHOS[e["nicho"]][2]
 
-out = ["-- Semente das 77 contas de TESTE (gerada por gerar-contas-teste.py). Tudo fictício.", "begin;"]
+out = [f"-- Semente das 77 contas de TESTE, lote {LOTE} (gerada por gerar-contas-teste.py). Tudo fictício.", "begin;"]
 for e in E:
     meta = json.dumps({"nome": e["nome"], "titulo": e["titulo"], "cidade": e["cidade"], "uf": e["uf"], "empresa": e["empresa"]}, ensure_ascii=False)
     criado = random.uniform(24 * 20, 24 * 45)
@@ -202,6 +207,13 @@ GUILDAS = [("Guilda Paulista", None, "Sudeste", "SP"), ("Guilda Carioca", None, 
            ("Guilda do Cerrado", None, "Centro-Oeste", None), ("Guilda Amazônia", None, "Norte", None),
            ("Guilda dos Contadores", "Contabilidade", None, None), ("Guilda Digital", "Tecnologia", None, None),
            ("Guilda Saúde Brasil", "Saúde", None, None), ("Guilda da Construção", "Construção", None, None)]
+GUILDAS_2 = [("Guilda Bandeirante", None, "Sudeste", "SP"), ("Guilda Fluminense", None, "Sudeste", "RJ"), ("Guilda Capixaba", None, "Sudeste", None),
+             ("Guilda dos Pampas", None, "Sul", None), ("Guilda Recôncavo", None, "Nordeste", None), ("Guilda Agreste", None, "Nordeste", None),
+             ("Guilda Pantaneira", None, "Centro-Oeste", None), ("Guilda do Norte Verde", None, "Norte", None),
+             ("Guilda Jurídica", "Advocacia", None, None), ("Guilda do Marketing", "Marketing", None, None),
+             ("Guilda da Logística", "Logística", None, None), ("Guilda Financeira", "Financeiro", None, None)]
+if LOTE > 1:
+    GUILDAS = GUILDAS_2 if LOTE == 2 else [(f"{n} {LOTE}", ni, r, u) for n, ni, r, u in GUILDAS_2]
 membro_de = {}
 for nome, nicho, reg, uf in GUILDAS:
     afins = AFINS.get(nicho, {nicho}) if nicho else None
