@@ -2,7 +2,7 @@ const { PageHead, Panel, Button, Input, Field, Switch, Toolbar, Toast } = window
 
 /* app/configuracoes.html + paginas.configuracoes().
    No kit nada é gravado: o botão só confirma com o aviso, como faria o produto. */
-function ConfiguracoesScreen() {
+function ConfiguracoesScreen({ conta }) {
   const [aviso, setAviso] = React.useState("");
   const confirmar = (texto) => (e) => {
     e.preventDefault();
@@ -42,6 +42,14 @@ function ConfiguracoesScreen() {
           <Switch id="n-match" label="Novos matches" defaultChecked />
           <Switch id="n-conq" label="Conquistas desbloqueadas" defaultChecked />
           <Switch id="n-rev" label="Novas edições da Revista" />
+          <hr className="hg-filete" />
+          {/* AJ3: o Assistente do Reino apresenta cada aba uma vez; aqui volta a apresentar todas */}
+          <Toolbar>
+            <Button variant="ghost" type="button" onClick={(e) => {
+              if (window.ReinoApresentacao) window.ReinoApresentacao.religar(conta && conta.id);
+              confirmar("Pronto. O Assistente do Reino vai apresentar cada aba de novo.")(e);
+            }}>Ouvir as apresentações das abas de novo</Button>
+          </Toolbar>
         </Panel>
       </div>
       <Toast open={!!aviso}>{aviso}</Toast>

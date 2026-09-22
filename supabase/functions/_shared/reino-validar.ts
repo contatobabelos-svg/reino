@@ -68,3 +68,14 @@ export function urlVolta(v: unknown): string | undefined {
     return undefined;
   }
 }
+
+// WhatsApp do Brasil (AJ1): aceita com ou sem +55, parênteses, espaço e hífen; devolve E.164
+// (+55 + DDD + número) ou "" se não for um número válido. Celular com 11 dígitos começa em 9.
+export function normalizarWhatsapp(v: unknown): string {
+  let d = soDigitos(v);
+  if ((d.length === 12 || d.length === 13) && d.startsWith("55")) d = d.slice(2);
+  if (d.length !== 10 && d.length !== 11) return "";
+  if (!/^[1-9][1-9]/.test(d)) return "";
+  if (d.length === 11 && d[2] !== "9") return "";
+  return "+55" + d;
+}

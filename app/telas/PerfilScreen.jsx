@@ -1,6 +1,9 @@
 const { PageHead, Panel, Button, Input, Select, Field, Toolbar, Pill, Icon, Toast, EmptyState, AffiliateLevel } = window.BabelOSDesignSystem_5ad360;
 
-/* Minha conta — dados do login validado, foto, senha e os links de afiliado.
+/* Minha conta — dados da conta, foto, senha e os links de afiliado.
+   Desde AJ2 (22/09) o cadastro só pede nome, WhatsApp, foto, usuário e senha: empresa, CNPJ e
+   cidade/UF são completados aqui (sem cidade/UF a empresa não aparece no mapa do Reino).
+   O CNPJ é gravado uma vez; depois só um administrador troca.
    O código base é único por pessoa; cada campanha gera um link próprio
    (?ref=codigo&c=campanha) para você saber de onde veio cada cadastro. */
 const CAMPANHAS = ["instagram", "whatsapp", "youtube", "evento", "indicacao"];
@@ -10,7 +13,15 @@ function PerfilScreen({ ir }) {
   const d = window.BABEL_DEMO;
   const s = (C && C.sessao()) || {};
   const nome = s.nome || d.perfil.nome;
-  const [f, setF] = React.useState({ nome, email: s.email || "", cidade: s.cidade || d.perfil.cidade, uf: s.uf || d.perfil.uf, titulo: s.titulo || d.perfil.titulo });
+  const V = window.ReinoValidar;
+  const [f, setF] = React.useState({
+    nome, titulo: s.titulo || d.perfil.titulo || "",
+    whatsapp: V && s.whatsapp ? V.mascaraWhatsapp(s.whatsapp) : "",
+    empresa: s.empresa || "", cnpj: V && s.cnpj ? V.mascaraCnpj(s.cnpj) : "",
+    local: s.cidade ? s.cidade + (s.uf ? ", " + s.uf : "") : "",
+  });
+  const [erroDados, setErroDados] = React.useState("");
+  const [salvando, setSalvando] = React.useState(false);
   const [codigo, setCodigo] = React.useState(() => (A ? A.meuCodigo(nome) : ""));
   const [checando, setChecando] = React.useState(null); // null | "ok" | "erro"
   const [motivo, setMotivo] = React.useState("");
@@ -36,7 +47,41 @@ function PerfilScreen({ ir }) {
     if (!v.ok) { setChecando("erro"); setMotivo(v.motivo); return; }
     setCodigo(v.codigo); setChecando("ok"); dizer("Código salvo: " + v.codigo);
   };
-  const salvarDados = async () => { await C.salvarPerfil({ ...f }); dizer("Dados salvos."); };
+  const falta = [!s.empresa && "empresa", !s.cnpj && "CNPJ", !s.cidade && "cidade e UF", !s.whatsapp && "WhatsApp"].filter(Boolean);
+  const salvarDados = async () => {
+    setErroDados("");
+    const muda = { nome: f.nome.replace(/\s+/g, " ").trim(), titulo: f.titulo || null };
+    if (muda.nome.length < 5) return setErroDados("Digite nome e sobrenome.");
+    if (f.whatsapp.trim()) {
+      const w = V.normalizarWhatsapp(f.whatsapp);
+      if (!w) return setErroDados("WhatsApp com DDD, assim: (11) 91234-5678.");
+      muda.whatsapp = w;
+    }
+    const emp = f.empresa.replace(/\s+/g, " ").trim();
+    if (emp && (emp.length < 2 || emp.length > 120)) return setErroDados("Digite o nome da empresa.");
+    muda.empresa = emp || null;
+    if (!s.cnpj && V.soDigitos(f.cnpj)) {
+      const c = V.soDigitos(f.cnpj);
+      if (!V.cnpjValido(c)) return setErroDados("Esse CNPJ não é válido. Confira os números.");
+      muda.cnpj = c;
+    }
+    if (f.local.trim()) {
+      const r = V.lerCidadeUf(f.local);
+      if (r.erro) return setErroDados(r.erro);
+      muda.cidade = r.cidade; muda.uf = r.uf;
+    }
+    setSalvando(true);
+    try {
+      const novo = await C.salvarPerfil(muda);
+      if (muda.cnpj && novo.cnpj !== muda.cnpj) setErroDados("O CNPJ não foi gravado. Fale com um administrador.");
+      else dizer("Dados salvos.");
+      setF((v) => ({ ...v, cnpj: novo.cnpj ? V.mascaraCnpj(novo.cnpj) : v.cnpj, local: novo.cidade ? novo.cidade + ", " + novo.uf : v.local }));
+    } catch (e) {
+      const m = String(e.message || "");
+      setErroDados(/whatsapp/i.test(m) ? "Esse WhatsApp já está em outra conta." : /cnpj/i.test(m) ? "Esse CNPJ já tem cadastro no Reino." : "Não foi possível salvar agora. Tente de novo.");
+    }
+    setSalvando(false);
+  };
   const copiar = async (url) => { try { await navigator.clipboard.writeText(url); dizer("Link copiado."); } catch (e) {} };
   const criarLink = () => {
     const c = C.limpar(campanha);
@@ -60,7 +105,7 @@ function PerfilScreen({ ir }) {
       </PageHead>
 
       {!C.online() ? <p className="hg-af-aviso"><Icon name="alerta" />Login em modo demonstração: sem banco conectado, qualquer senha entra e os dados ficam neste navegador.</p> : null}
-      {s.confirmar ? <p className="hg-af-aviso"><Icon name="alerta" />Confirme o e-mail que enviamos para <b>{s.email}</b> para validar seu login.</p> : null}
+      {falta.length ? <p className="hg-af-aviso" role="status"><Icon name="alerta" />Falta completar: <b>{falta.join(", ")}</b>. Sem cidade e UF sua empresa não aparece no mapa do Reino.</p> : null}
 
       <div className="hg-duas">
         <Panel title="Quem você é" subtitle="Aparece no mapa, no feed e para quem você indica" headingLevel={3}>
@@ -68,25 +113,27 @@ function PerfilScreen({ ir }) {
             <FotoAvatar chave={f.nome || nome} nome={f.nome || nome} size={84} editavel camera />
             <div>
               <strong>{f.nome || nome}</strong>
-              <span>{f.titulo} · {f.cidade} · {f.uf}</span>
-              <span className="hg-sub">{s.email || "sem e-mail cadastrado"}</span>
+              <span>{[f.titulo, s.cidade, s.uf].filter(Boolean).join(" · ")}</span>
+              <span className="hg-sub">{s.usuario ? "Login: @" + s.usuario : s.email ? "Login: " + s.email : ""}</span>
             </div>
           </div>
           <form className="hg-form" onSubmit={(e) => { e.preventDefault(); salvarDados(); }}>
             <Field label="Nome" htmlFor="p-nome"><Input id="p-nome" value={f.nome} onChange={campo("nome")} autoComplete="name" /></Field>
-            <Field label="E-mail" htmlFor="p-email" hint={C.online() ? "É o que valida seu login." : undefined}><Input id="p-email" type="email" value={f.email} onChange={campo("email")} autoComplete="email" /></Field>
+            <Field label="WhatsApp" htmlFor="p-wpp" hint="Só você e os administradores veem."><Input id="p-wpp" type="tel" inputMode="tel" value={f.whatsapp} onChange={(e) => setF((v) => ({ ...v, whatsapp: V.mascaraWhatsapp(e.target.value) }))} autoComplete="tel-national" placeholder="(11) 91234-5678" /></Field>
+            <Field label="Empresa" htmlFor="p-empresa"><Input id="p-empresa" value={f.empresa} onChange={campo("empresa")} autoComplete="organization" placeholder="Nome da empresa" /></Field>
+            <Field label="CNPJ" htmlFor="p-cnpj" hint={s.cnpj ? "Para trocar o CNPJ, fale com um administrador." : "Grava uma vez só. Confira antes de salvar."}>
+              <Input id="p-cnpj" inputMode="numeric" value={f.cnpj} onChange={(e) => setF((v) => ({ ...v, cnpj: V.mascaraCnpj(e.target.value) }))} placeholder="00.000.000/0000-00" disabled={!!s.cnpj} />
+            </Field>
             <Field label="Título" htmlFor="p-titulo">
               <Select id="p-titulo" value={f.titulo} onChange={campo("titulo")}>
                 {["Imperador", "Rei", "Príncipe", "Duque", "Marquês", "Conde", "Visconde", "Barão"].map((t) => <option key={t}>{t}</option>)}
               </Select>
             </Field>
-            <Field label="Onde você atua" htmlFor="p-cidade">
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 80px", gap: ".5rem" }}>
-                <Input id="p-cidade" value={f.cidade} onChange={campo("cidade")} placeholder="Cidade" />
-                <Input value={f.uf} onChange={campo("uf")} placeholder="UF" maxLength={2} />
-              </div>
+            <Field label="Cidade e UF da empresa" htmlFor="p-cidade" hint="É daí que sai o seu lugar no mapa do Reino.">
+              <Input id="p-cidade" value={f.local} onChange={campo("local")} autoComplete="address-level2" placeholder="Campinas, SP" />
             </Field>
-            <Toolbar><Button variant="cyan" type="submit">Salvar dados</Button></Toolbar>
+            {erroDados ? <p className="hg-cod-erro" role="alert"><Icon name="alerta" />{erroDados}</p> : null}
+            <Toolbar><Button variant="cyan" type="submit" disabled={salvando}>{salvando ? "Salvando…" : "Salvar dados"}</Button></Toolbar>
           </form>
         </Panel>
 

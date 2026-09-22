@@ -247,3 +247,12 @@ Decisão do fundador (pergunta da Vyra): as 77 são **fictícias** e marcadas co
 - [ ] AI5 Os status da semente vencem em 24 h (regra do status); rodar o gerador de novo renova — ou pedir para eu gerar só status novos
 - [ ] AI6 Ainda sem tabela no banco (tela vazia): feed da Rede social, Vitrine, Revista, Eventos, Conquistas, Bolsa, Clube, Rede Completa, Busca
 - [x] AI7 "agora duplique o teste" (22/09): lote 2 com mais 77 contas de teste (teste-078 a teste-154), empresa com cidade no nome e pessoa com dois sobrenomes, 12 guildas próprias; total 154 contas, 147 msgs no grupo, 110 pedidos, 423 privadas, 24 guildas, 300 matches, 89 status. `gerar-contas-teste.py 2`
+
+## AJ — "sistema de login ser mais simples. Pedir Nome, whatsapp, Usuário e senhas e uma foto. As demais configurações vão para seu perfil. Ter uma notificação pop up que mostra uma vez a cada aba resumidamente o que é aquela aba. vá na internet e pegue referencias de sites que fazem esses tutorias de apresentação de apps ou sites. Tava pensando que o avatar  poderia ser o assistente do reino, e como ele falaria  a mesma coisas sempre, pensei de ter uma voz pré pronta." (22/09)
+- [x] AJ1 Cadastro só com nome, WhatsApp, foto, usuário, senha + confirmação (sem e-mail, sem validação por e-mail)
+- [x] AJ2 Empresa, CNPJ, cidade/UF e e-mail passam para Minha conta (com aviso do que falta para aparecer no mapa)
+- [x] AJ3 Apresentação de cada aba, uma vez por aba, com o rosto do Assistente do Reino e voz pré-gravada (pt-BR)
+- [x] AJ4 Referências de tours de apresentação (docs/contexto/)
+
+## AK — "Vamos trocar o usuario e senha do adm para: usuario: <omitido> - senha: <omitida>" (22/09)
+- [x] AK1 usuário e senha escolhidos pelo fundador (fora do git) aplicados na conta admin ccc087dd (a outra linha admin, 11111111-…, não tem login)

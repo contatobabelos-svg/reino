@@ -114,10 +114,19 @@
   }
 
   /* ---------- perfil ---------- */
+  /* grava só os campos que vieram (PATCH): o perfil já existe desde o cadastro. O banco ignora o
+     que o dono não pode trocar (usuário, e-mail, situação; CNPJ só de vazio para válido) e devolve
+     a linha como ficou — é ela que vale na sessão. Erro do banco sobe para a tela mostrar. */
+  const CAMPOS_PERFIL = ["nome", "titulo", "cidade", "uf", "foto", "empresa", "cnpj", "whatsapp"];
   async function salvarPerfil(p) {
-    const atual = { ...(sessao || {}), ...p };
+    const muda = {};
+    CAMPOS_PERFIL.forEach((k) => { if (p && k in p) muda[k] = p[k] === "" ? null : p[k]; });
+    let atual = { ...(sessao || {}), ...muda };
+    if (CFG() && atual.id && Object.keys(muda).length) {
+      const r = await rest("perfis", "PATCH", muda, "id=eq." + atual.id);
+      if (r && r[0]) atual = { ...atual, ...r[0] };
+    }
     sessao = atual; gravarSessao(atual);
-    if (CFG() && atual.id) { try { await rest("perfis", "POST", [{ id: atual.id, nome: atual.nome || null, email: atual.email || null, titulo: atual.titulo || null, cidade: atual.cidade || null, uf: atual.uf || null, foto: atual.foto || null }]); } catch (e) {} }
     return atual;
   }
 
@@ -190,12 +199,12 @@
     }
     throw erroFuncao(j, "Usuário ou senha não conferem.");
   }
-  /* cadastro completo: { nome, empresa, cnpj, foto (Blob), email, usuario, senha, indicadoPor?, titulo? }
-     → { confirmar: true, emailMascarado } ou { conta } (projeto sem confirmação de e-mail) */
+  /* cadastro simples (AJ1): { nome, whatsapp, foto (Blob), usuario, senha, indicadoPor?, titulo? }
+     → { conta } (entra na hora; sem e-mail para validar) ou { entrarManual: true } se a sessão não abriu */
   async function cadastrarCompleto(d) {
     const f = new FormData();
-    /* cidade e uf entram no cadastro desde AF11: sem elas a empresa não tem lugar no mapa */
-    ["nome", "empresa", "cnpj", "cidade", "uf", "email", "usuario", "senha"].forEach((k) => f.append(k, d[k] == null ? "" : String(d[k])));
+    /* empresa, CNPJ, cidade/UF e e-mail ficam para Minha conta (AJ2) */
+    ["nome", "whatsapp", "usuario", "senha"].forEach((k) => f.append(k, d[k] == null ? "" : String(d[k])));
     if (d.indicadoPor) f.append("indicado_por", d.indicadoPor);
     if (d.titulo) f.append("titulo", d.titulo);
     /* C6: o contexto da visita vai junto — é o servidor que grava a linha de `cadastros` agora */
@@ -211,8 +220,9 @@
     if (d.foto) f.append("foto", d.foto, "foto." + (d.foto.type === "image/jpeg" ? "jpg" : "webp"));
     const j = await funcao("reino-cadastro", f);
     if (!j.ok) throw erroFuncao(j, "Não foi possível criar a conta agora. Tente de novo.");
-    if (!j.confirmar && j.access_token) return { conta: await abrirSessao(j) };
-    return { confirmar: true, emailMascarado: j.email_mascarado, foto: j.foto };
+    if (j.access_token) return { conta: await abrirSessao(j) };
+    if (j.confirmar) return { confirmar: true, emailMascarado: j.email_mascarado, foto: j.foto };
+    return { entrarManual: true, foto: j.foto };
   }
   /* true = livre. Só responde sim/não. null = não deu para conferir.
      C12 do Parecer 1: a RPC `usuario_disponivel` deixou de ser pública (dava para varrer a lista de

@@ -286,3 +286,50 @@ html.is-modo-app .hg-zap-notif { left: .8rem; right: .8rem; width: auto; top: 64
 /* ---------- 8. Rede Completa ---------- */
 @media (max-width: 575.98px) { .hg-rc-linha { grid-template-columns: minmax(0, 1fr); } .hg-rc-fatos { grid-template-columns: 1fr 1fr; } }
 html.is-modo-app .hg-rc-linha { grid-template-columns: minmax(0, 1fr); }
+
+/* ---------- Apresentação da aba (AJ3): o Assistente do Reino fala o que a aba faz ---------- */
+.hg-apres {
+  position: fixed; z-index: 140; right: 1.2rem; bottom: 1.2rem;
+  width: min(380px, calc(100vw - 2rem));
+  padding: 1rem 1.1rem .9rem;
+  background: linear-gradient(145deg, rgba(20, 40, 90, .96), rgba(8, 16, 42, .97));
+  border-color: var(--line-2);
+  box-shadow: var(--glow-2);
+  animation: hg-apres-entra .42s cubic-bezier(.2, .9, .3, 1.15) both;
+}
+.hg-apres.is-quieto { animation: none; }
+@keyframes hg-apres-entra { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+.hg-apres-topo { display: flex; align-items: center; gap: .75rem; }
+.hg-apres-rosto {
+  flex: none; width: 64px; height: 64px; display: grid; place-items: center;
+  border-radius: 50%; background: radial-gradient(circle, rgba(63, 227, 255, .16), rgba(63, 227, 255, 0) 70%);
+  border: 1px solid rgba(63, 227, 255, .35); transition: box-shadow .3s;
+}
+.hg-apres-rosto.is-falando { box-shadow: var(--neon-cyan); }
+.hg-apres-quem { flex: 1; min-width: 0; }
+.hg-apres-quem small { display: block; color: var(--cyan); font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.hg-apres-quem h2 { margin: .1rem 0 0; font-family: var(--font-d); font-size: 1.05rem; color: #e6efff; }
+.hg-apres-texto { margin: .7rem 0 .8rem; font-size: .88rem; line-height: 1.5; color: #c9d8f5; }
+.hg-apres-acoes { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.hg-apres-icone, .hg-apres-ajuda {
+  flex: none; width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer;
+  border-radius: var(--r-sm); border: 1px solid var(--line); background: rgba(63, 227, 255, .06); color: #cfe6ff;
+}
+.hg-apres-icone[aria-pressed="true"] { color: #8aa6d8; }
+.hg-apres-ajuda { font-family: var(--font-d); font-weight: 800; font-size: 1rem; color: var(--cyan); }
+.hg-apres-icone:hover, .hg-apres-ajuda:hover { border-color: var(--cyan); box-shadow: var(--neon-cyan); }
+.hg-apres-ouvir {
+  display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+  padding: .45rem .75rem; border-radius: var(--r-pill); font-size: .8rem; font-weight: 600;
+  border: 1px solid rgba(63, 227, 255, .45); background: rgba(63, 227, 255, .1); color: var(--cyan);
+}
+.hg-apres-link { margin-left: auto; background: none; border: 0; cursor: pointer; color: #8aa6d8; font-size: .78rem; text-decoration: underline; text-underline-offset: 3px; }
+.hg-apres-ok {
+  cursor: pointer; padding: .45rem 1rem; border-radius: var(--r-pill); font-size: .82rem; font-weight: 700;
+  border: 0; color: #03122b; background: linear-gradient(90deg, var(--cyan), var(--blue));
+}
+.hg-apres-ouvir:focus-visible, .hg-apres-link:focus-visible, .hg-apres-ok:focus-visible, .hg-apres-icone:focus-visible, .hg-apres-ajuda:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+@media (max-width: 1100px) {
+  .hg-apres { right: 1rem; left: 1rem; width: auto; max-width: 420px; margin-left: auto; bottom: calc(var(--tabbar, 64px) + env(safe-area-inset-bottom) + .8rem); }
+}
+html.is-modo-app .hg-apres { right: 1rem; left: 1rem; width: auto; max-width: 420px; margin-left: auto; bottom: calc(var(--tabbar, 64px) + env(safe-area-inset-bottom) + .8rem); }

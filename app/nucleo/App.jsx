@@ -160,7 +160,7 @@ function App() {
         <div className="hg-main">
           <TopBar user={conta.nome || conta.email} role={[ehAdm ? "Imperador" : conta.titulo || "Título a definir", conta.cidade].filter(Boolean).join(" · ")} notifications messages
             onMenu={() => setMenu((v) => !v)} onNotifications={() => setGaveta("notificacoes")} onMessages={() => ir("chat.html")}
-            actions={<>{SeloImperador}{Modo}</>} />
+            actions={<>{SeloImperador}{window.BotaoApresentacao ? <window.BotaoApresentacao /> : null}{Modo}</>} />
           <main className="hg-content">
             {conta.situacao !== "membro" && conta.situacao !== "admin" ? (
               <p className="hg-aviso-aprovacao" role="status">Sua conta aguarda a aprovação de um administrador. Enquanto isso, você já pode explorar o Reino.</p>
@@ -170,6 +170,7 @@ function App() {
         </div>
       </div>
       <TabBar current={rota} onNavigate={ir} />
+      {window.Apresentacao ? <window.Apresentacao rota={rota} conta={conta} /> : null}
       <Drawer open={gaveta === "notificacoes"} title="Notificações" onClose={() => setGaveta(null)}>
         <ul className="hg-list">{d.notificacoes.map((n) => <ListRow key={n.titulo} title={n.titulo} subtitle={n.texto} time={n.quando} avatar={n.autor} />)}</ul>
       </Drawer>

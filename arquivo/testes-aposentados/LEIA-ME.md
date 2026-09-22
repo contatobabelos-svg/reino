@@ -21,3 +21,8 @@ O que cobre o mesmo terreno hoje:
 - `supabase/testes/e2e-login-imersivo-local.cjs` — cadastro → e-mail → login ponta a ponta contra o
   Supabase local, incluindo a linha de `cadastros` gravada pelo servidor;
 - `supabase/testes/e2e-dashboard-lateral.cjs` — o painel "Meus acessos".
+
+## e2e-login-imersivo-local.cjs (aposentado em 2026-09-22)
+Dirigia o cadastro antigo (empresa, CNPJ, cidade/UF, e-mail e validação pelo Mailpit). Desde AJ1 o
+cadastro pede só nome, WhatsApp, foto, usuário e senha e entra na hora. Substituído por
+`supabase/testes/e2e-cadastro-simples-local.cjs`, que também cobre a apresentação das abas (AJ3).

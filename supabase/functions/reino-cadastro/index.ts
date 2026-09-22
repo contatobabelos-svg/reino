@@ -1,20 +1,20 @@
-// Reino · cadastro do login imersivo (W). Recebe multipart/form-data:
-//   nome, empresa, cnpj, cidade, uf, email, usuario, senha, foto (arquivo webp/jpeg),
-//   indicado_por?, titulo?, redirecionar?, visita_id?, dispositivo?, captcha_token?
+// Reino · cadastro do login imersivo (W, simplificado em AJ1 — 22/09). Recebe multipart/form-data:
+//   nome, whatsapp, usuario, senha, foto (arquivo webp/jpeg),
+//   indicado_por?, titulo?, visita_id?, dispositivo?, captcha_token?
+// Empresa, CNPJ, cidade/UF e e-mail ficam para Minha conta (AJ2).
 // Também atende, em JSON, a checagem do carrossel (C12 do Parecer 1):
 //   POST { acao: "usuario_disponivel", usuario } → { ok: true, disponivel: boolean }
-// Valida tudo de novo aqui (o navegador não é confiável), cria a conta pelo signup normal do Auth
-// (o Supabase manda o e-mail de confirmação), grava a foto no Storage em avatares/<user_id>.webp
-// e o link em perfis.foto. Nada de base64 em coluna.
+// Valida tudo de novo aqui (o navegador não é confiável). Sem e-mail, a conta nasce no Auth pela
+// API de admin com um e-mail INTERNO já confirmado (m-<uuid>@contas.reino.invalid, domínio que
+// nunca recebe mensagem) e entra na hora: o login é sempre por usuário. A foto vai para o
+// Storage em avatares/<user_id>.webp e o link em perfis.foto. Nada de base64 em coluna.
 // Respostas:
-//   { ok: true, confirmar: true, email_mascarado }                         → falta validar o e-mail
-//   { ok: true, confirmar: false, access_token, refresh_token, user }       → projeto sem confirmação
+//   { ok: true, confirmar: false, access_token, refresh_token, user }       → conta criada e aberta
 //   { ok: false, codigo, campo?, mensagem }                                 → erro para mostrar na etapa
 // Chamada com a chave publicável (verify_jwt = false no gateway): é cadastro, não há login ainda.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
-  cidadeValida, cnpjValido, CORS, emailValido, empresaValida, ipDe, limparUf, limparUsuario, mascararEmail,
-  nomeValido, resposta, senhaValida, soDigitos, ufValida, urlVolta, usuarioValido,
+  CORS, ipDe, limparUsuario, nomeValido, normalizarWhatsapp, resposta, senhaValida, usuarioValido,
 } from "../_shared/reino-validar.ts";
 import { conferirCaptcha, MENSAGEM_CAPTCHA } from "../_shared/reino-captcha.ts";
 
@@ -83,11 +83,7 @@ Deno.serve(async (req) => {
   const txt = (k: string) => String(form.get(k) ?? "").trim();
 
   const nome = txt("nome").replace(/\s+/g, " ");
-  const empresa = txt("empresa").replace(/\s+/g, " ");
-  const cnpj = soDigitos(form.get("cnpj"));
-  const cidade = txt("cidade").replace(/\s+/g, " ");
-  const uf = limparUf(form.get("uf"));
-  const email = txt("email").toLowerCase();
+  const whatsapp = normalizarWhatsapp(form.get("whatsapp"));
   const usuario = limparUsuario(form.get("usuario"));
   const senha = String(form.get("senha") ?? "");
   const indicadoPor = txt("indicado_por").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40) || null;
@@ -97,15 +93,14 @@ Deno.serve(async (req) => {
   const visitaId = UUID_RE.test(txt("visita_id")) ? txt("visita_id") : null;
   const dispositivo = txt("dispositivo") === "celular" ? "celular" : "computador";
 
-  // C2 do Parecer 1: limite por IP e por e-mail ANTES de qualquer trabalho (banco, Storage, Auth).
+  // C2 do Parecer 1: limite por IP ANTES de qualquer trabalho (banco, Storage, Auth).
   // 10 cadastros por IP em 5 minutos: nenhuma pessoa real faz isso; um script faz em segundos.
-  // 5 tentativas com o MESMO e-mail em 5 minutos: trava o uso do cadastro para encher a caixa de
-  // entrada de outra pessoa. O limite vem antes do CAPTCHA porque é mais barato.
+  // Sem e-mail para validar, o limite por WhatsApp (5 em 5 minutos) segura quem tenta o mesmo número.
   if (!(await cabe(`cad:ip:${ip}`, 10))) {
     return erro("muitas_tentativas", "Muitos cadastros seguidos deste acesso. Aguarde alguns minutos e tente de novo.", undefined, 429);
   }
-  if (email && !(await cabe(`cad:email:${email}`, 5))) {
-    return erro("muitas_tentativas", "Já tentamos esse e-mail várias vezes agora há pouco. Aguarde alguns minutos.", "email", 429);
+  if (whatsapp && !(await cabe(`cad:wpp:${whatsapp}`, 5))) {
+    return erro("muitas_tentativas", "Já tentamos esse WhatsApp várias vezes agora há pouco. Aguarde alguns minutos.", "whatsapp", 429);
   }
   // CAPTCHA: enquanto o segredo TURNSTILE_SECRET não existir, passa sem token (fase tolerante).
   {
@@ -117,13 +112,9 @@ Deno.serve(async (req) => {
   }
 
   if (!nomeValido(nome)) return erro("campo_invalido", "Digite seu nome completo (nome e sobrenome).", "nome");
-  if (!empresaValida(empresa)) return erro("campo_invalido", "Digite o nome da sua empresa.", "empresa");
-  if (!cnpjValido(cnpj)) return erro("campo_invalido", "Esse CNPJ não é válido. Confira os números.", "cnpj");
-  if (!cidadeValida(cidade)) return erro("campo_invalido", "Digite a cidade da sua empresa.", "cidade");
-  if (!ufValida(uf)) return erro("campo_invalido", "Escreva a cidade e a UF, assim: Campinas, SP.", "cidade");
+  if (!whatsapp) return erro("campo_invalido", "Digite o WhatsApp com DDD, assim: (11) 91234-5678.", "whatsapp");
   if (!(foto instanceof File) || foto.size === 0) return erro("campo_invalido", "Envie uma foto de perfil.", "foto");
   if (foto.size > FOTO_MAX) return erro("campo_invalido", "A foto passou de 2 MB. Escolha outra.", "foto");
-  if (!emailValido(email)) return erro("campo_invalido", "Digite um e-mail válido.", "email");
   if (!usuarioValido(usuario)) return erro("campo_invalido", "Usuário: 3 a 24 letras minúsculas, números, ponto ou sublinhado.", "usuario");
   if (!senhaValida(senha)) return erro("campo_invalido", "A senha precisa de pelo menos 8 caracteres.", "senha");
 
@@ -131,80 +122,76 @@ Deno.serve(async (req) => {
   const tipo = tipoDaFoto(bytes);
   if (!tipo) return erro("campo_invalido", "A foto precisa ser WebP ou JPEG.", "foto");
 
-  // CNPJ único: uma empresa, um cadastro (o índice perfis_cnpj_unico cobre a corrida entre dois envios)
-  const { data: cnpjJa, error: eCnpj } = await admin.rpc("reino_cnpj_existe", { p_cnpj: cnpj });
-  if (eCnpj) { console.error("reino_cnpj_existe", eCnpj); return erro("servidor", "Não foi possível conferir o CNPJ agora. Tente de novo.", undefined, 500); }
-  if (cnpjJa === true) return erro("cnpj_em_uso", "Esse CNPJ já tem cadastro no Reino. Se a empresa é sua, use \"Já tenho conta\".", "cnpj");
+  // um WhatsApp, uma conta (o índice perfis_whatsapp_unico cobre a corrida entre dois envios)
+  const { data: wppJa, error: eWpp } = await admin.rpc("reino_whatsapp_existe", { p_whatsapp: whatsapp });
+  if (eWpp) { console.error("reino_whatsapp_existe", eWpp); return erro("servidor", "Não foi possível conferir o WhatsApp agora. Tente de novo.", undefined, 500); }
+  if (wppJa === true) return erro("whatsapp_em_uso", "Esse WhatsApp já tem conta no Reino. Use \"Já tenho conta\".", "whatsapp");
   const { data: livre, error: eLivre } = await admin.rpc("usuario_disponivel", { p_usuario: usuario });
   if (eLivre) { console.error("usuario_disponivel", eLivre); return erro("servidor", "Não foi possível conferir o usuário agora. Tente de novo.", undefined, 500); }
   if (livre !== true) return erro("usuario_indisponivel", "Esse usuário já existe. Escolha outro.", "usuario");
-  const { data: existe, error: eExiste } = await admin.rpc("reino_email_existe", { p_email: email });
-  if (eExiste) { console.error("reino_email_existe", eExiste); return erro("servidor", "Não foi possível conferir o e-mail agora. Tente de novo.", undefined, 500); }
-  if (existe === true) return erro("email_em_uso", "Esse e-mail já tem conta no Reino. Use \"Já tenho conta\".", "email");
 
-  // signup com a chave SECRETA e o IP real de quem está cadastrando (C5): o Auth aplica as regras
-  // dele, manda o e-mail de confirmação e conta o limite por IP na conta de quem pediu, não da
-  // função. Só o Sb-Forwarded-For vai — o X-Forwarded-For do cliente é forjável e a plataforma o
-  // reescreve de qualquer jeito. Com chave secreta o Auth pula o CAPTCHA dele, e está certo: quem
-  // já validou o token foi esta função, logo acima (o token do Turnstile é de uso único).
-  const servidor = createClient(SUPABASE_URL, SECRETA, { ...sem, global: { headers: { "Sb-Forwarded-For": ip } } });
-  const { data, error } = await servidor.auth.signUp({
-    email, password: senha,
-    options: { emailRedirectTo: urlVolta(form.get("redirecionar")), data: { nome, empresa, cnpj, cidade, uf, usuario, titulo, indicado_por: indicadoPor } },
+  // conta no Auth com e-mail interno já confirmado: nada é enviado, e o login é pelo usuário
+  const emailInterno = `m-${crypto.randomUUID()}@contas.reino.invalid`;
+  const { data, error } = await admin.auth.admin.createUser({
+    email: emailInterno, password: senha, email_confirm: true,
+    user_metadata: { nome, whatsapp, usuario, titulo, indicado_por: indicadoPor },
   });
   if (error) {
     const m = `${error.code || ""} ${error.message || ""}`;
-    if (/already|registered|exists/i.test(m)) return erro("email_em_uso", "Esse e-mail já tem conta no Reino. Use \"Já tenho conta\".", "email");
     if (/database error/i.test(m)) {
-      // o banco recusou o perfil: ou o usuário ou o CNPJ acabou de ser ocupado por outro envio
-      const { data: cnpjAgora } = await admin.rpc("reino_cnpj_existe", { p_cnpj: cnpj });
-      if (cnpjAgora === true) return erro("cnpj_em_uso", "Esse CNPJ acabou de ser cadastrado por outra pessoa. Se a empresa é sua, use \"Já tenho conta\".", "cnpj");
+      // o banco recusou o perfil: ou o usuário ou o WhatsApp acabou de ser ocupado por outro envio
+      const { data: wppAgora } = await admin.rpc("reino_whatsapp_existe", { p_whatsapp: whatsapp });
+      if (wppAgora === true) return erro("whatsapp_em_uso", "Esse WhatsApp acabou de ser cadastrado. Se a conta é sua, use \"Já tenho conta\".", "whatsapp");
       return erro("usuario_indisponivel", "Esse usuário acabou de ser escolhido por outra pessoa. Escolha outro.", "usuario");
     }
-    if (/rate|too many|over_email/i.test(m)) return erro("limite", "Muitos cadastros seguidos agora. Aguarde alguns minutos e tente de novo.", undefined, 429);
     if (/weak|password/i.test(m)) return erro("campo_invalido", "Essa senha é fraca demais. Escolha outra.", "senha");
-    if (/email/i.test(m)) return erro("campo_invalido", "Esse e-mail não foi aceito. Confira e tente de novo.", "email");
-    console.error("signUp", error);
+    console.error("createUser", error);
     return erro("servidor", "Não foi possível criar a conta agora. Tente de novo.", undefined, 500);
   }
   const user = data.user;
-  // e-mail já confirmado em outra conta: o Auth devolve um usuário "de mentira" sem identidades
-  if (!user || (Array.isArray(user.identities) && user.identities.length === 0)) {
-    return erro("email_em_uso", "Esse e-mail já tem conta no Reino. Use \"Já tenho conta\".", "email");
+  // o gatilho ao_criar_usuario não grava o WhatsApp se ele colidir no índice: confere e desfaz
+  const { data: perfil } = await admin.from("perfis").select("usuario, whatsapp").eq("id", user.id).maybeSingle();
+  if (!perfil || perfil.usuario !== usuario || perfil.whatsapp !== whatsapp) {
+    console.error("perfil incompleto após createUser", user.id, perfil);
+    await admin.auth.admin.deleteUser(user.id).catch(() => {});
+    return erro("servidor", "Não foi possível criar a conta agora. Tente de novo.", undefined, 500);
   }
 
-  // foto → Storage; se falhar, desfaz a conta para a pessoa poder tentar de novo com o mesmo e-mail/usuário
+  // foto → Storage; se falhar, desfaz a conta para a pessoa poder tentar de novo com o mesmo usuário
   const arquivo = `${user.id}.${tipo === "image/webp" ? "webp" : "jpg"}`;
   const { error: eUp } = await admin.storage.from("avatares").upload(arquivo, bytes, { contentType: tipo, upsert: true, cacheControl: "3600" });
-  let link = "";
-  if (!eUp) {
-    link = `${URL_PUBLICA}/storage/v1/object/public/avatares/${arquivo}?v=${Date.now()}`;
-    const { error: ePerfil } = await admin.from("perfis").update({ foto: link }).eq("id", user.id);
-    if (ePerfil) console.error("perfis.foto", ePerfil);
-  }
   if (eUp) {
     console.error("upload avatar", eUp);
     await admin.auth.admin.deleteUser(user.id).catch(() => {});
     return erro("servidor", "Não foi possível salvar sua foto agora. Tente de novo.", "foto", 500);
   }
+  const link = `${URL_PUBLICA}/storage/v1/object/public/avatares/${arquivo}?v=${Date.now()}`;
+  {
+    const { error: ePerfil } = await admin.from("perfis").update({ foto: link }).eq("id", user.id);
+    if (ePerfil) console.error("perfis.foto", ePerfil);
+  }
 
   // C6 (Parecer 1): a linha de indicação nasce AQUI, com a chave de serviço, amarrada ao user.id
-  // recém-criado — o navegador não insere mais em `cadastros` (era forjável com a chave pública,
-  // e o ranking e a comissão saem dessas linhas). A chave primária é o próprio user.id: uma conta,
-  // um registro, sem duplicata nem corrida. Falhar aqui NÃO derruba o cadastro: a conta já existe.
+  // recém-criado. A chave primária é o próprio user.id: uma conta, um registro. Falhar aqui NÃO
+  // derruba o cadastro: a conta já existe.
   {
     const { error: eCad } = await admin.from("cadastros").insert({
       id: user.id,
       codigo: indicadoPor || AFILIADO_PADRAO,
       visita_id: visitaId,
-      nome, email, titulo, cidade, uf, dispositivo,
+      nome, email: null, titulo, cidade: null, uf: null, dispositivo,
       criado_em: new Date().toISOString(),
     });
     if (eCad) console.error("cadastros.insert", eCad);
   }
 
-  if (data.session) {
-    return resposta({ ok: true, confirmar: false, access_token: data.session.access_token, refresh_token: data.session.refresh_token, user: { id: user.id, email: user.email }, foto: link });
+  // abre a sessão com a chave SECRETA e o IP real (C5): o Auth conta o limite por pessoa, não pela função
+  const servidor = createClient(SUPABASE_URL, SECRETA, { ...sem, global: { headers: { "Sb-Forwarded-For": ip } } });
+  const { data: ses, error: eSes } = await servidor.auth.signInWithPassword({ email: emailInterno, password: senha });
+  if (eSes || !ses?.session) {
+    // a conta existe; a pessoa entra pelo "Já tenho conta" com usuário e senha
+    console.error("signIn após cadastro", eSes);
+    return resposta({ ok: true, confirmar: false, entrar_manual: true, foto: link });
   }
-  return resposta({ ok: true, confirmar: true, email_mascarado: mascararEmail(email), foto: link });
+  return resposta({ ok: true, confirmar: false, access_token: ses.session.access_token, refresh_token: ses.session.refresh_token, user: { id: user.id, email: null }, foto: link });
 });

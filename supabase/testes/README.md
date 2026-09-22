@@ -7,7 +7,11 @@ Rodam contra o Supabase **local** (portas 5436x, `supabase/config.toml`), nunca 
 3. `e2e-afiliados-local.cjs` foi **aposentado em 2026-09-21** (está em `arquivo/testes-aposentados/`,
    com o porquê no `LEIA-ME.md` de lá): dirigia a tela `PortalLogin`, que não é mais renderizada, e
    provava o cadastro inserido pelo navegador, que a C6 do Parecer 1 fechou.
-4. `e2e-login-imersivo-local.cjs` (TODO W): precisa também de storage, edge-runtime e Mailpit, então suba com
+4. `e2e-cadastro-simples-local.cjs` (AJ1/AJ3, 22/09) substituiu o `e2e-login-imersivo-local.cjs` (aposentado,
+   em `arquivo/testes-aposentados/`): cadastro só com nome, WhatsApp, foto, usuário e senha, entrada
+   direta, apresentação das abas e Minha conta gravando empresa/CNPJ/cidade. Mesmos pré-requisitos abaixo,
+   com a migração `2026-09-22_cadastro_simples_whatsapp.sql`. Porta 8161.
+   Histórico do teste antigo, `e2e-login-imersivo-local.cjs` (TODO W): precisa também de storage, edge-runtime e Mailpit, então suba com
    `supabase start -x studio,imgproxy,logflare,vector,supavisor,realtime,postgres-meta`, aplique
    `2026-09-21_login_imersivo_usuario_empresa_cnpj.sql` e rode as funções com
    `supabase functions serve --env-file supabase/functions/.env` (arquivo fora do git com
