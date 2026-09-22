@@ -231,3 +231,9 @@ Cada pedido do fundador vira uma seção por letra. `[x]` concluído com evidên
 - [x] AG3 Regras no banco: aguardando só lê o grupo; membro/admin falam; título Barão/Visconde/Conde só lê (regra `chatFala`); "título a definir" fala; privado só entre as duas pontas de um network aceito; 8 msgs/30 s por conta; nome/empresa/título do autor vêm do perfil
 - [ ] AG4 Decisão do fundador: manter "título a definir" falando no grupo até os títulos serem atribuídos? (hoje nenhum membro tem título; se aplicar a regra do Marquês à risca, só os 2 admins falam)
 - [ ] AG5 Sem anexo, sem apagar mensagem e sem contador de não lidas (o botão de anexo, que não fazia nada, saiu)
+
+## AH — "Ter como alterar o modo mocado para real para fazer um teste real" · "quero que ao alternar os dados falsos sumam" (22/09)
+- [x] AH1 Selo do topo vira interruptor: "Dados fictícios · ligado" ↔ "Só dados reais" (lembrado no navegador, `reino.dadosFicticios`; a troca recarrega). Padrão: ligado, como era
+- [x] AH2 Desligado, `app/dados/modo-dados.js` esvazia `BABEL_DEMO` e as respostas de `BabelDemo` mantendo o formato; ficam títulos, regras e grupos do feed. Somem também os fixos no código: stories de exemplo, tendências da Rede social, KPIs "Negócios fechados"/"Cidades ativas", campos de exemplo em Configurações, território Campinas/Cambuí (vira a cidade da conta)
+- [x] AH3 `TelaSegura` no App: tela que quebra sem dado mostra estado vazio em vez de branco (hoje só a Bolsa de Valores cai nele)
+- [ ] AH4 Decisão do fundador: o padrão deve passar a ser "Só dados reais" para todo mundo?

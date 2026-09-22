@@ -323,8 +323,11 @@ const podarVelhos = (grupos) => grupos.map((g) => ({ ...g, itens: g.itens.filter
 
 function useStories(eu) {
   const [stories, setStories] = React.useState(() => {
-    try { const s = JSON.parse(sessionStorage.getItem("reino.stories") || "null"); if (s) return podarVelhos(s); } catch (e) {}
-    return STORIES_INICIAIS.map((g) => ({ ...g, itens: g.itens.map((it) => ({ ...it, criado_em: it.criado_em || Date.now() })) }));
+    /* dados fictícios desligados (TODO AH): somem os stories de exemplo, ficam os da conta */
+    const exemplos = STORIES_INICIAIS.map((g) => g.autor);
+    const reais = (gs) => ((!window.ReinoDados || window.ReinoDados.ficticios()) ? gs : gs.filter((g) => !exemplos.includes(g.autor)));
+    try { const s = JSON.parse(sessionStorage.getItem("reino.stories") || "null"); if (s) return reais(podarVelhos(s)); } catch (e) {}
+    return reais(STORIES_INICIAIS).map((g) => ({ ...g, itens: g.itens.map((it) => ({ ...it, criado_em: it.criado_em || Date.now() })) }));
   });
   React.useEffect(() => { try {
     const leve = stories.map((g) => ({ ...g, itens: g.itens.filter((it) => !(it.midia && it.midia.temporario)) }));

@@ -73,7 +73,7 @@ function RedeSocialScreen({ ir }) {
   const [feed, setFeed] = React.useState(() => d.feed.map((p, i) => ({ ...p, titulo: TITULO_POR_AUTOR[p.autor], repostagens: [3, 5, 11, 1, 7, 2][i % 6] })));
   const publicar = (texto) => setFeed((f) => [{ autor: d.perfil.nome, empresa: "Você", titulo: d.perfil.titulo, quando: "agora", texto, curtidas: 0, comentarios: 0, repostagens: 0 }, ...f]);
   const lista = aba === "seguindo" ? feed.filter((p) => ["Ana Ribeiro", "Felipe Nunes", d.perfil.nome].includes(p.autor)) : aba === "grupo" ? feed.filter((p) => p.titulo === d.perfil.titulo) : feed;
-  const tendencias = [["Marketing · em alta", "#diagnosticogratis", "1.204 publicações"], ["Curitiba", "#parceriacontabil", "863 publicações"], ["Reino", "#guildaplanalto", "412 publicações"], ["Saúde", "#novaunidade", "377 publicações"]];
+  const tendencias = !(!window.ReinoDados || window.ReinoDados.ficticios()) ? [] : [["Marketing · em alta", "#diagnosticogratis", "1.204 publicações"], ["Curitiba", "#parceriacontabil", "863 publicações"], ["Reino", "#guildaplanalto", "412 publicações"], ["Saúde", "#novaunidade", "377 publicações"]];
   return (
     <div className="hg-social">
       <nav className="hg-social-nav" aria-label="Rede social">
