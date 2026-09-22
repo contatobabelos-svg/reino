@@ -137,6 +137,7 @@
     const [mostraAfiliado, setMostraAfiliado] = React.useState(false);
     const [teclado, setTeclado] = React.useState(0);
     const [faiscas, setFaiscas] = React.useState([]); // partículas de luz ao digitar
+    const [ondaId, setOndaId] = React.useState(0); // onda de luz na borda quando um campo valida
     const credRef = React.useRef({ usuario: "", senha: "" }); // só em memória, para "já validei" e "reenviar"
     const recorteRef = React.useRef(null);
     const editandoRef = React.useRef(false);
@@ -364,31 +365,31 @@
           const n = v.replace(/\s+/g, " ");
           if (!n) return setErro("Digite seu nome completo para continuar.");
           if (!nomeOk(n)) return setErro("Digite nome e sobrenome, só com letras.");
-          gravar("nome", n); return avancar();
+          gravar("nome", n); disparaOnda(); return avancar();
         }
         case "whatsapp": {
           const w = normalizarWhatsapp(v);
           if (!w) return setErro("Digite o WhatsApp com DDD, assim: (11) 91234-5678.");
-          gravar("whatsapp", w); return avancar();
+          gravar("whatsapp", w); disparaOnda(); return avancar();
         }
         case "empresa": {
           const e = v.trim();
           if (!e) return setErro("Digite sua empresa ou negócio.");
           if (e.length < 2) return setErro("Mínimo de 2 caracteres.");
           if (e.length > 120) return setErro("Máximo de 120 caracteres.");
-          gravar("empresa", e); return avancar();
+          gravar("empresa", e); disparaOnda(); return avancar();
         }
         case "cidade": {
           const c = v.trim();
           if (!c) return setErro("Digite sua cidade.");
           if (c.length < 2) return setErro("Mínimo de 2 caracteres.");
-          gravar("cidade", c); return avancar();
+          gravar("cidade", c); disparaOnda(); return avancar();
         }
         case "nicho": {
           const n = v.trim();
           if (!n) return setErro("Digite seu nicho.");
           if (n.length < 2) return setErro("Mínimo de 2 caracteres.");
-          gravar("nicho", n); return avancar();
+          gravar("nicho", n); disparaOnda(); return avancar();
         }
         case "foto": {
           if (camera) return tirarFoto();
@@ -403,18 +404,18 @@
           let livre = disp.usuario === u && disp.estado === "livre" ? true : disp.usuario === u && disp.estado === "ocupado" ? false : null;
           if (livre === null) { setIndo(true); livre = await C.usuarioDisponivel(u); setIndo(false); }
           if (livre === false) { setDisp({ usuario: u, estado: "ocupado" }); return setErro("Esse usuário já existe. Escolha outro."); }
-          gravar("usuario", u); return avancar();
+          gravar("usuario", u); disparaOnda(); return avancar();
         }
         case "senha": {
           if (texto.length < 8) return setErro("A senha precisa de pelo menos 8 caracteres.");
           if (texto.length > 72) return setErro("A senha pode ter no máximo 72 caracteres.");
           if (texto !== dados.senha) gravar("senha2", "");
-          gravar("senha", texto); return avancar();
+          gravar("senha", texto); disparaOnda(); return avancar();
         }
         case "senha2": {
           if (!texto) return setErro("Repita a senha para confirmar.");
           if (texto !== dados.senha) return setErro("As duas senhas não são iguais.");
-          gravar("senha2", texto); return avancar();
+          gravar("senha2", texto); disparaOnda(); return avancar();
         }
         case "resumo": return criarConta();
         case "l-usuario": {
@@ -422,7 +423,7 @@
           if (!u) return setErro("Digite seu usuário ou e-mail.");
           if (!(u.includes("@") ? EMAIL_RE.test(u) : USUARIO_RE.test(u))) return setErro("Esse usuário não parece certo. Confira e tente de novo.");
           credRef.current = { usuario: u, senha: "" };
-          return avancar();
+          disparaOnda(); return avancar();
         }
         case "l-senha": {
           if (!texto) return setErro("Digite sua senha.");
@@ -439,7 +440,7 @@
         }
         case "n-senha": {
           if (texto.length < 8) return setErro("A nova senha precisa de pelo menos 8 caracteres.");
-          gravar("senha", texto); return avancar();
+          gravar("senha", texto); disparaOnda(); return avancar();
         }
         case "n-senha2": {
           if (texto !== dados.senha) return setErro("As duas senhas não são iguais.");
@@ -551,6 +552,8 @@
     }, [reduzMovimento]);
     const removerFaisca = (id) => setFaiscas((fs) => fs.filter((f) => f.id !== id));
     React.useEffect(() => { setFaiscas([]); }, [modo, etapa]);
+    /* onda de luz: dispara quando um campo passa na validação, antes de avançar */
+    const disparaOnda = () => { if (!reduzMovimento) setOndaId((n) => n + 1); };
 
     const aoDigitar = (e) => {
       let v = e.target.value;
@@ -705,6 +708,7 @@
 
           <form className="hg-li-barra" onSubmit={enviar} noValidate aria-busy={indo}>
             <div className="hg-li-barra-dentro" ref={barraRef}>
+              {ondaId > 0 ? <span key={ondaId} className="hg-li-onda" aria-hidden="true" onAnimationEnd={() => setOndaId(0)} /> : null}
               {faiscas.map((f) => (
                 <span key={f.id} className="hg-li-faisca" style={{ left: f.x, top: f.y, "--dx": f.dx + "px" }} onAnimationEnd={() => removerFaisca(f.id)} aria-hidden="true" />
               ))}

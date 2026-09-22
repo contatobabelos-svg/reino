@@ -224,16 +224,45 @@
   100% { opacity: 0; transform: translate(var(--dx, 0), -26px) scale(.3); }
 }
 
+/* onda de luz na borda: dispara quando um campo passa na validação */
+.hg-li-onda {
+  position: absolute; inset: -1px; border-radius: 23px; pointer-events: none; z-index: 2;
+  padding: 1.5px;
+  background: conic-gradient(from 0deg, transparent 0%, transparent 78%, var(--cyan) 88%, #fff 91%, var(--cyan) 94%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0; animation: hg-li-onda-percorre .8s var(--ease) forwards;
+}
+@keyframes hg-li-onda-percorre {
+  0% { opacity: 1; transform: rotate(0deg); }
+  80% { opacity: .9; }
+  100% { opacity: 0; transform: rotate(360deg); }
+}
+
 .hg-li-dica { margin: 2px 0 0; text-align: center; font-size: 11.5px; letter-spacing: .02em; color: rgba(230, 239, 255, .62); text-shadow: 0 1px 8px rgba(0, 0, 0, .7); }
 
 /* saída depois do login: a conversa desce e some, e um portal de luz se abre atrás dela */
 .hg-li.is-saindo .hg-li-palco { transition: opacity .8s var(--ease), transform .8s var(--ease); opacity: 0; transform: translate(-50%, 24px); }
 .hg-li-portal { position: absolute; inset: 0; z-index: 45; pointer-events: none; opacity: 0; }
-.hg-li.is-saindo .hg-li-portal { animation: hg-li-portal-abre .9s var(--ease) forwards; }
+.hg-li.is-saindo .hg-li-portal { animation: hg-li-portal-abre 1s var(--ease) forwards; }
 @keyframes hg-li-portal-abre {
-  0% { opacity: 0; background: radial-gradient(circle at 50% 64%, rgba(63, 227, 255, 0) 0%, transparent 40%); }
-  35% { opacity: 1; background: radial-gradient(circle at 50% 64%, #fff 0%, var(--cyan) 16%, rgba(139, 92, 255, .55) 36%, transparent 62%); }
-  100% { opacity: 1; background: radial-gradient(circle at 50% 64%, #fff 0%, var(--cyan) 30%, var(--violet) 62%, var(--bg) 100%); }
+  0% { opacity: 0; filter: brightness(1); background: radial-gradient(circle at 50% 64%, rgba(63, 227, 255, 0) 0%, transparent 40%); }
+  25% { opacity: 1; filter: brightness(1.35); background: radial-gradient(circle at 50% 64%, #fff 0%, var(--cyan) 22%, rgba(139, 92, 255, .7) 46%, transparent 68%); }
+  55% { opacity: 1; filter: brightness(1.6) saturate(1.25); background: radial-gradient(circle at 50% 64%, #fff 0%, var(--cyan) 38%, var(--violet) 68%, rgba(3, 8, 23, .25) 100%); }
+  100% { opacity: 1; filter: brightness(1.05); background: radial-gradient(circle at 50% 64%, #fff 0%, var(--cyan) 46%, var(--violet) 78%, var(--bg) 100%); }
+}
+/* núcleo extra, em screen, pra fazer o clarão realmente estourar no meio da abertura */
+.hg-li-portal::after {
+  content: ""; position: absolute; left: 50%; top: 64%; width: 10px; height: 10px; margin: -5px 0 0 -5px;
+  border-radius: 50%; background: #fff; mix-blend-mode: screen; opacity: 0;
+  box-shadow: 0 0 40px 18px #fff, 0 0 100px 50px var(--cyan), 0 0 180px 90px rgba(139, 92, 255, .65);
+}
+.hg-li.is-saindo .hg-li-portal::after { animation: hg-li-portal-nucleo 1s var(--ease) forwards; }
+@keyframes hg-li-portal-nucleo {
+  0% { opacity: 0; transform: scale(.2); }
+  30% { opacity: 1; transform: scale(1); }
+  60% { opacity: 1; transform: scale(3.2); }
+  100% { opacity: 0; transform: scale(6); }
 }
 
 /* ---------------------------------------------------------------- celular */
@@ -256,5 +285,7 @@
   .hg-li-palco, .hg-li.is-saindo .hg-li-palco { transition: none; }
   .hg-li-progresso-trilho i.is-atual { animation: none; box-shadow: 0 0 8px var(--cyan); }
   .hg-li-faisca { display: none; }
+  .hg-li-onda { display: none; }
   .hg-li.is-saindo .hg-li-portal { animation: none; opacity: 1; background: var(--bg); }
+  .hg-li-portal::after { display: none; }
 }
