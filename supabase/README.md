@@ -94,8 +94,8 @@ Publicar (nesta ordem, com autorização do fundador):
    (em produção não precisa de `REINO_URL_PUBLICA`: o `SUPABASE_URL` já é o endereço público.)
    Conferir: `curl -X POST https://fxlansnepokjxdikxocb.supabase.co/functions/v1/reino-login -H "apikey: <publicável>" -H "Content-Type: application/json" -d '{"usuario":"ninguem","senha":"12345678"}'`
    → `{"ok":false,"codigo":"nao_confere",...}`.
-3. **Auth** (painel → Authentication): confirmação de e-mail ligada; `Site URL` = `https://o-reino.vercel.app`
-   e a mesma URL (e o domínio próprio, se houver) em *Redirect URLs*, para o link do e-mail voltar ao app.
+3. **Auth** (painel → Authentication): confirmação de e-mail ligada; `Site URL` = `https://networkreino.com`
+    e `https://o-reino.vercel.app` em *Redirect URLs*, para o link do e-mail voltar ao app.
    O SMTP padrão do Supabase manda só poucos e-mails por hora — com cadastro aberto, configurar SMTP próprio.
 4. **Site**: push no `main` (Vercel monta com `montar-site.sh`). O App passa a abrir o `LoginImersivo`;
    `PortalLogin` fica de reserva automática se o arquivo novo não carregar.

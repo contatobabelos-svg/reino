@@ -59,6 +59,11 @@ class TelaSegura extends React.Component {
 
 function App() {
   const d = window.BABEL_DEMO;
+  /* pré-aquecimento (entrar.html): ?aquecendo=1 = este index.html está num iframe oculto,
+     carregando e transpilando tudo em segundo plano enquanto a pessoa ainda está no login.
+     Fica "dormindo" (sem desenhar a tela de login, que já está sendo mostrada de verdade na
+     página de cima) até receber o sinal "reino:acordar" com a sessão recém-criada. */
+  const AQUECENDO = React.useMemo(() => window.parent !== window && new URLSearchParams(window.location.search).get("aquecendo") === "1", []);
   /* login real: undefined = conferindo a sessão salva; null = pedir login; objeto = conta do banco */
   const [conta, setConta] = React.useState(undefined);
   const [recuperacao, setRecuperacao] = React.useState(false);
@@ -123,7 +128,26 @@ function App() {
       if (r.erro) setErroLogin("O link do e-mail não vale mais (" + r.erro + "). Peça outro.");
       else if (r.aviso) setErroLogin(r.aviso);
       if (r.recuperacao) { setRecuperacao(true); setConta(null); } else setConta(r.sessao && r.sessao.token ? r.sessao : null);
-    }).catch((e) => { setErroLogin((e && e.message) || "Não foi possível conferir sua sessão agora. Tente de novo."); setConta(null); });
+    }).catch((e) => { setErroLogin((e && e.message) || "Não foi possível conferir sua sessão agora. Tente de novo."); setConta(null); })
+      .finally(() => {
+        // avisa quem está de fora (entrar.html) que o Reino terminou de carregar e já
+        // pode ser acordado — só faz sentido quando este index.html está dentro de um iframe
+        if (window.parent !== window) { try { window.parent.postMessage({ tipo: "reino:pronto" }, window.location.origin); } catch (e) {} }
+      });
+  }, []);
+  React.useEffect(() => {
+    // sinal de fora (entrar.html) para acordar com a sessão que acabou de logar ali
+    if (window.parent === window) return;
+    const ouvir = (e) => {
+      if (e.origin !== window.location.origin) return;
+      if (e.data && e.data.tipo === "reino:acordar" && e.data.sessao && e.data.sessao.token) {
+        if (window.ReinoContas && window.ReinoContas.assumir) window.ReinoContas.assumir(e.data.sessao);
+        setRecuperacao(false);
+        setConta(e.data.sessao);
+      }
+    };
+    window.addEventListener("message", ouvir);
+    return () => window.removeEventListener("message", ouvir);
   }, []);
   React.useEffect(() => {
     document.body.dataset.page = PAGINA[rota] || rota.replace(".html", "");
@@ -133,18 +157,22 @@ function App() {
   // login imersivo (W): conversa + barra de comando; PortalLogin (O3) e LoginScreen ficam de reserva
   const TelaLogin = window.LoginImersivo || window.PortalLogin || LoginScreen;
   if (conta === undefined) return <div className="hg-moldura hg-moldura-login" aria-busy="true"><p className="hg-carregando-conta">Conferindo sua sessão…</p></div>;
-  if (!conta) return (
-    <div className="hg-moldura hg-moldura-login">
-      <TelaLogin recuperacao={recuperacao} erroInicial={erroLogin}
-        onEntrar={(s) => { const c = s || (window.ReinoContas && window.ReinoContas.sessao()) || null; setRecuperacao(false); setConta(c && c.token ? c : null); }} />
-      {TelaLogin === LoginScreen ? (
-        <div className="hg-modo hg-modo-login" role="group" aria-label="Modo de exibição">
-          <button type="button" aria-pressed={modo === "pc"} onClick={() => setModo("pc")}>PC</button>
-          <button type="button" aria-pressed={modo === "app"} onClick={() => setModo("app")}>App</button>
-        </div>
-      ) : null}
-    </div>
-  );
+  if (!conta) {
+    // dormindo: já carregou e transpilou tudo, só falta a pessoa terminar o login em entrar.html
+    if (AQUECENDO) return <div className="hg-moldura" aria-hidden="true" />;
+    return (
+      <div className="hg-moldura hg-moldura-login">
+        <TelaLogin recuperacao={recuperacao} erroInicial={erroLogin}
+          onEntrar={(s) => { const c = s || (window.ReinoContas && window.ReinoContas.sessao()) || null; setRecuperacao(false); setConta(c && c.token ? c : null); }} />
+        {TelaLogin === LoginScreen ? (
+          <div className="hg-modo hg-modo-login" role="group" aria-label="Modo de exibição">
+            <button type="button" aria-pressed={modo === "pc"} onClick={() => setModo("pc")}>PC</button>
+            <button type="button" aria-pressed={modo === "app"} onClick={() => setModo("app")}>App</button>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
   if (rota === "pre-cadastro.html") return <PreCadastroScreen ir={ir} />;
 
   const Tela = TELAS[rota];

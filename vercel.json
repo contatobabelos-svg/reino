@@ -3,5 +3,8 @@
   "outputDirectory": "site",
   "redirects": [
     { "source": "/r/:codigo", "destination": "/?ref=:codigo", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/", "destination": "/entrar.html" }
   ]
 }

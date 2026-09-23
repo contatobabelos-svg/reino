@@ -88,7 +88,7 @@ const EDITORIAS: Editoria[] = [
 ];
 const APELIDOS: Record<string, string> = { "": "destaques", manchetes: "destaques", mercado: "economia", varejo: "marketing", empresas: "negocios", credito: "credito" };
 
-const UA = "Mozilla/5.0 (compatible; ReinoBot/1.0; +https://o-reino.vercel.app)";
+const UA = "Mozilla/5.0 (compatible; ReinoBot/1.0; +https://networkreino.com)";
 const PRIVADO = /^(localhost|\[?::1\]?|0\.0\.0\.0|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[?f[cde])/i;
 function enderecoPublico(u: string) {
   try {

@@ -1,6 +1,6 @@
 # REINO · Babel OS
 
-Rede de negócios brasileira montada como um reino. No ar em https://o-reino.vercel.app.
+Rede de negócios brasileira montada como um reino. No ar em https://networkreino.com.
 
 | Pasta | O que tem |
 |---|---|

@@ -295,10 +295,15 @@
     if (!r.ok) throw new Error(erroDe(await r.json().catch(() => ({})), r));
     return true;
   }
+  /* pré-aquecimento (entrar.html → index.html num iframe): a sessão nasce na página de
+     login, que roda sua própria cópia deste arquivo (outra `sessao` na memória). Em vez de
+     torcer para o iframe reler o localStorage sozinho, entrar.html manda a sessão pronta por
+     postMessage e o iframe assume ela aqui, do jeito que o resto do arquivo já espera. */
+  function assumir(s) { sessao = s || null; gravarSessao(sessao); }
   window.ReinoContas = {
     sessao: () => sessao, entrar, cadastrar, sair, salvarPerfil, iniciar, carregarConta, recuperarSenha,
     entrarUsuario, reenviarConfirmacao, cadastrarCompleto, usuarioDisponivel,
-    codigoLivre, reservarCodigo, limpar,
+    codigoLivre, reservarCodigo, limpar, assumir,
     online: () => !!CFG(), token,
     trocarSenha: async (nova) => { if (!CFG() || !sessao || !sessao.token) throw new Error("Entre novamente para trocar a senha."); const r = await fetch(base() + "/auth/v1/user", { method: "PUT", headers: cab({ Authorization: "Bearer " + sessao.token }), body: JSON.stringify({ password: nova }) }); if (!r.ok) throw new Error(erroDe(await r.json().catch(() => ({})), r)); return true; },
   };
