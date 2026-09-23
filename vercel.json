@@ -2,9 +2,7 @@
   "buildCommand": "sh montar-site.sh",
   "outputDirectory": "site",
   "redirects": [
+    { "source": "/", "destination": "/entrar.html", "permanent": false },
     { "source": "/r/:codigo", "destination": "/?ref=:codigo", "permanent": false }
-  ],
-  "rewrites": [
-    { "source": "/", "destination": "/entrar.html" }
   ]
 }
