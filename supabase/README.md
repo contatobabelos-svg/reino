@@ -58,6 +58,13 @@ Migrações aplicadas, em ordem:
 Ordem obrigatória do item 10, para não derrubar o cadastro ao vivo: publicar a `reino-cadastro` com o
 insert no servidor → publicar o site sem o insert no navegador → só então rodar a migração.
 
+### Domínio networkreino.com
+
+- Registrado e configurado na Vercel (nameservers: `ns1.vercel-dns.com` / `ns2.vercel-dns.com`) ✔
+- **Auth Site URL**: `https://networkreino.com` (via Supabase Management API)
+- **Redirect URLs**: `https://networkreino.com/**`, `https://o-reino.vercel.app/**`, `http://localhost:8123/**`
+- **`REINO_DOMINIO`**: `https://networkreino.com` em `app/nucleo/config.js`
+
 Backup: `~/Backups/reino/` (fora do git, tem dado pessoal), com `COMO-RESTAURAR.md`.
 Testes: `supabase/testes/` (sempre no Supabase local).
 
