@@ -288,5 +288,18 @@ Decisão do fundador (pergunta da Vyra): as 77 são **fictícias** e marcadas co
 - [x] AM3 `app/telas/LoginImersivo.jsx` atualizado: `refUrl` lê `cadeiaDaUrl()`, `codigoRef` aceita cadeia, `criarConta` passa `cadeia`, exibição "Cadeia: adm/affiliate1"
 - [x] AM4 `app/servicos/contas.js` atualizado: `reservarCodigo` armazena `pai` e `cadeia`, `cadastrarCompleto` envia `cadeia` ao servidor
 - [x] AM5 `supabase/functions/reino-cadastro/index.ts` atualizado: parse de `cadeia`/`pai`, insert em `cadastros` com `cadeia` e `pai`, auto-registro em `codigos`
-- [ ] AM6 **Publicar (Vyra):** migração aplicada em produção, funções reino-cadastro republishadas, site publicado. Enquanto não sobe, o sistema funciona em modo local (cadeia guardada no localStorage)
+- [x] AM6 **Publicado (23/09, a pedido "Publicar tudo agora"):** migração `afiliados_hierarquia` aplicada em produção (codigos.pai/cadeia + `privado.cadeia_completa` + `trigger_cadeia_codigo`), funções reino-cadastro republishadas, site publicado
 - [ ] AM7 Teste ponta a ponta: adm compartilha `/r/marcelo/affiliate1`, affiliate1 cadastra, admin vê cadeia completa no painel
+
+## AN — "deixe o login mais simples: peça apenas nome, whatsapp, empresa e nicho e cidade... só de enviar isso ele já pode entrar como demonstração no reino, não ter essa de não deu pra confirmar que você é uma pessoa. apos aceitar a pessoa pelo adm, ela tem acesso ao reino completo como usuario, não tema acesso as funcionalidades do adm" (23/09)
+Decisões do fundador (pergunta da Vyra):
+- **Reentrar só pelo WhatsApp**: digitar de novo os 5 campos (nome, whatsapp, empresa, nicho, cidade) e o sistema reconhece pelo WhatsApp; se já foi aprovado pelo adm, entra com acesso completo; se não, volta como demonstração.
+- **Cria conta real já**: os 5 campos criam a conta no Supabase com `situacao` "aguardando", entra na hora na fila do AdminScreen; o adm aprova → `membro` (acesso completo, sem as telas de adm).
+- **Remove o CAPTCHA** do cadastro e do login (segue só com os limites por IP/WhatsApp que já existem).
+- [x] AN1 Migração `supabase/2026-09-23_cadastro_5campos.sql`: coluna `nicho` em `perfis`, `criar_perfil()` grava nicho, RPC `reino_entrar_por_whatsapp()` (adm reentra só pelo WhatsApp) — **aplicada em produção 23/09**
+- [x] AN2 `reino-cadastro`: aceita só nome/whatsapp/empresa/nicho/cidade (sem foto, usuário, senha); se o WhatsApp já existe, entra com a conta existente (situação do banco); sem CAPTCHA — **publicada em produção 23/09 (v9+)**
+- [x] AN3 `reino-login`: sem CAPTCHA (fica para contas antigas/admin-migradas, se houver) — **publicada em produção 23/09**
+- [x] AN4 `LoginImersivo.jsx`: cadastro vira 5 campos, sem foto/usuário/senha/resumo, mantém a cadeia do afiliado na URL; fim da conversa = entra como demonstração/aguardando
+- [x] AN5 `contas.js`/`PerfilScreen.jsx`: campo `nicho` no perfil; cadastro envia 5 campos; CAPTCHA removido do app
+- [x] AN6 Despublicar/remover CAPTCHA: `config.js` sem `REINO_CAPTCHA`, páginas sem captcha.js (validado por grep)
+- [ ] AN7 Publicar em produção (migração + funções + site) e teste ponta a ponta: cadastra com 5 campos, entra como demonstração, adm aprova, vira membro com acesso ao Reino sem as telas de adm — migração e funções publicadas 23/09; **falta: push do site + teste ponta a ponta no domínio**

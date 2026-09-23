@@ -20,12 +20,7 @@ window.REINO_SUPABASE = {
   url: "https://fxlansnepokjxdikxocb.supabase.co", /* projeto do cliente */
   anon: "sb_publishable_qrjZtFZVvByCqBHeTT5ktQ_1RdSulmM" /* chave publicável (Settings → API) — pública por natureza */
 };
-/* CAPTCHA (C2 do Parecer 1): a mesma Site Key pública do index.html. Aqui o mapa só renova a sessão
-   (grant_type=refresh_token, isento de CAPTCHA), mas o contas.js é o mesmo arquivo e pode pedir o
-   token se alguém abrir o mapa sem sessão. */
-window.REINO_CAPTCHA = { siteKey: "0x4AAAAAAE_VWgCH0dB6d3Jq" };
 </script>
-<script src="servicos/captcha.js"></script>
 <script src="servicos/contas.js"></script>
 <script src="servicos/fotos.js"></script>
 <script src="servicos/empresas.js"></script>

@@ -1,11 +1,12 @@
 const { PageHead, Panel, Button, Input, Select, Field, Toolbar, Pill, Icon, Toast, EmptyState, AffiliateLevel } = window.BabelOSDesignSystem_5ad360;
 
 /* Minha conta — dados da conta, foto, senha e os links de afiliado.
-   Desde AJ2 (22/09) o cadastro só pede nome, WhatsApp, foto, usuário e senha: empresa, CNPJ e
-   cidade/UF são completados aqui (sem cidade/UF a empresa não aparece no mapa do Reino).
-   O CNPJ é gravado uma vez; depois só um administrador troca.
-   O código base é único por pessoa; cada campanha gera um link próprio
-   (?ref=codigo&c=campanha) para você saber de onde veio cada cadastro. */
+   Desde AN (23/09) o cadastro cria a conta com 5 campos (nome, WhatsApp, empresa, nicho,
+   cidade) e tudo isso é editável aqui — empresa/nicho ficam livres, e cidade/UF completam
+   o lugar da empresa no mapa do Reino. Sem CNPJ gravado, o campo fica aberto; gravado,
+   só um administrador troca (o CNPJ é gravado uma vez). O código base é único por pessoa;
+   cada campanha gera um link próprio (?ref=codigo&c=campanha) para você saber de onde veio
+   cada cadastro. */
 const CAMPANHAS = ["instagram", "whatsapp", "youtube", "evento", "indicacao"];
 
 function PerfilScreen({ ir }) {
@@ -17,7 +18,7 @@ function PerfilScreen({ ir }) {
   const [f, setF] = React.useState({
     nome, titulo: s.titulo || d.perfil.titulo || "",
     whatsapp: V && s.whatsapp ? V.mascaraWhatsapp(s.whatsapp) : "",
-    empresa: s.empresa || "", cnpj: V && s.cnpj ? V.mascaraCnpj(s.cnpj) : "",
+    empresa: s.empresa || "", nicho: s.nicho || "", cnpj: V && s.cnpj ? V.mascaraCnpj(s.cnpj) : "",
     local: s.cidade ? s.cidade + (s.uf ? ", " + s.uf : "") : "",
   });
   const [erroDados, setErroDados] = React.useState("");
@@ -60,6 +61,9 @@ function PerfilScreen({ ir }) {
     const emp = f.empresa.replace(/\s+/g, " ").trim();
     if (emp && (emp.length < 2 || emp.length > 120)) return setErroDados("Digite o nome da empresa.");
     muda.empresa = emp || null;
+    const nichoOk = f.nicho.trim();
+    if (nichoOk && (nichoOk.length < 2 || nichoOk.length > 60)) return setErroDados("Nicho entre 2 e 60 caracteres.");
+    muda.nicho = nichoOk || null;
     if (!s.cnpj && V.soDigitos(f.cnpj)) {
       const c = V.soDigitos(f.cnpj);
       if (!V.cnpjValido(c)) return setErroDados("Esse CNPJ não é válido. Confira os números.");
@@ -121,6 +125,7 @@ function PerfilScreen({ ir }) {
             <Field label="Nome" htmlFor="p-nome"><Input id="p-nome" value={f.nome} onChange={campo("nome")} autoComplete="name" /></Field>
             <Field label="WhatsApp" htmlFor="p-wpp" hint="Só você e os administradores veem."><Input id="p-wpp" type="tel" inputMode="tel" value={f.whatsapp} onChange={(e) => setF((v) => ({ ...v, whatsapp: V.mascaraWhatsapp(e.target.value) }))} autoComplete="tel-national" placeholder="(11) 91234-5678" /></Field>
             <Field label="Empresa" htmlFor="p-empresa"><Input id="p-empresa" value={f.empresa} onChange={campo("empresa")} autoComplete="organization" placeholder="Nome da empresa" /></Field>
+            <Field label="Nicho" htmlFor="p-nicho" hint="O que a empresa faz: tecnologia, saúde, alimentação…"><Input id="p-nicho" value={f.nicho} onChange={campo("nicho")} autoComplete="off" placeholder="Ex: tecnologia, saúde, educação" /></Field>
             <Field label="CNPJ" htmlFor="p-cnpj" hint={s.cnpj ? "Para trocar o CNPJ, fale com um administrador." : "Grava uma vez só. Confira antes de salvar."}>
               <Input id="p-cnpj" inputMode="numeric" value={f.cnpj} onChange={(e) => setF((v) => ({ ...v, cnpj: V.mascaraCnpj(e.target.value) }))} placeholder="00.000.000/0000-00" disabled={!!s.cnpj} />
             </Field>

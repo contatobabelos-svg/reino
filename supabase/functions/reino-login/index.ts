@@ -1,6 +1,8 @@
 // Reino · login do login imersivo (W), baseado na login-commandbar do Babel OS.
-//   POST { usuario, senha, captcha_token? }       → entra (usuario pode ser o usuário ou o e-mail)
-//   POST { usuario, senha, acao: "reenviar", redirecionar?, captcha_token? } → reenvia a confirmação
+// Continua com usuário+senha de propósito (AN, 23/09): é por aqui que o ADM e as contas
+// antigas entram — o cadastro novo (reino-cadastro) é só por WhatsApp.
+//   POST { usuario, senha }               → entra (usuario pode ser o usuário ou o e-mail)
+//   POST { usuario, senha, acao: "reenviar", redirecionar? } → reenvia a confirmação
 // Segurança:
 //   - latência mínima + jitter em TODA resposta (não dá para medir se o usuário existe);
 //   - erro genérico { ok:false, codigo:"nao_confere" } para usuário inexistente OU senha errada;
@@ -11,7 +13,6 @@
 //   { ok:true, access_token, refresh_token, user:{ id, email } }
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { CORS, EMAIL_RE, ipDe, limparUsuario, mascararEmail, resposta, urlVolta, USUARIO_RE } from "../_shared/reino-validar.ts";
-import { conferirCaptcha, MENSAGEM_CAPTCHA } from "../_shared/reino-captcha.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -57,16 +58,8 @@ Deno.serve(async (req) => {
     }
 
     // C2 do Parecer 1: esta função é a porta (verify_jwt = false) e fala com o Auth pela chave
-    // secreta, que é isenta do CAPTCHA do Auth — então quem valida o token é ela, aqui, uma vez só
-    // (o token do Turnstile é de uso único; "entrar" e "reenviar" usam o mesmo token porque as duas
-    // chamadas ao Auth saem daqui). Sem TURNSTILE_SECRET configurado, passa sem token.
-    {
-      const v = await conferirCaptcha(corpo?.captcha_token, ip);
-      if (!v.ok) {
-        console.error("captcha recusado no login:", v.codigos.join(","));
-        return responder({ ok: false, codigo: "captcha", mensagem: MENSAGEM_CAPTCHA }, 403);
-      }
-    }
+    // secreta. CAPTCHA removido por decisão do fundador (AN): sem TURNSTILE_SECRET o pedido
+    // sempre passa; se no futuro ligarem o segredo, o limitação por IP já estava aqui antes.
 
     let email = ehEmail ? bruto : null;
     if (!ehEmail) {

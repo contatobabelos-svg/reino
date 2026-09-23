@@ -23,7 +23,7 @@ create policy codigos_editar on public.codigos for update to authenticated
 
 -- Função auxiliar: construir a cadeia completa a partir do pai
 create or replace function privado.cadeia_completa(p_codigo text, p_pai text)
-returns text as $$
+returns text as $func$
 declare
   v_pai_codigo text;
   v_pai_cadeia text;
@@ -38,11 +38,11 @@ begin
     return p_pai || '/' || p_codigo;
   end if;
 end;
-language plpgsql security definer;
+$func$ language plpgsql security definer;
 
 -- Gatilho: atualizar a cadeia quando o pai é definido
 create or replace function privado.trigger_cadeia_codigo()
-returns trigger as $$
+returns trigger as $func$
 begin
   if new.pai is not null then
     new.cadeia := privado.cadeia_completa(new.codigo, new.pai);
@@ -51,7 +51,7 @@ begin
   end if;
   return new;
 end;
-language plpgsql security definer;
+$func$ language plpgsql security definer;
 
 drop trigger if exists trigger_cadeia_codigo on public.codigos;
 create trigger trigger_cadeia_codigo

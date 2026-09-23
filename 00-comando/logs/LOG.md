@@ -5,6 +5,7 @@ os demais, de `date` no momento do registro. O que não tem horário registrado 
 
 | Itens | Horário | Quem | O que foi feito | Evidência |
 |-------|---------|------|-----------------|-----------|
+| AN+AM6 Publicação em produção | 2026-09-23 08:13 | this-session | Migração `afiliados_hierarquia` aplicada em produção (codigos.pai/cadeia, `privado.cadeia_completa`, `trigger_cadeia_codigo`); migração `cadastro_5campos` aplicada (perfis.nicho, cadastros.pai/cadeia, `criar_perfil` grava nicho); funções reino-cadastro e reino-login republishadas (a reino-cadastro reentra pelo WhatsApp via `POST /auth/v1/verify`; as duas sem CAPTCHA) | API do Supabase: ambas as migrações HTTP 201; colunas e funções conferidas no banco; curl em produção: reino-login responde `nao_confere` sem CAPTCHA, reino-cadastro valida nome vazio e `usuario_disponivel` ok |
 | A1 | 2026-09-18 (não registrado) | Vyra | Zip aplicado com `rsync --delete`; backup da pasta anterior | `diff -rq` sem diferenças |
 | A2 | 2026-09-18 23:40 | Vyra | Commit `ce507ff` por cima do `main` existente e push | `git log` |
 | A3 | 2026-09-19 (não registrado) | Vyra | Pasta ligada ao `o-reino` (Babel OS); GitHub já conectado | `vercel git connect` → "already connected" |

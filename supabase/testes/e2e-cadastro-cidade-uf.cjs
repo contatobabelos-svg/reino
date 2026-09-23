@@ -1,15 +1,12 @@
-// Cadastro pelo carrossel do login imersivo: etapa de cidade/UF (TODO AF11) e, desde o Parecer 1,
-// o token do CAPTCHA (C2) e a checagem de usuário pela função (C12).
-// Nunca escreve nada: a função reino-cadastro é respondida aqui (page.route).
+// Cadastro pelo carrossel do login imersivo desde AN (23/09): exatamente 5 campos
+// (nome → WhatsApp → empresa → nicho → cidade), sem foto, sem usuário/senha e sem CAPTCHA.
+// O CADASTRO NÃO PASSA NESTE TESTE; a função reino-cadastro é respondida aqui (page.route).
 //   node supabase/testes/e2e-cadastro-cidade-uf.cjs
 //
-// CAPTCHA: o teste usa a Site Key de TESTE da Cloudflare (1x00000000000000000000AA, "always
-// passes") e troca o script challenges.cloudflare.com/turnstile/v0/api.js por um dublê local com a
-// mesma interface (render/execute/reset + callback), porque o desafio de verdade não fecha em
-// navegador de teste (o pedido a hagen.challenges.cloudflare.com é abortado) — e porque um teste
-// não deve depender da rede da Cloudflare. O que se prova aqui é a ligação: captcha.js pede o
-// token, contas.js manda o token junto do cadastro e a checagem de usuário não usa mais a RPC
-// pública. O desafio real, com o dedo de uma pessoa, é o teste humano no site publicado.
+// O que se prova aqui é o roteiro do carrossel: os 5 campos na ordem certa, a máscara do
+// WhatsApp, as validações locais e o que exatamente o navegador manda ao servidor (nada de
+// usuário, senha, foto ou captcha_token). A reentrada pelo WhatsApp e a criação de conta real
+// são o teste humano/Playwright no site publicado (as funções são respondidas aqui).
 const PW = process.env.REINO_PLAYWRIGHT || '/home/marcos/.npm/_npx/e41f203b7505f1fb/node_modules/playwright';
 const { chromium } = require(PW);
 const { execSync, spawn } = require('child_process');
@@ -25,17 +22,11 @@ fs.mkdirSync(PRINTS, { recursive: true });
 let falhas = 0;
 const ok = (nome, cond, info) => { if (!cond) falhas++; console.log((cond ? 'PASSOU ' : 'FALHOU ') + nome + (info ? '  → ' + String(info).slice(0, 240) : '')); };
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
-const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAF0lEQVQIW2NkYGD4z8DAwMgABXAGNgEAVfgCASYZ9OwAAAAASUVORK5CYII=', 'base64');
 
 const PASSO = (p) => `input.hg-li-campo[data-passo="${p}"]`;
 async function erroVisivel(p) {
   const e = p.locator('.hg-li-bolha-in.is-erro');
   try { await e.first().waitFor({ state: 'visible', timeout: 4000 }); return (await e.first().innerText()).trim(); } catch (x) { return ''; }
-}
-function fotoTeste() {
-  const f = '/tmp/claude-1000/reino-foto-teste.jpg';
-  if (!fs.existsSync(f)) execSync(`ffmpeg -loglevel error -y -f lavfi -i "testsrc2=s=900x600" -frames:v 1 ${f}`);
-  return f;
 }
 
 (async () => {
@@ -45,31 +36,18 @@ function fotoTeste() {
   const servidor = spawn('python3', ['-m', 'http.server', String(PORTA), '--bind', '127.0.0.1'], { cwd: pasta, stdio: 'ignore' });
   for (let i = 0; i < 60; i++) { try { await fetch(SITE + '/'); break; } catch (e) { await espera(150); } }
   const navegador = await chromium.launch({ channel: 'chrome', args: ['--disable-dev-shm-usage'] });
-  let enviado = null, chamouRpcUsuario = 0, checagens = 0;
+  let enviado = null, chamouRpcUsuario = 0;
   try {
     const ctx = await navegador.newContext({ viewport: { width: 1440, height: 900 } });
-    /* Site Key de TESTE da Cloudflare + dublê do api.js com a mesma interface */
-    await ctx.addInitScript(() => { window.REINO_CAPTCHA = { siteKey: '1x00000000000000000000AA' }; });
-    await ctx.route('https://challenges.cloudflare.com/turnstile/v0/api.js*', (r) => r.fulfill({
-      status: 200, contentType: 'application/javascript',
-      body: `window.turnstile = {
-        render: function (el, opcoes) { this._o = opcoes; return 'dublê'; },
-        execute: function () { var o = this._o; setTimeout(function () { o.callback('XXXX.DUMMY.TOKEN.XXXX'); }, 30); },
-        reset: function () {}, remove: function () {},
-      };`,
-    }));
     await ctx.route('**/rest/v1/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
-    /* C12: a RPC pública saiu do caminho — se alguém a chamar, o teste acusa */
+    await ctx.route('**/auth/v1/user', (r) => r.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ id: '00000000-0000-0000-0000-000000000001', email: 'dono@teste.local', user_metadata: { nome: 'Dono Teste Ourives' } }) }));
+    /* AN: a RPC pública saiu do caminho e o CAPTCHA também — ninguém pode chamar nem um nem outro */
     await ctx.route('**/rest/v1/rpc/usuario_disponivel', (r) => { chamouRpcUsuario++; return r.fulfill({ status: 401, contentType: 'application/json', body: '{}' }); });
     await ctx.route('**/functions/v1/reino-cadastro', (r) => {
-      const tipo = r.request().headers()['content-type'] || '';
-      if (tipo.includes('application/json')) { // checagem de usuário (C12)
-        checagens++;
-        return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, disponivel: true }) });
-      }
       const b = r.request().postDataBuffer();
       enviado = b ? b.toString('latin1') : (r.request().postData() || '');
-      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, confirmar: true, email_mascarado: 'do***@te***.local' }) });
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, access_token: 'DUMMY.TOKEN', reentrou: false }) });
     });
     const p = await ctx.newPage();
     const saco = [];
@@ -78,64 +56,56 @@ function fotoTeste() {
     await p.goto(SITE + '/', { waitUntil: 'domcontentloaded' });
     await p.waitForSelector(PASSO('nome'), { timeout: 60000 });
 
+    /* a tela abre direto no CADASTRO, com só 5 campos a partir de hoje */
+    ok('abre no cadastro', await p.locator('input.hg-li-campo').count() === 1);
+    const rotulo = await p.locator('.hg-li-progresso-rotulo').innerText();
+    ok('primeira etapa: Nome', /1 de 5/i.test(rotulo) && /Nome/i.test(rotulo), rotulo);
+
     const digitar = async (passo, texto) => {
       await p.waitForSelector(PASSO(passo), { timeout: 20000 });
       await p.fill(PASSO(passo), texto);
       await p.press(PASSO(passo), 'Enter');
     };
     await digitar('nome', 'Dono Teste Ourives');
+    await p.waitForSelector(PASSO('whatsapp'), { timeout: 20000 });
+    ok('segunda etapa: WhatsApp (máscara)', /2 de 5/i.test(await p.locator('.hg-li-progresso-rotulo').innerText()));
+    await p.fill(PASSO('whatsapp'), '1191234567');
+    await espera(150);
+    ok('a máscara aplica formato brasileiro', (await p.inputValue(PASSO('whatsapp'))).includes('(11)'), await p.inputValue(PASSO('whatsapp')));
+    await p.press(PASSO('whatsapp'), 'Enter');
+
+    await p.waitForSelector(PASSO('empresa'), { timeout: 20000 });
+    ok('terceira etapa: Empresa', /3 de 5/i.test(await p.locator('.hg-li-progresso-rotulo').innerText()));
     await digitar('empresa', 'Padaria Coroa');
-    await digitar('cnpj', '11222333000181');
-
-    /* a etapa nova */
+    await p.waitForSelector(PASSO('nicho'), { timeout: 20000 });
+    ok('quarta etapa: Nicho', /4 de 5/i.test(await p.locator('.hg-li-progresso-rotulo').innerText()));
+    await digitar('nicho', 'Alimentação');
     await p.waitForSelector(PASSO('cidade'), { timeout: 20000 });
-    ok('a etapa de cidade/UF existe, logo depois do CNPJ', true);
-    ok('a pergunta explica o mapa', /mapa do Reino/i.test(await p.locator('.hg-li-slide[data-passo="cidade"]').innerText()), (await p.locator('.hg-li-slide[data-passo="cidade"]').innerText()).replace(/\n/g, ' ').slice(0, 120));
-    await p.screenshot({ path: PRINTS + '/1-etapa-cidade.png' });
+    ok('quinta etapa: Cidade (última)', /5 de 5/i.test(await p.locator('.hg-li-progresso-rotulo').innerText()));
 
+    await p.fill(PASSO('cidade'), 'Campinae');
+    await p.press(PASSO('cidade'), 'Enter');
+    await espera(300);
+    ok('a cidade ainda é a última etapa (sem ir para resumo/foto)', await p.locator(PASSO('cidade')).isVisible());
     await p.fill(PASSO('cidade'), 'Campinas');
     await p.press(PASSO('cidade'), 'Enter');
-    await espera(300);
-    ok('sem a UF, o cadastro não passa', /UF/i.test(await erroVisivel(p)), await erroVisivel(p));
-
-    await p.fill(PASSO('cidade'), 'Campinazzz, SP');
-    await p.press(PASSO('cidade'), 'Enter');
-    await espera(300);
-    ok('cidade que não existe na UF é recusada', /não achei/i.test(await erroVisivel(p)), await erroVisivel(p));
-
-    await p.fill(PASSO('cidade'), 'campinas sp');
-    await p.press(PASSO('cidade'), 'Enter');
-    await p.waitForSelector('.hg-li-slide[data-passo="foto"]', { timeout: 20000 });
-    ok('"campinas sp" é aceito e vira o nome do IBGE', true);
-
-    /* foto: galeria + recorte, como no e2e-login-imersivo-local */
-    await p.setInputFiles('input[data-foto="galeria"]', fotoTeste());
-    await p.waitForSelector('.hg-li-recorte-quadro img', { timeout: 20000 });
-    await espera(500);
-    await p.keyboard.press('Enter');
-
-    await digitar('email', 'dono.teste@teste.local');
-    await digitar('usuario', 'dono.ourives');
-    await digitar('senha', 'SenhaForte123');
-    await digitar('senha2', 'SenhaForte123');
-    await p.waitForSelector('.hg-li-slide[data-passo="resumo"]', { timeout: 20000 });
-    const resumo = (await p.locator('.hg-li-slide[data-passo="resumo"]').innerText()).replace(/\n/g, ' ');
-    ok('o resumo mostra a cidade e a UF', /Campinas.*SP/.test(resumo), resumo.slice(0, 200));
-    await p.screenshot({ path: PRINTS + '/2-resumo.png' });
-
-    await p.keyboard.press('Enter');
-    /* dá tempo ao CAPTCHA: o script da Cloudflare carrega, o widget executa e só então o cadastro sai */
     for (let i = 0; i < 40 && !enviado; i++) await espera(500);
-    ok('o cadastro envia cidade e uf para o servidor',
-      !!enviado && /name="cidade"[\s\S]{0,80}Campinas/.test(enviado) && /name="uf"[\s\S]{0,80}SP/.test(enviado),
-      enviado ? enviado.replace(/\r?\n/g, ' ').replace(/-{5,}\S+/g, '·').slice(0, 220) : 'nada enviado');
-    /* C2: o token do CAPTCHA acompanha o cadastro */
-    const mToken = enviado && enviado.match(/name="captcha_token"\r?\n\r?\n([^\r\n]+)/);
-    ok('o cadastro envia o token do CAPTCHA', !!(mToken && mToken[1].trim().length > 5), mToken ? mToken[1].slice(0, 12) + '…' : 'sem captcha_token no envio');
-    /* C12: a checagem de usuário passou a ser feita pela função, não pela RPC pública */
-    ok('a checagem de usuário passa pela função reino-cadastro', checagens > 0, 'checagens: ' + checagens);
+
+    /* o que o navegador mandou: só os 5 campos + contexto; nada de usuário/senha/foto/captcha */
+    const corpo = enviado ? enviado.replace(/\r?\n/g, ' ').slice(0, 400) : '(nada enviado)';
+    ok('o cadastro envia os 5 campos para o servidor',
+      !!enviado &&
+      /name="nome"[\s\S]{0,60}Dono Teste/.test(enviado) &&
+      /name="whatsapp"[\s\S]{0,60}119/.test(enviado) &&
+      /name="empresa"[\s\S]{0,60}Padaria Coroa/.test(enviado) &&
+      /name="nicho"[\s\S]{0,60}Alimenta/.test(enviado) &&
+      /name="cidade"[\s\S]{0,80}Campinas/.test(enviado),
+      corpo);
+    ok('não envia usuário, senha, foto ou CAPTCHA',
+      !!enviado && !/name="(usuario|senha|foto|captcha_token)"/.test(enviado), corpo);
     ok('nada mais chama a RPC pública usuario_disponivel', chamouRpcUsuario === 0, 'chamadas: ' + chamouRpcUsuario);
     ok('sem erro de JavaScript', saco.filter((t) => !/Failed to load resource|favicon/i.test(t)).length === 0, saco.join(' | '));
+    await p.screenshot({ path: PRINTS + '/1-fin-cadastro.png' });
     await ctx.close();
   } finally {
     await navegador.close();
