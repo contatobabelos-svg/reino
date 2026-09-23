@@ -107,9 +107,12 @@
   async function reservarCodigo(codigo) {
     const v = await codigoLivre(codigo);
     if (!v.ok) return v;
+    const pai = (window.ReinoAfiliados && window.ReinoAfiliados.paiDaUrl) ? window.ReinoAfiliados.paiDaUrl() : null;
+    const cadeia = (window.ReinoAfiliados && window.ReinoAfiliados.cadeiaDaUrl) ? window.ReinoAfiliados.cadeiaDaUrl() : codigo;
     localStorage.setItem("reino.meuCodigo", v.codigo);
+    if (cadeia) localStorage.setItem("reino.cadeia", cadeia);
     if (sessao && sessao.id) localStorage.setItem("reino.meuCodigo.dono", String(sessao.id));
-    if (CFG() && sessao) { try { await rest("codigos", "POST", [{ codigo: v.codigo, user_id: sessao.id, nome: sessao.nome || null }]); } catch (e) {} }
+    if (CFG() && sessao) { try { await rest("codigos", "POST", [{ codigo: v.codigo, user_id: sessao.id, nome: sessao.nome || null, pai, cadeia }]); } catch (e) {} }
     return { ok: true, codigo: v.codigo };
   }
 
@@ -206,6 +209,7 @@
     /* empresa, CNPJ, cidade/UF e e-mail ficam para Minha conta (AJ2) */
     ["nome", "whatsapp", "usuario", "senha"].forEach((k) => f.append(k, d[k] == null ? "" : String(d[k])));
     if (d.indicadoPor) f.append("indicado_por", d.indicadoPor);
+    if (d.cadeia) f.append("cadeia", d.cadeia);
     if (d.titulo) f.append("titulo", d.titulo);
     /* C6: o contexto da visita vai junto — é o servidor que grava a linha de `cadastros` agora */
     try {

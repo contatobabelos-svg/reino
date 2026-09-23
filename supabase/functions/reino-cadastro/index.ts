@@ -87,11 +87,27 @@ Deno.serve(async (req) => {
   const usuario = limparUsuario(form.get("usuario"));
   const senha = String(form.get("senha") ?? "");
   const indicadoPor = txt("indicado_por").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40) || null;
+  const cadeia = txt("cadeia").toLowerCase().replace(/[^a-z0-9_\/]/g, "").slice(0, 60) || null;
   const foto = form.get("foto");
   const titulo = TITULOS.includes(txt("titulo")) ? txt("titulo") : null; // título escolhido antes (opcional)
   // C6: o clique que trouxe esta pessoa e o aparelho dela — só para a linha de `cadastros`
   const visitaId = UUID_RE.test(txt("visita_id")) ? txt("visita_id") : null;
   const dispositivo = txt("dispositivo") === "celular" ? "celular" : "computador";
+
+  // Determinar o pai e a cadeia completa
+  let pai = null;
+  let cadeiaCompleta = cadeia;
+  if (cadeia && cadeia.includes("/")) {
+    const partes = cadeia.split("/");
+    pai = partes.slice(0, -1).join("/");
+    cadeiaCompleta = cadeia;
+  } else if (indicadoPor && indicadoPor !== AFILIADO_PADRAO) {
+    // indicadoPor sem cadeia = primeiro nível, o pai é o padrão
+    pai = PADRAO();
+    cadeiaCompleta = pai + "/" + indicadoPor;
+  } else {
+    cadeiaCompleta = indicadoPor || AFILIADO_PADRAO;
+  }
 
   // C2 do Parecer 1: limite por IP ANTES de qualquer trabalho (banco, Storage, Auth).
   // 10 cadastros por IP em 5 minutos: nenhuma pessoa real faz isso; um script faz em segundos.
@@ -178,11 +194,23 @@ Deno.serve(async (req) => {
     const { error: eCad } = await admin.from("cadastros").insert({
       id: user.id,
       codigo: indicadoPor || AFILIADO_PADRAO,
+      cadeia: cadeiaCompleta,
+      pai,
       visita_id: visitaId,
       nome, email: null, titulo, cidade: null, uf: null, dispositivo,
       criado_em: new Date().toISOString(),
     });
     if (eCad) console.error("cadastros.insert", eCad);
+  }
+
+  // Registrar o código do afiliado na tabela codigos (se ainda não existir)
+  if (indicadoPor && indicadoPor !== AFILIADO_PADRAO) {
+    try {
+      const { data: codigoExistente } = await admin.from("codigos").select("codigo").eq("codigo", indicadoPor).maybeSingle();
+      if (!codigoExistente) {
+        await admin.from("codigos").insert({ codigo: indicadoPor, user_id: user.id, nome, pai, cadeia: cadeiaCompleta });
+      }
+    } catch (e) { console.warn("[reino-cadastro] codigos.insert", e.message); }
   }
 
   // abre a sessão com a chave SECRETA e o IP real (C5): o Auth conta o limite por pessoa, não pela função

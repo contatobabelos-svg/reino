@@ -267,3 +267,26 @@ Decisão do fundador (pergunta da Vyra): as 77 são **fictícias** e marcadas co
 - [x] AL6 `window.REINO_SUPABASE`/`REINO_GOOGLE`/`REINO_CAPTCHA` saíram do `<script>` solto do `index.html` e viraram `nucleo/config.js`, carregado pelas duas páginas — para nunca ficarem com chaves diferentes
 - [x] AL7 **Decisão do fundador (22/09): trocar a home.** `vercel.json` ganhou `"rewrites": [{ "source": "/", "destination": "/entrar.html" }]` — é *rewrite*, não *redirect*: a barra de endereço continua mostrando só "/", só o conteúdo servido muda. Efeito nos dois pontos que dependiam de "/" ser o `index.html`: (1) **link de afiliado** `?ref=<codigo>` — `servicos/afiliados.js` (registra clique, lê "quem indicou") entrou em `entrar.html`; o dedupe por `sessionStorage.reino.visitaId` já existente evita contar 2 cliques quando o iframe de pré-aquecimento também carrega o `index.html` completo por trás. (2) **e-mail de recuperação de senha** — `recuperarSenha()` manda `redirect_to = origin + "/"`; como `entrar.jsx` já chama `ReinoContas.iniciar()` e repassa `recuperacao`/`erroInicial` pro `LoginImersivo` (mesma lógica que estava só no `App.jsx`), o link do e-mail continua caindo em cima do formulário de nova senha, sem mexer em nada no Supabase Auth nem no template do Resend. (O e-mail de confirmação de cadastro não existe mais desde a AJ1 — só sobrou o de recuperação.)
 - [ ] AL8 Testado local (montar-site.sh + servidor Python): sintaxe de `App.jsx`/`entrar.jsx` conferida com esbuild, `vercel.json` validado como JSON, 200 OK em todo arquivo referenciado nas duas páginas (agora com `afiliados.js` também). **Não testei** um login de verdade ponta a ponta (não tenho credencial de conta real), o handshake `pronto`/`acordar`, nem a *rewrite* do Vercel em si (só o `python -m http.server` local, que não entende `vercel.json`) — o Chrome desta sessão não alcança o localhost da máquina. Falta abrir o site publicado de verdade (ou `vercel dev`) e conferir: "/" abre rápido em `entrar.html`, login normal acorda o Reino sem reload, `?ref=código` ainda credita o afiliado, e o e-mail de "esqueci a senha" ainda cai no formulário certo
+
+## AH — "quero que você primeiro exclua os dados mocados e apos isso, me gere 77 usuarios..." (22/09) — já concluída, não repetir
+
+## AF — "...não ter botao de ir pro brasil. o globo agora é todo clicavel..." (21/09) — já concluída, não repetir
+
+## AG — "...o sistema de chat esta funcional entre os chats?" → "...pode montar e o grupo tambem." (22/09) — já concluída, não repetir
+
+## AH2 — "Ter como alterar o modo mocado para real para fazer um teste real" · "quero que ao alternar os dados falsos sumam" (22/09) — já concluída, não repetir
+
+## AJ — "sistema de login ser mais simples..." (22/09) — já concluída, não repetir
+
+## AK — "Vamos trocar o usuario e senha do adm..." (22/09) — já concluída, não repetir
+
+## AL — pré-aquecimento (22/09) — em andamento
+
+## AM — "o link de afiliado do adm deve mostrar a cadeia hierárquica" (23/09)
+- [x] AM1 Migração `supabase/2026-09-23_afiliados_hierarquia.sql`: colunas `pai` e `cadeia` na tabela `codigos`, gatilho `trigger_cadeia_codigo`, função `privado.cadeia_completa()`
+- [x] AM2 `app/servicos/afiliados.js` atualizado: `cadeiaDaUrl()`, `paiDaUrl()`, `nivelDaUrl()`, `linkDe(cadeia)`, `linkCurtoDe(cadeia)`, `meuLink()` — parse de `/r/<adm>/<afiliado>[/<sub>]`, URL `/r/marcelo/affiliate1`, contexto inclui `cadeia`, `pai`, `nível`
+- [x] AM3 `app/telas/LoginImersivo.jsx` atualizado: `refUrl` lê `cadeiaDaUrl()`, `codigoRef` aceita cadeia, `criarConta` passa `cadeia`, exibição "Cadeia: adm/affiliate1"
+- [x] AM4 `app/servicos/contas.js` atualizado: `reservarCodigo` armazena `pai` e `cadeia`, `cadastrarCompleto` envia `cadeia` ao servidor
+- [x] AM5 `supabase/functions/reino-cadastro/index.ts` atualizado: parse de `cadeia`/`pai`, insert em `cadastros` com `cadeia` e `pai`, auto-registro em `codigos`
+- [ ] AM6 **Publicar (Vyra):** migração aplicada em produção, funções reino-cadastro republishadas, site publicado. Enquanto não sobe, o sistema funciona em modo local (cadeia guardada no localStorage)
+- [ ] AM7 Teste ponta a ponta: adm compartilha `/r/marcelo/affiliate1`, affiliate1 cadastra, admin vê cadeia completa no painel

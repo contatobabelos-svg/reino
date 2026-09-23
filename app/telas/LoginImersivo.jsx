@@ -147,16 +147,17 @@
     const reduzMovimento = React.useMemo(() => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } }, []);
     const ladoRecorte = React.useMemo(() => (window.innerWidth < 480 ? 160 : 176), []);
 
-    /* código de quem indicou: ?ref=, /r/código, localStorage reino.indicadoPor ou colado no resumo */
+    /* código de quem indicou: ?ref=<cadeia>, /r/<cadeia>, localStorage reino.cadeia ou colado no resumo */
     const refUrl = React.useMemo(() => {
       try {
         const A = window.ReinoAfiliados;
-        const c = (A ? A.codigoDaUrl() : "") || sessionStorage.getItem("reino.ref") || new URLSearchParams(location.search).get("ref") || "";
-        return A && A.ehPadrao && A.ehPadrao(c) ? "" : c;
+        const c = (A ? A.cadeiaDaUrl() : "") || sessionStorage.getItem("reino.cadeia") || new URLSearchParams(location.search).get("ref") || "";
+        return A && A.ehPadrao && A.ehPadrao(c.split("/").pop()) ? "" : c;
       } catch (e) { return ""; }
     }, []);
-    const codigoRef = (v) => { const s = String(v || ""); const m = s.match(/[?&]ref=([^&#\s]+)/) || s.match(/\/r\/([A-Za-z0-9_-]+)/); return (m ? decodeURIComponent(m[1]) : s.trim()).toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40); };
-    const codigo = codigoRef(dados.afiliado) || refUrl;
+    const codigoRef = (v) => { const s = String(v || ""); const m = s.match(/[?&]ref=([^&#\s]+)/) || s.match(/\/r\/([A-Za-z0-9_-]+\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*)/); return (m ? decodeURIComponent(m[1]) : s.trim()).toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 60); };
+    const cadeia = codigoRef(dados.afiliado) || refUrl;
+    const codigo = cadeia ? cadeia.split("/").pop() : "";
 
     /* ---------- roteiro de cada modo ---------- */
     const ROTEIRO = {
@@ -493,12 +494,12 @@
       if (faltando) { setErro("Falta preencher: " + ({ nome: "nome", whatsapp: "WhatsApp", empresa: "empresa", cidade: "cidade", nicho: "nicho", usuario: "usuário", senha: "senha", foto: "foto" }[faltando]) + "."); editandoRef.current = true; irPara("cadastro", passos.indexOf(faltando), -1); return; }
       if (dados.senha !== dados.senha2) { editandoRef.current = true; irPara("cadastro", passos.indexOf("senha2"), -1); setTimeout(() => setErro("Confirme a senha de novo."), 0); return; }
       setIndo(true); setErro("");
-      if (codigo) { try { localStorage.setItem("reino.indicadoPor", codigo); sessionStorage.setItem("reino.ref", codigo); } catch (e) { /* sem armazenamento */ } }
+      if (cadeia) { try { localStorage.setItem("reino.indicadoPor", codigo); localStorage.setItem("reino.cadeia", cadeia); sessionStorage.setItem("reino.ref", codigo); sessionStorage.setItem("reino.cadeia", cadeia); } catch (e) { /* sem armazenamento */ } }
       let titulo; try { titulo = localStorage.getItem("reino.tituloEscolhido") || undefined; } catch (e) { titulo = undefined; }
       try {
         // C6 (Parecer 1): a linha de `cadastros` é gravada pelo servidor, dentro da reino-cadastro,
         // depois que a conta existe — o navegador só manda o contexto da visita (contas.js).
-        const r = await C.cadastrarCompleto({ ...dados, foto: foto.blob, indicadoPor: codigo || undefined, titulo });
+        const r = await C.cadastrarCompleto({ ...dados, foto: foto.blob, indicadoPor: codigo || undefined, cadeia: cadeia || undefined, titulo });
         credRef.current = { usuario: dados.usuario, senha: dados.senha };
         if (r.conta) { entrarComConta(r.conta, "Conta criada. Bem-vindo ao Reino, " + primeiroNome(dados.nome) + "."); return; }
         /* conta criada, mas a sessão não abriu: entra pelo login com o que acabou de digitar */
@@ -665,12 +666,12 @@
                       <button type="button" className="hg-li-link" onClick={() => { editandoRef.current = true; irPara("cadastro", passos.indexOf("foto"), -1); }}>trocar foto</button>
                       <div className="hg-li-afiliado">
                         {mostraAfiliado ? (
-                          <label><span>Código ou link de afiliado (opcional)</span>
-                            <input value={dados.afiliado} onChange={(e) => gravar("afiliado", e.target.value)} placeholder={(window.REINO_DOMINIO || location.origin) + "/r/…"} autoComplete="off" />
+                          <label><span>Código ou link de afiliado (formato: <adm>/<seu_codigo>)</span>
+                            <input value={dados.afiliado} onChange={(e) => gravar("afiliado", e.target.value)} placeholder={(window.REINO_DOMINIO || location.origin) + "/r/" + (window.ReinoAfiliados ? window.ReinoAfiliados.paiDaUrl() : "marcelo") + "/seu_codigo"} autoComplete="off" />
                           </label>
                         ) : (
                           <button type="button" className="hg-li-link" onClick={() => setMostraAfiliado(true)}>
-                            {codigo ? "Indicado por " + codigo + " · alterar" : "Tenho um código de afiliado"}
+                            {cadeia ? "Cadeia: " + cadeia + " · alterar" : "Tenho um código de afiliado"}
                           </button>
                         )}
                       </div>
