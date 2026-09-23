@@ -1,18 +1,19 @@
 // Reino · cadastro do login imersivo (AN, 23/09). Recebe multipart/form-data:
-//   nome, whatsapp, empresa, nicho, cidade, indicado_por?, cadeia?, titulo?, visita_id?, dispositivo?
-// Sem foto, sem usuário, sem senha e sem CAPTCHA (decisão do fundador em AN).
-// Empresa, nicho e cidade vão direto para o perfil; reentrada é só pelo WhatsApp.
+//   nome, whatsapp, empresa, nicho, cidade, usuario, senha, indicado_por?, cadeia?, titulo?, visita_id?, dispositivo?
+// Usuário e senha são OBRIGATÓRIOS (pedido do fundador em AN+): a pessoa escolhe os dois no
+// cadastro e depois reentra por eles no "Já tenho conta". Empresa, nicho e cidade vão direto
+// para o perfil; sem foto e sem CAPTCHA (decisão do fundador em AN).
 //
 // Reentrada: se o WhatsApp já tem conta, o sistema reconhece o número, abre a sessão
 // da conta existente (situação que vem do banco — aguardando = demonstração, membro/admin =
-// completo) e atualiza nome/empresa/nicho/cidade que a pessoa redigiu. Não toca em senha:
-// a sessão sai por um magic link gerado e trocado aqui dentro (o ADM segue entrando pelo
-// "Já tenho conta" com usuário e senha).
+// completo), atualiza nome/empresa/nicho/cidade que a pessoa redigiu, e GRAVA o usuário e a
+// senha digitados — é assim que contas antigas (que nasceram com senha aleatória) passam a
+// ter login por usuário+senha. Usuário alheio é barrado; o atual dela pode ser trocado por
+// outro livre. A sessão sai por um magic link gerado e trocado aqui dentro.
 //
-// Sem e-mail no cadastro: a conta nasce no Auth com e-mail INTERNO já confirmado
-// (m-<uuid>@contas.reino.invalid, domínio que nunca recebe mensagem — RFC 2606) e uma senha
-// aleatória que ninguém precisa saber (o acesso é por WhatsApp, as regras em
-// supabase/2026-09-22_...sql e o mock "criar_perfil" gravam a situação "aguardando" até o ADM aprovar).
+// Conta nova nasce com a SENHA DIGITADA (não aleatória) e o usuário nos metadados — o
+// gatilho privado.criar_perfil copia o usuário para perfis.usuario, e o "Já tenho conta"
+// resolve o usuário para o e-mail interno e entra pela senha.
 //
 // Também atende, em JSON (compat — contas antigas reservadas):
 //   POST { acao: "usuario_disponivel", usuario } → { ok: true, disponivel: boolean }
@@ -23,7 +24,7 @@
 // Chamada com a chave publicável (verify_jwt = false no gateway): é cadastro, não há login ainda.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
-  CORS, cidadeValida, empresaValida, ipDe, limparUsuario, nomeValido, normalizarWhatsapp, resposta, usuarioValido,
+  CORS, cidadeValida, empresaValida, ipDe, limparUsuario, nomeValido, normalizarWhatsapp, resposta, senhaValida, usuarioValido,
 } from "../_shared/reino-validar.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -44,14 +45,7 @@ const erro = (codigo: string, mensagem: string, campo?: string, status = 200) =>
 
 const PADRAO = () => AFILIADO_PADRAO;
 
-// senha aleatória forte (o Auth exige senha; ninguém precisa digitar)
-function senhaAleatoria(): string {
-  const bytes = new Uint8Array(18);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"[b % 58]).join("");
-}
-
-// abre a sessão de uma conta existente SEM tocar na senha dela: gera um magic link
+// abre a sessão de uma conta existente SEM tocar nela: gera um magic link
 // (sem enviar e-mail) e o troca aqui por uma sessão. Assim o ADM, que entra por
 // usuário+senha no "Já tenho conta", continua com a senha dele intacta.
 async function abrirSessao(userId: string, ip: string): Promise<{ access_token: string; refresh_token: string; id: string } | null> {
@@ -113,6 +107,8 @@ Deno.serve(async (req) => {
   const empresa = txt("empresa").replace(/\s+/g, " ");
   const nicho = txt("nicho").replace(/\s+/g, " ");
   const cidade = txt("cidade").replace(/\s+/g, " ");
+  const usuario = limparUsuario(form.get("usuario"));
+  const senha = String(form.get("senha") ?? "");
   const indicadoPor = txt("indicado_por").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40) || null;
   const cadeia = txt("cadeia").toLowerCase().replace(/[^a-z0-9_\/]/g, "").slice(0, 60) || null;
   const titulo = TITULOS.includes(txt("titulo")) ? txt("titulo") : null; // título escolhido antes (opcional)
@@ -148,25 +144,51 @@ Deno.serve(async (req) => {
   if (!empresaValida(empresa)) return erro("campo_invalido", "Digite o nome da sua empresa ou negócio.", "empresa");
   if (nicho.length < 2 || nicho.length > 60) return erro("campo_invalido", "Digite o seu nicho (2 a 60 caracteres).", "nicho");
   if (!cidadeValida(cidade)) return erro("campo_invalido", "Digite a sua cidade.", "cidade");
+  if (!usuarioValido(usuario)) return erro("campo_invalido", "Escolha um usuário: só letras minúsculas, números, ponto e sublinhado (3 a 24).", "usuario");
+  if (!senhaValida(senha)) return erro("campo_invalido", "A senha precisa de pelo menos 8 caracteres.", "senha");
+  // o usuário tem de estar livre (a conta própria, na reentrada, não conta como uso)
+  const { data: usuarioLivre, error: eUsu } = await admin.rpc("usuario_disponivel", { p_usuario: usuario });
+  if (eUsu) { console.error("usuario_disponivel", eUsu); return erro("servidor", "Não foi possível conferir o usuário agora. Tente de novo.", undefined, 500); }
+  const usuarioEmUso = usuarioLivre !== true;
 
   // um WhatsApp, uma conta (o índice perfis_whatsapp_unico cobre a corrida entre dois envios)
   const { data: wppJa, error: eWpp } = await admin.rpc("reino_whatsapp_existe", { p_whatsapp: whatsapp });
   if (eWpp) { console.error("reino_whatsapp_existe", eWpp); return erro("servidor", "Não foi possível conferir o WhatsApp agora. Tente de novo.", undefined, 500); }
 
-  const atualizarPerfil = async (id: string) => {
+  // o GoTrue da produção recusa senhas conhecidas/localmente fracas (comum e "pwned"); o app
+  // precisa mostrar isso na etapa da senha, não um 500 genérico
+  const senhaFraca = (e: unknown): boolean => {
+    const s = `${(e as { code?: unknown })?.code ?? ""} ${(e as { message?: unknown })?.message ?? ""} ${(e as { error_code?: unknown })?.error_code ?? ""}`.toLowerCase();
+    return /weak_password|password is known to be weak|too easy to guess|null_password|pwned/i.test(s) || /weak/i.test(s);
+  };
+  const atualizarPerfil = async (id: string, usuarioAtual: string | null): Promise<string | null> => {
     // reentrada: redigitou os dados; atualiza o que era editável e ajunta o título escolhido
     const patch: Record<string, unknown> = { nome, empresa, nicho, cidade };
     if (titulo) patch.titulo = titulo;
+    // o usuário digitado troca o atual só se estiver livre (já conferido antes)
+    if (usuario !== usuarioAtual) patch.usuario = usuario;
     const { error: ePerfil } = await admin.from("perfis").update(patch).eq("id", id);
     if (ePerfil) console.error("perfis.update na reentrada", ePerfil);
+    // a senha digitada vira a senha da conta (é assim que contas antigas passam a relogar por ela)
+    const { error: eSenha } = await admin.auth.admin.updateUserById(id, { password: senha });
+    if (eSenha) {
+      if (senhaFraca(eSenha)) return "Escolha uma senha mais forte para a sua conta. Misture letras, números e símbolos.";
+      console.error("updateUserById (senha) na reentrada", eSenha);
+    }
+    return null;
   };
 
   // ------------------------------------------------------------ reentrada pelo WhatsApp (conta já existe)
   if (wppJa === true) {
-    const { data: ja } = await admin.from("perfis").select("id").eq("whatsapp", whatsapp).maybeSingle();
+    const { data: ja } = await admin.from("perfis").select("id, usuario").eq("whatsapp", whatsapp).maybeSingle();
     if (!ja) { console.error("whatsapp sem perfil?", whatsapp); return erro("servidor", "Não foi possível reconhecer seu WhatsApp agora. Tente de novo.", undefined, 500); }
     const id = ja.id as string;
-    await atualizarPerfil(id);
+    // o usuário digitado pertence a outra conta: pede outro (o dela continua valendo)
+    if (usuarioEmUso && usuario !== (ja.usuario ?? null)) {
+      return erro("usuario_em_uso", "Esse usuário já pertence a outra conta. Escolha outro.", "usuario");
+    }
+    const msgSenha = await atualizarPerfil(id, ja.usuario ?? null);
+    if (msgSenha) return erro("senha_fraca", msgSenha, "senha");
     // a linha de afiliação nasce no cadastro; na reentrada só se faltou (conta pré-hierarquia)
     const { data: linha } = await admin.from("cadastros").select("id").eq("id", id).maybeSingle();
     if (!linha) {
@@ -182,29 +204,33 @@ Deno.serve(async (req) => {
   }
 
   // ---------------------------------------------------------------- conta nova (situacao "aguardando")
+  if (usuarioEmUso) return erro("usuario_em_uso", "Esse usuário já está em uso. Escolha outro.", "usuario");
   const emailInterno = `m-${crypto.randomUUID()}@contas.reino.invalid`;
-  const senha = senhaAleatoria();
   const { data, error } = await admin.auth.admin.createUser({
     email: emailInterno, password: senha, email_confirm: true,
-    user_metadata: { nome, whatsapp, empresa, nicho, cidade, titulo, indicado_por: indicadoPor },
+    user_metadata: { nome, whatsapp, empresa, nicho, cidade, usuario, titulo, indicado_por: indicadoPor },
   });
   if (error) {
     const m = `${error.code || ""} ${error.message || ""}`;
+    if (senhaFraca(error)) return erro("senha_fraca", "Escolha uma senha mais forte. Misture letras, números e símbolos.", "senha");
     if (/database error/i.test(m)) {
-      // o banco recusou o perfil: o WhatsApp acabou de ser ocupado por outro envio
+      // o banco recusou o perfil: o WhatsApp ou o usuário acabaram de ser ocupados por outro envio
       const { data: wppAgora } = await admin.rpc("reino_whatsapp_existe", { p_whatsapp: whatsapp });
       if (wppAgora === true) return erro("whatsapp_em_uso", "Esse WhatsApp acabou de ser cadastrado. Se a conta é sua, digite os dados de novo que a gente reconhece.", "whatsapp");
+      const { data: usuAgora } = await admin.rpc("usuario_disponivel", { p_usuario: usuario });
+      if (usuAgora !== true) return erro("usuario_em_uso", "Esse usuário já está em uso. Escolha outro.", "usuario");
       return erro("servidor", "Não foi possível criar a conta agora. Tente de novo.", undefined, 500);
     }
     console.error("createUser", error);
     return erro("servidor", "Não foi possível criar a conta agora. Tente de novo.", undefined, 500);
   }
   const user = data.user;
-  // o gatilho ao_criar_usuario grava o perfil; confere o WhatsApp e desfaz a conta se o índice barrou
-  const { data: perfil } = await admin.from("perfis").select("whatsapp").eq("id", user.id).maybeSingle();
-  if (!perfil || perfil.whatsapp !== whatsapp) {
+  // o gatilho ao_criar_usuario grava o perfil; confere WhatsApp e usuário e desfaz se algum índice barrou
+  const { data: perfil } = await admin.from("perfis").select("whatsapp, usuario").eq("id", user.id).maybeSingle();
+  if (!perfil || perfil.whatsapp !== whatsapp || (perfil.usuario ?? null) !== usuario) {
     console.error("perfil incompleto após createUser", user.id, perfil);
     await admin.auth.admin.deleteUser(user.id).catch(() => {});
+    if (perfil && perfil.whatsapp === whatsapp) return erro("usuario_em_uso", "Esse usuário já está em uso. Escolha outro.", "usuario");
     return erro("servidor", "Não foi possível criar a conta agora. Tente de novo.", undefined, 500);
   }
 
@@ -238,7 +264,7 @@ Deno.serve(async (req) => {
   const servidor = createClient(SUPABASE_URL, SECRETA, { ...sem, global: { headers: { "Sb-Forwarded-For": ip } } });
   const { data: ses, error: eSes } = await servidor.auth.signInWithPassword({ email: emailInterno, password: senha });
   if (eSes || !ses?.session) {
-    // a conta existe com senha aleatória desconhecida; é ela que o magic link da próxima reentrada abre
+    // a conta existe com a senha digitada; se o signIn falhou, a próxima reentrada (magic link) resolve
     console.error("signIn após cadastro", eSes);
     return erro("servidor", "Não foi possível abrir a sua conta agora. Digite os dados de novo.", undefined, 500);
   }

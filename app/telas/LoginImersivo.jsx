@@ -1,13 +1,13 @@
 /* LoginImersivo — entrada do Reino no estilo da barra de comando do Babel OS (TODO W).
    Nada de caixa: fundo "Reino Animado" em tela cheia, conversa com bolhas e uma barra de
    comando embaixo, uma pergunta por vez.
-   - Sempre abre no CADASTRO, simples desde AN (23/09): nome → WhatsApp → empresa → nicho →
-     cidade. Só de enviar os 5 campos a pessoa entra: se o WhatsApp ainda não tem conta, cria
-     (situação "aguardando", demonstração até o ADM aprovar); se já tem, o servidor reconhece
-     o número e reentra com a conta existente. Sem foto, sem usuário, sem senha e sem CAPTCHA.
-     A cadeia do afiliado vem do link (?ref= ou /r/...) sem precisar digitar.
+   - Sempre abre no CADASTRO: nome → WhatsApp → empresa → nicho → cidade → usuário → senha
+     (repetida, para relogar por eles depois). Todos obrigatórios. Ao terminar a pessoa já
+     entra: se o WhatsApp ainda não tem conta, cria (situação "aguardando", demonstração até o
+     ADM aprovar); se já tem, o servidor reconhece o número e reentra com a conta existente.
+     Sem foto e sem CAPTCHA. A cadeia do afiliado vem do link (?ref= ou /r/...) sem precisar digitar.
    - "Já tenho conta": usuário → enviar → senha → enviar (aceita o e-mail no lugar do usuário,
-     porque contas antigas não têm usuário). Função reino-login — é por ali que o ADM entra.
+      porque contas antigas não têm usuário). Função reino-login — é por ali que o ADM entra.
    - E-mail não validado (no login com a senha certa): "valide seu e-mail", e-mail mascarado,
      reenviar e a lista Gmail / Yahoo / Outlook (nova aba).
    - Também cobre "esqueci a senha" e "nova senha" (link do e-mail), como o PortalLogin.
@@ -66,7 +66,7 @@
     const [modo, setModo] = React.useState(recuperacao ? "nova-senha" : "cadastro");
     const [etapa, setEtapa] = React.useState(0);
     const [dir, setDir] = React.useState(1);
-    const [dados, setDados] = React.useState({ nome: "", whatsapp: "", empresa: "", nicho: "", cidade: "" });
+    const [dados, setDados] = React.useState({ nome: "", whatsapp: "", empresa: "", nicho: "", cidade: "", usuario: "", senha: "" });
     const [texto, setTexto] = React.useState("");
     const [ver, setVer] = React.useState(false);
     const [erro, setErro] = React.useState(erroInicial || "");
@@ -97,10 +97,11 @@
     const codigo = cadeia ? cadeia.split("/").pop() : "";
 
     /* ---------- roteiro de cada modo ----------
-       AN: cadastro são só 5 campos; depois da cidade a conta é criada e a pessoa entra
+       AN+: cadastro são 7 campos (nome, WhatsApp, empresa, nicho, cidade, usuário, senha com
+       confirmação); depois da senha a conta é criada e a pessoa entra
        (demonstração/aguardando até o ADM aprovar). */
     const ROTEIRO = {
-      cadastro: ["nome", "whatsapp", "empresa", "nicho", "cidade"],
+      cadastro: ["nome", "whatsapp", "empresa", "nicho", "cidade", "usuario", "senha", "senha2"],
       entrar: ["l-usuario", "l-senha"],
       esqueci: ["e-email"],
       "nova-senha": ["n-senha", "n-senha2"],
@@ -115,6 +116,9 @@
       empresa: { chave: "empresa", auto: "organization", ph: "Sua empresa ou negócio", rotulo: "Empresa" },
       nicho: { chave: "nicho", auto: "off", ph: "Ex: tecnologia, saúde, educação", rotulo: "Nicho" },
       cidade: { chave: "cidade", auto: "address-level2", ph: "Sua cidade", rotulo: "Cidade" },
+      usuario: { chave: "usuario", auto: "username", ph: "Usuário (letras e números)", rotulo: "Usuário" },
+      senha: { chave: "senha", auto: "new-password", ph: "Senha (mínimo de 8)", rotulo: "Senha" },
+      "senha2": { chave: "senha2", auto: "new-password", ph: "Repita a senha", rotulo: "Confirmação" },
       "l-usuario": { chave: "l-usuario", auto: "username", ph: "Usuário ou e-mail", rotulo: "Usuário ou e-mail" },
       "l-senha": { chave: "l-senha", auto: "current-password", ph: "Sua senha", rotulo: "Senha" },
       "e-email": { chave: "e-email", auto: "email", ph: "E-mail da sua conta", tipo: "email", modo: "email", rotulo: "E-mail" },
@@ -131,6 +135,9 @@
         case "empresa": return ["Qual é a sua empresa ou negócio?", "Você pode mudar isso depois."];
         case "nicho": return ["Qual é o seu nicho?", "Tecnologia, saúde, educação, etc. Também dá para mudar depois."];
         case "cidade": return ["Qual é a sua cidade?", "Usamos para conectar você com pessoas próximas."];
+        case "usuario": return ["Escolha um usuário para entrar depois.", "Só letras minúsculas, números, ponto e sublinhado (mínimo de 3)."];
+        case "senha": return ["Crie a sua senha (mínimo de 8 caracteres).", "Você vai usá-la para entrar depois de sair."];
+        case "senha2": return ["Repita a senha."];
         case "l-usuario": return ["Bem-vindo de volta ao Reino.", "Qual é o seu usuário? Se a conta é antiga, pode usar o e-mail."];
         case "l-senha": return ["Agora a sua senha."];
         case "e-email": return ["Sem problema. Se a sua conta tem e-mail, digite abaixo e mandamos um link para criar uma nova senha.", "Criou a conta só com WhatsApp? Peça a troca de senha a um administrador do Reino."];
@@ -164,7 +171,8 @@
     React.useLayoutEffect(() => {
       const k = CAMPO && CAMPO.chave;
       if (!k) { setTexto(""); return; }
-      if (k === "whatsapp") setTexto(mascaraWhatsapp(dados.whatsapp));
+      if (/senha/.test(passo)) setTexto(""); // senha nunca volta preenchida
+      else if (k === "whatsapp") setTexto(mascaraWhatsapp(dados.whatsapp));
       else if (k in dados) setTexto(dados[k]);
       else if (k === "l-usuario") setTexto(credRef.current.usuario);
       else setTexto("");
@@ -251,9 +259,22 @@
           const c = v.trim();
           if (!c) return setErro("Digite sua cidade.");
           if (c.length < 2) return setErro("Mínimo de 2 caracteres.");
-          gravar("cidade", c); disparaOnda();
-          /* última etapa do cadastro (AN): os 5 campos prontos, a conta é criada e a pessoa entra */
-          return criarConta({ cidade: c });
+          gravar("cidade", c); disparaOnda(); return avancar();
+        }
+        case "usuario": {
+          const u = v.trim().toLowerCase();
+          if (!u) return setErro("Escolha um usuário para entrar depois.");
+          if (!USUARIO_RE.test(u)) return setErro("Use só letras minúsculas, números, ponto e sublinhado (3 a 24).");
+          if (["admin", "administrador", "adm", "root", "reino", "babel", "babelos", "suporte", "ajuda", "teste", "oficial", "moderador"].includes(u)) return setErro("Esse usuário não pode ser usado. Escolha outro.");
+          gravar("usuario", u); disparaOnda(); return avancar();
+        }
+        case "senha": {
+          if (texto.length < 8) return setErro("A senha precisa de pelo menos 8 caracteres.");
+          gravar("senha", texto); disparaOnda(); return avancar();
+        }
+        case "senha2": {
+          if (texto !== dados.senha) return setErro("As duas senhas não são iguais.");
+          disparaOnda(); return criarConta();
         }
         case "l-usuario": {
           const u = v.toLowerCase();
@@ -325,16 +346,16 @@
       setIndo(false);
     }
 
-async function criarConta(extra) {
-      const d = { ...dados, ...(extra || {}) };
-      const faltando = ["nome", "whatsapp", "empresa", "nicho", "cidade"].find((k) => !d[k]);
-      if (faltando) { setErro("Falta preencher: " + ({ nome: "nome", whatsapp: "WhatsApp", empresa: "empresa", nicho: "nicho", cidade: "cidade" }[faltando]) + "."); editandoRef.current = true; irPara("cadastro", passos.indexOf(faltando), -1); return; }
+async function criarConta() {
+      const d = dados;
+      const faltando = ["nome", "whatsapp", "empresa", "nicho", "cidade", "usuario", "senha"].find((k) => !d[k]);
+      if (faltando) { setErro("Falta preencher: " + ({ nome: "nome", whatsapp: "WhatsApp", empresa: "empresa", nicho: "nicho", cidade: "cidade", usuario: "usuário", senha: "senha" }[faltando]) + "."); editandoRef.current = true; irPara("cadastro", passos.indexOf(faltando), -1); return; }
       setIndo(true); setErro("");
       if (cadeia) { try { localStorage.setItem("reino.indicadoPor", codigo); localStorage.setItem("reino.cadeia", cadeia); sessionStorage.setItem("reino.ref", codigo); sessionStorage.setItem("reino.cadeia", cadeia); } catch (e) { /* sem armazenamento */ } }
       let titulo; try { titulo = localStorage.getItem("reino.tituloEscolhido") || undefined; } catch (e) { titulo = undefined; }
       try {
-        /* AN: só os 5 campos; o servidor cria a conta (aguardando) ou reentra pelo WhatsApp
-           e devolve a sessão aberta — a pessoa entra como demonstração na hora. */
+        /* os 7 campos prontos (nome → … → senha): o servidor cria a conta (aguardando) ou reentra
+           pelo WhatsApp e devolve a sessão aberta — a pessoa entra como demonstração na hora. */
         const r = await C.cadastrarCompleto({ ...d, indicadoPor: codigo || undefined, cadeia: cadeia || undefined, titulo });
         if (r.conta) {
           const nome = primeiroNome(d.nome);
@@ -409,15 +430,15 @@ async function criarConta(extra) {
     const bolhas = pergunta();
     const ant = anterior();
     const progresso = modo === "cadastro" ? 1 : -1;
-    const ROTULOS = ["Nome", "WhatsApp", "Empresa", "Nicho", "Cidade"];
+    const ROTULOS = ["Nome", "WhatsApp", "Empresa", "Nicho", "Cidade", "Usuário", "Senha"];
     const TOTAL = ROTULOS.length;
-    const passoCadastroIdx = { nome: 0, whatsapp: 1, empresa: 2, nicho: 3, cidade: 4 }[passo];
+    const passoCadastroIdx = { nome: 0, whatsapp: 1, empresa: 2, nicho: 3, cidade: 4, usuario: 5, senha: 6, senha2: 6 }[passo];
     const semCampo = passo === "validar";
     const podeVoltar = !saindo && (etapa > 0 || modo === "entrar" || modo === "esqueci");
     const vazio = semCampo ? false : !texto.trim();
     const rotuloEnviar = indo ? "Aguarde" : passo === "validar" ? "Já validei, entrar" : passo === "l-senha" ? "Entrar" : "Enviar";
     const dica = {
-      cadastro: "Enter envia · Esc volta uma etapa · depois da cidade você entra",
+      cadastro: "Enter envia · Esc volta uma etapa · depois da senha você entra",
       entrar: passo === "l-usuario" ? "Enter envia · use seu usuário ou o e-mail da conta" : "Enter envia · o olho mostra o que você digitou",
       esqueci: "Enter envia · Esc volta",
       "nova-senha": "Enter envia · o olho mostra o que você digitou",

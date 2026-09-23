@@ -1,12 +1,13 @@
-// Teste de ponta a ponta do cadastro simples (desde AN, 23/09: nome → WhatsApp → empresa →
-// nicho → cidade) e da apresentação das abas contra o Supabase LOCAL (nunca produção).
+// Teste de ponta a ponta do cadastro (desde AN+, 23/09: nome → WhatsApp → empresa → nicho →
+// cidade → usuário → senha (repetida)) e da apresentação das abas contra o Supabase LOCAL
+// (nunca produção).
 // Pré-requisitos (ver README.md desta pasta):
 //   supabase start -x studio,imgproxy,logflare,vector,supavisor,realtime,postgres-meta
 //   migrações 2026-09-22_cadastro_simples_whatsapp.sql, 2026-09-23_afiliados_hierarquia.sql e
 //   2026-09-23_cadastro_5campos.sql aplicadas no banco local
 //   supabase functions serve --env-file supabase/functions/.env   (sem CAPTCHA desde AN)
 // Uso: node supabase/testes/e2e-cadastro-simples-local.cjs
-//   REINO_TESTE_PRINTS=/pasta/fora/do/git  (padrão /tmp/claude-1000/reino-cadastro-simples-prints)
+//   REINO_TESTE_PRINTS=/pasta/fora/do/git  (padrão /tmp/claude-1000/reino-cadastro-prints)
 const PW = process.env.REINO_PLAYWRIGHT || '/home/marcos/.npm/_npx/e41f203b7505f1fb/node_modules/playwright';
 const { chromium } = require(PW);
 const { execSync, spawn } = require('child_process');
@@ -87,12 +88,12 @@ async function fluxo(b, [w, h], rotulo) {
   const numero = `9${String(Date.now()).slice(-8)}`;
   const whatsapp = `+55${ddd}${numero}`;
   // ---- primeiro cadastro (cria a conta) ----
-  await cadastroUnico(b, [w, h], rotulo, whatsapp, 'Maria Teste Simples', 'Padaria Simples', 'Alimentação', 'Campinas');
+  await cadastroUnico(b, [w, h], rotulo, whatsapp, 'Maria Teste Simples', 'Padaria Simples', 'Alimentação', 'Campinas', 'mariasimples' + n, 'Teste1234');
   // ---- reentrada pelo WhatsApp (reconhece e atualiza; não cria outra conta) ----
-  await reentrada(b, [w, h], rotulo, whatsapp);
+  await reentrada(b, [w, h], rotulo, whatsapp, 'mariareentra' + n, 'OutraSenha1');
 }
 
-async function cadastroUnico(b, [w, h], rotulo, whatsapp, nome, empresa, nicho, cidade) {
+async function cadastroUnico(b, [w, h], rotulo, whatsapp, nome, empresa, nicho, cidade, usuario, senha) {
   const ctx = await b.newContext({ viewport: { width: w, height: h }, hasTouch: w < 500 });
   const p = await ctx.newPage();
   const erros = [];
@@ -101,7 +102,7 @@ async function cadastroUnico(b, [w, h], rotulo, whatsapp, nome, empresa, nicho, 
   await p.goto(SITE + '/', { waitUntil: 'networkidle' });
   await p.waitForSelector(PASSO('nome'), { timeout: 15000 });
   await p.waitForTimeout(800);
-  ok(`[${rotulo}] abre no cadastro, etapa 1 de 5`, (await p.locator('.hg-li-progresso-rotulo').textContent()).includes('1 de 5'));
+  ok(`[${rotulo}] abre no cadastro, etapa 1 de 7`, (await p.locator('.hg-li-progresso-rotulo').textContent()).includes('1 de 7'));
   await digitarEnviar(p, nome);
   await p.waitForSelector(PASSO('whatsapp'));
   ok(`[${rotulo}] depois do nome vem o WhatsApp`, true);
@@ -120,17 +121,36 @@ async function cadastroUnico(b, [w, h], rotulo, whatsapp, nome, empresa, nicho, 
   ok(`[${rotulo}] depois da empresa vem o nicho`, true);
   await digitarEnviar(p, nicho);
   await p.waitForSelector(PASSO('cidade'));
-  ok(`[${rotulo}] depois do nicho vem a cidade (última etapa, sem resumo)`,
-    /5 de 5/i.test(await p.locator('.hg-li-progresso-rotulo').textContent()));
+  ok(`[${rotulo}] depois do nicho vem a cidade (etapa 5 de 7)`,
+    /5 de 7/i.test(await p.locator('.hg-li-progresso-rotulo').textContent()));
   await p.waitForTimeout(1500);
   await p.screenshot({ path: `${PRINTS}/${rotulo}-02-cidade.png` });
   await digitarEnviar(p, cidade);
+  await p.waitForSelector(PASSO('usuario'));
+  ok(`[${rotulo}] depois da cidade vem o usuário (etapa 6 de 7)`,
+    /6 de 7/i.test(await p.locator('.hg-li-progresso-rotulo').textContent()));
+  await digitarEnviar(p, usuario);
+  await p.waitForSelector(PASSO('senha'));
+  ok(`[${rotulo}] depois do usuário vem a senha (etapa 7 de 7)`,
+    /7 de 7/i.test(await p.locator('.hg-li-progresso-rotulo').textContent()));
+  await digitarEnviar(p, 'curta');
+  ok(`[${rotulo}] senha curta bloqueia`, /8 caracteres/i.test(await erroVisivel(p)));
+  await p.keyboard.press('Control+A'); await p.keyboard.press('Backspace');
+  await p.keyboard.type(senha, { delay: 8 });
+  await p.keyboard.press('Enter');
+  await p.waitForSelector(PASSO('senha2'));
+  ok(`[${rotulo}] senha pede confirmação`, true);
+  await digitarEnviar(p, senha + 'diferente');
+  ok(`[${rotulo}] senhas diferentes bloqueiam`, /não são iguais/i.test(await erroVisivel(p)));
+  await p.keyboard.press('Control+A'); await p.keyboard.press('Backspace');
+  await p.keyboard.type(senha, { delay: 8 });
+  await p.keyboard.press('Enter');
   await p.waitForSelector('.hg-main', { timeout: 20000 });
   ok(`[${rotulo}] entra direto no app, sem validar e-mail`, true);
 
-  const linha = psql(`select coalesce(email,'∅')||'|'||whatsapp||'|'||empresa||'|'||nicho||'|'||cidade||'|'||situacao||'|'||(usuario is not null)||'|'||(foto is not null) from public.perfis where whatsapp='${whatsapp}'`);
-  ok(`[${rotulo}] perfil: sem e-mail, sem usuário/senha/foto, com dados e aguardando`,
-    linha === `∅|${whatsapp}|${empresa}|${nicho}|${cidade}|aguardando|false|false`, linha);
+  const linha = psql(`select coalesce(email,'∅')||'|'||whatsapp||'|'||empresa||'|'||nicho||'|'||cidade||'|'||situacao||'|'||coalesce(usuario,'∅')||'|'||(foto is not null) from public.perfis where whatsapp='${whatsapp}'`);
+  ok(`[${rotulo}] perfil: sem e-mail, com usuário, sem foto, com dados e aguardando`,
+    linha === `∅|${whatsapp}|${empresa}|${nicho}|${cidade}|aguardando|${usuario}|false`, linha);
   // a linha de cadastro nasce com a cadeia do afiliado padrão
   const cad = psql(`select codigo||'|'||coalesce(cadeia,'∅')||'|'||nome from public.cadastros where id in (select id from public.perfis where whatsapp='${whatsapp}')`);
   ok(`[${rotulo}] linha de cadastro nasce com afiliado padrão (cadeia sem pai)`, cad === 'marcelo|marcelo|' + nome, cad);
@@ -183,14 +203,14 @@ async function cadastroUnico(b, [w, h], rotulo, whatsapp, nome, empresa, nicho, 
   await ctx.close();
 }
 
-async function reentrada(b, [w, h], rotulo, whatsapp) {
+async function reentrada(b, [w, h], rotulo, whatsapp, usuario, senha) {
   const ctx = await b.newContext({ viewport: { width: w, height: h }, hasTouch: w < 500 });
   const p = await ctx.newPage();
   const erros = [];
   p.on('pageerror', (e) => erros.push('pageerror ' + e.message));
   const contasAntes = Number(psql(`select count(*) from public.perfis`));
 
-  // volta para o login (deslogado) e redigita os 5 campos com o MESMO WhatsApp
+  // volta para o login (deslogado) e redigita os 7 campos com o MESMO WhatsApp
   await p.goto(SITE + '/', { waitUntil: 'networkidle' });
   await p.keyboard.press('Control+Shift+R');
   await p.waitForTimeout(400);
@@ -207,6 +227,12 @@ async function reentrada(b, [w, h], rotulo, whatsapp) {
   await digitarEnviar(p, 'Consultoria');
   await p.waitForSelector(PASSO('cidade'));
   await digitarEnviar(p, 'São Paulo');
+  await p.waitForSelector(PASSO('usuario'));
+  await digitarEnviar(p, usuario);
+  await p.waitForSelector(PASSO('senha'));
+  await digitarEnviar(p, senha);
+  await p.waitForSelector(PASSO('senha2'));
+  await digitarEnviar(p, senha);
   // o "Bem-vindo de volta" aparece na bolha do login antes da transição para o app
   let msg = '';
   for (let i = 0; i < 60 && !msg; i++) {
@@ -228,8 +254,27 @@ async function reentrada(b, [w, h], rotulo, whatsapp) {
 
   const contasDepois = Number(psql(`select count(*) from public.perfis`));
   ok(`[${rotulo}] reentrada: não cria outra conta`, contasDepois === contasAntes, `${contasAntes} → ${contasDepois}`);
-  const linha = psql(`select nome||'|'||empresa||'|'||nicho||'|'||cidade||'|'||situacao from public.perfis where whatsapp='${whatsapp}'`);
-  ok(`[${rotulo}] reentrada: dados atualizados no perfil`, linha === 'Maria Teste Renomeada|Empresa Nova|Consultoria|São Paulo|aguardando', linha);
+  const linha = psql(`select nome||'|'||empresa||'|'||nicho||'|'||cidade||'|'||situacao||'|'||usuario from public.perfis where whatsapp='${whatsapp}'`);
+  ok(`[${rotulo}] reentrada: dados atualizados no perfil (usuário também)`, linha === `Maria Teste Renomeada|Empresa Nova|Consultoria|São Paulo|aguardando|${usuario}`, linha);
+  // e o login por usuário+senha abre a MESMA conta (relogar depois de sair)
+  await p.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (e) {} });
+  await p.reload({ waitUntil: 'networkidle' });
+  await p.waitForSelector(PASSO('nome'), { timeout: 15000 });
+  await p.click('.hg-li-pilula'); // Já tenho conta
+  await p.waitForSelector(PASSO('l-usuario'));
+  await digitarEnviar(p, usuario);
+  await p.waitForSelector(PASSO('l-senha'));
+  await digitarEnviar(p, senha);
+  await p.waitForSelector('.hg-main', { timeout: 20000 });
+  ok(`[${rotulo}] relogar por usuário+senha entra na mesma conta`, true);
+  let nomeLogado = '';
+  try {
+    await p.waitForFunction(() => { const u = document.querySelector('.hg-user'); return !!u && /Maria/i.test(u.textContent || ''); }, null, { timeout: 8000 });
+    nomeLogado = await p.evaluate(() => { const u = document.querySelector('.hg-user'); return u ? u.textContent : ''; }).catch(() => '');
+  } catch (e) {
+    nomeLogado = await p.evaluate(() => { const u = document.querySelector('.hg-user'); return u ? u.textContent : ''; }).catch(() => '(sem .hg-user)');
+  }
+  ok(`[${rotulo}] usuário logado corresponde à conta`, /Maria/i.test(nomeLogado), nomeLogado);
   await p.screenshot({ path: `${PRINTS}/${rotulo}-05-reentrada.png` });
   ok(`[${rotulo}] reentrada: sem erro de página`, erros.length === 0, erros.join(' | '));
   await ctx.close();

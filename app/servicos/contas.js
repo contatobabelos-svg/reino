@@ -192,11 +192,11 @@
     }
     throw erroFuncao(j, "Usuário ou senha não conferem.");
   }
-  /* cadastro simples (AN): { nome, whatsapp, empresa, nicho, cidade, indicadoPor?, titulo? }
+  /* cadastro (AN+): { nome, whatsapp, empresa, nicho, cidade, usuario, senha, indicadoPor?, titulo? }
      → { conta } — a reino-cadastro cria (aguardando) ou reentra (reconhece o WhatsApp) e abre a sessão */
   async function cadastrarCompleto(d) {
     const f = new FormData();
-    ["nome", "whatsapp", "empresa", "nicho", "cidade"].forEach((k) => f.append(k, d[k] == null ? "" : String(d[k])));
+    ["nome", "whatsapp", "empresa", "nicho", "cidade", "usuario", "senha"].forEach((k) => f.append(k, d[k] == null ? "" : String(d[k])));
     if (d.indicadoPor) f.append("indicado_por", d.indicadoPor);
     if (d.cadeia) f.append("cadeia", d.cadeia);
     if (d.titulo) f.append("titulo", d.titulo);
