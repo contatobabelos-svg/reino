@@ -666,7 +666,7 @@
                       <button type="button" className="hg-li-link" onClick={() => { editandoRef.current = true; irPara("cadastro", passos.indexOf("foto"), -1); }}>trocar foto</button>
                       <div className="hg-li-afiliado">
                         {mostraAfiliado ? (
-                          <label><span>Código ou link de afiliado (formato: <adm>/<seu_codigo>)</span>
+                          <label><span>Código ou link de afiliado (formato: {"<adm>/<seu_codigo>"})</span>
                             <input value={dados.afiliado} onChange={(e) => gravar("afiliado", e.target.value)} placeholder={(window.REINO_DOMINIO || location.origin) + "/r/" + (window.ReinoAfiliados ? window.ReinoAfiliados.paiDaUrl() : "marcelo") + "/seu_codigo"} autoComplete="off" />
                           </label>
                         ) : (
