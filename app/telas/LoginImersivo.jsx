@@ -63,11 +63,7 @@
     const Icon = DS.Icon;
     const C = window.ReinoContas;
 
-    const [modo, setModo] = React.useState(
-      recuperacao ? "nova-senha"
-        : new URLSearchParams(location.search).get("modo") === "login" ? "entrar"
-        : "cadastro"
-    );
+    const [modo, setModo] = React.useState(recuperacao ? "nova-senha" : "cadastro");
     const [etapa, setEtapa] = React.useState(0);
     const [dir, setDir] = React.useState(1);
     const [dados, setDados] = React.useState({ nome: "", whatsapp: "", empresa: "", nicho: "", cidade: "", usuario: "", senha: "" });
