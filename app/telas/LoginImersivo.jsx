@@ -1,12 +1,13 @@
 /* LoginImersivo — entrada do Reino no estilo da barra de comando do Babel OS (TODO W).
    Nada de caixa: fundo "Reino Animado" em tela cheia, conversa com bolhas e uma barra de
    comando embaixo, uma pergunta por vez.
-   - Sempre abre no CADASTRO: nome → WhatsApp → empresa → nicho → cidade → usuário → senha
-     (repetida, para relogar por eles depois). Todos obrigatórios. Ao terminar a pessoa já
-     entra: se o WhatsApp ainda não tem conta, cria (situação "aguardando", demonstração até o
-     ADM aprovar); se já tem, o servidor reconhece o número e reentra com a conta existente.
-     Sem foto e sem CAPTCHA. A cadeia do afiliado vem do link (?ref= ou /r/...) sem precisar digitar.
-   - "Já tenho conta": usuário → enviar → senha → enviar (aceita o e-mail no lugar do usuário,
+- A primeira tela oferece a escolha: "Fazer cadastro" ou "Já tenho conta".
+    - Kadastro: nome → WhatsApp → empresa → nicho → cidade → usuário → senha
+      (repetida, para relogar por eles depois). Todos obrigatórios. Ao terminar a pessoa já
+      entra: se o WhatsApp ainda não tem conta, cria (situação "aguardando", demonstração até o
+      ADM aprovar); se já tem, o servidor reconhece o número e reentra com a conta existente.
+      Sem foto e sem CAPTCHA. A cadeia do afiliado vem do link (?ref= ou /r/...) sem precisar digitar.
+    - "Já tenho conta": usuário → enviar → senha → enviar (aceita o e-mail no lugar do usuário,
       porque contas antigas não têm usuário). Função reino-login — é por ali que o ADM entra.
    - E-mail não validado (no login com a senha certa): "valide seu e-mail", e-mail mascarado,
      reenviar e a lista Gmail / Yahoo / Outlook (nova aba).
@@ -17,6 +18,7 @@
   const ASSETS = {
     reservaVideo: { webm: "assets/login/fundo-login.webm?v=juntos7", mp4: "assets/login/fundo-login.mp4?v=juntos7" },
     reservaImagem: "assets/login/fundo-login-final.jpg",
+    musica: "assets/login/fundo-musica.mp3",
   };
   const CORREIOS = [
     { nome: "Gmail", url: "https://mail.google.com", letra: "G" },
@@ -41,6 +43,9 @@
   const IcOlhoFechado = () => <Svg><path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></Svg>;
   const IcReenviar = () => <Svg><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5" /></Svg>;
   const IcSeta = () => <Svg size={16}><path d="M5 12h14M13 6l6 6-6 6" /></Svg>;
+  const IcCadastro = () => <Svg size={20}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></Svg>;
+  const IcSom = () => <Svg><path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 6a9 9 0 0 1 0 12" /></Svg>;
+  const IcSomOff = () => <Svg><path d="M11 5 6 9H2v6h4l5 4z" /><path d="m23 9-6 6M17 9l6 6" /></Svg>;
   const IcGiro = () => <span className="hg-li-giro" aria-hidden="true" />;
 
   /* ---------------------------------------------------------------- fundo de reserva (vídeo antigo) */
@@ -63,7 +68,7 @@
     const Icon = DS.Icon;
     const C = window.ReinoContas;
 
-    const [modo, setModo] = React.useState(recuperacao ? "nova-senha" : "cadastro");
+    const [modo, setModo] = React.useState(recuperacao ? "nova-senha" : "escolha");
     const [etapa, setEtapa] = React.useState(0);
     const [dir, setDir] = React.useState(1);
     const [dados, setDados] = React.useState({ nome: "", whatsapp: "", empresa: "", nicho: "", cidade: "", usuario: "", senha: "" });
@@ -73,6 +78,14 @@
     const [aviso, setAviso] = React.useState(avisoInicial || "");
     const [indo, setIndo] = React.useState(false);
     const [saindo, setSaindo] = React.useState(false);
+    const [musicaAo, setMusicaAo] = React.useState(true);
+    const musicaRef = React.useRef(null);
+    if (!musicaRef.current && typeof Audio !== "undefined") {
+      const a = new Audio(ASSETS.musica);
+      a.loop = true;
+      a.volume = 0.28;
+      musicaRef.current = a;
+    }
     const [fundo, setFundo] = React.useState(window.FundoReino ? "reino" : "reserva");
     const [validar, setValidar] = React.useState(null);  // { emailMascarado, origem, reenviado }
     const [teclado, setTeclado] = React.useState(0);
@@ -101,6 +114,7 @@
        confirmação); depois da senha a conta é criada e a pessoa entra
        (demonstração/aguardando até o ADM aprovar). */
     const ROTEIRO = {
+      escolha: [],
       cadastro: ["nome", "whatsapp", "empresa", "nicho", "cidade", "usuario", "senha", "senha2"],
       entrar: ["l-usuario", "l-senha"],
       esqueci: ["e-email"],
@@ -129,6 +143,7 @@
     /* perguntas do Reino em cada etapa */
     const pergunta = () => {
       const pn = primeiroNome(dados.nome);
+      if (modo === "escolha") return ["Bem-vindo ao Reino.", "Como você quer entrar?"];
       switch (passo) {
         case "nome": return ["Bem-vindo ao Reino. Vamos criar sua conta — é rapidinho.", "Qual é o seu nome completo?"];
         case "whatsapp": return [`Prazer, ${pn}. Qual é o seu WhatsApp?`, "Com DDD. É por ele que o Reino fala com você."];
@@ -188,7 +203,7 @@
     const voltar = () => {
       if (indo) return;
       if (etapa > 0) irPara(modo, etapa - 1, -1);
-      else if (modo === "entrar" || modo === "esqueci") irPara(modo === "esqueci" ? "entrar" : "cadastro", 0, -1);
+      else if (modo === "entrar" || modo === "esqueci") irPara(modo === "esqueci" ? "entrar" : "escolha", 0, -1);
     };
     const trocarModo = () => {
       if (indo) return;
@@ -210,6 +225,34 @@
       return () => { vv.removeEventListener("resize", medir); vv.removeEventListener("scroll", medir); };
     }, []);
 
+    /* música de fundo (os navegadores só liberam o som depois do primeiro toque/tecla:
+       a gente tenta no carregamento e, se bloquear, liga no primeiro gesto) */
+    const ligarMusica = React.useCallback(() => {
+      const a = musicaRef.current;
+      if (!a) return;
+      a.volume = 0.28;
+      a.play().then(() => setMusicaAo(true)).catch(() => {});
+    }, []);
+    const alternarMusica = () => {
+      const a = musicaRef.current;
+      if (!a) return;
+      if (a.paused) ligarMusica(); else { a.pause(); setMusicaAo(false); }
+    };
+    React.useEffect(() => {
+      const a = musicaRef.current;
+      if (!a) return undefined;
+      const gesto = () => ligarMusica();
+      a.play().then(() => setMusicaAo(true)).catch(() => {
+        window.addEventListener("pointerdown", gesto, { once: true });
+        window.addEventListener("keydown", gesto, { once: true });
+      });
+      return () => {
+        window.removeEventListener("pointerdown", gesto);
+        window.removeEventListener("keydown", gesto);
+        a.pause();
+      };
+    }, [ligarMusica]);
+
     /* ---------- avançar etapa ---------- */
     const avancar = () => {
       if (editandoRef.current && modo === "cadastro") { editandoRef.current = false; irPara("cadastro", passos.length - 1, 1); return; }
@@ -219,8 +262,18 @@
 
     const entrarComConta = (conta, texto) => {
       setAviso(texto || "Portão aberto. Bem-vindo ao Reino.");
-      setSaindo(true);
-      setTimeout(() => onEntrar && onEntrar(conta), 900);
+      const a = musicaRef.current;
+      setSaindo("voo");                            // a câmera olha para cima e começa a voar
+      setTimeout(() => setSaindo("flash"), 750);   // o zoom vira um flash de luz na velocidade máxima
+      setTimeout(() => setSaindo("escuro"), 1300); // tudo escuro…
+      if (a && a.volume > 0) {                     // …enquanto a música some devagar
+        const fx = setInterval(() => {
+          a.volume = Math.max(0, (a.volume || 0) - 0.04);
+          if (a.volume <= 0) clearInterval(fx);
+        }, 90);
+        setTimeout(() => clearInterval(fx), 2000);
+      }
+      setTimeout(() => onEntrar && onEntrar(conta), 2000); // …e a página entra
     };
 
     const enviar = async (e) => {
@@ -438,6 +491,7 @@ async function criarConta() {
     const vazio = semCampo ? false : !texto.trim();
     const rotuloEnviar = indo ? "Aguarde" : passo === "validar" ? "Já validei, entrar" : passo === "l-senha" ? "Entrar" : "Enviar";
     const dica = {
+      escolha: "Toque em uma das opções para começar",
       cadastro: "Enter envia · Esc volta uma etapa · depois da senha você entra",
       entrar: passo === "l-usuario" ? "Enter envia · use seu usuário ou o e-mail da conta" : "Enter envia · o olho mostra o que você digitou",
       esqueci: "Enter envia · Esc volta",
@@ -446,28 +500,37 @@ async function criarConta() {
     }[modo];
 
     return (
-      <div className={"hg-li" + (saindo ? " is-saindo" : "") + (indo ? " is-indo" : "")} onPointerDown={segurarFoco}
+      <div className={"hg-li" + (saindo ? " is-saindo is-" + saindo : "") + (indo ? " is-indo" : "")} onPointerDown={segurarFoco}
         style={{ "--li-teclado": teclado + "px" }}>
         {fundo === "reino" && window.FundoReino
           ? <window.FundoReino onFalha={() => setFundo("reserva")} />
           : <FundoReserva />}
         <span className="hg-li-veu" aria-hidden="true" />
-        <span className="hg-li-portal" aria-hidden="true" />
+        <span className="hg-li-luz" aria-hidden="true" />
+        <span className="hg-li-escuro" aria-hidden="true" />
 
         <header className="hg-li-topo">
           <span className="hg-li-marca" aria-label="REINO · Babel OS">
             <span className="hg-li-coroa" aria-hidden="true">{Icon ? <Icon name="coroa" /> : null}</span>
             <b>REINO</b><i aria-hidden="true">·</i><em>Babel OS</em>
           </span>
-          {modo === "nova-senha" ? null : (
-            <button type="button" className="hg-li-pilula" onClick={trocarModo} disabled={indo || saindo}>
-              {modo === "cadastro" || modo === "validar" ? "Já tenho conta" : "Criar conta"}
+
+          <nav className="hg-li-topo-acoes" aria-label="Ações do topo">
+            <button type="button" className={"hg-li-som" + (musicaAo ? " is-on" : "")} onClick={alternarMusica}
+              aria-pressed={musicaAo} aria-label={musicaAo ? "Desligar a música de fundo" : "Ligar a música de fundo"}
+              title={musicaAo ? "Desligar a música de fundo" : "Ligar a música de fundo"}>
+              {musicaAo ? <IcSom /> : <IcSomOff />}
             </button>
-          )}
+            {modo === "nova-senha" || modo === "escolha" ? null : (
+              <button type="button" className="hg-li-pilula" onClick={trocarModo} disabled={indo || saindo}>
+                {modo === "cadastro" || modo === "validar" ? "Já tenho conta" : "Criar conta"}
+              </button>
+            )}
+          </nav>
         </header>
 
         <main className="hg-li-palco" aria-labelledby="li-titulo">
-          <h1 id="li-titulo" className="hg-li-sr">{modo === "cadastro" ? "Criar conta no Reino" : modo === "validar" ? "Validar e-mail" : modo === "esqueci" ? "Recuperar acesso" : modo === "nova-senha" ? "Nova senha" : "Entrar no Reino"}</h1>
+          <h1 id="li-titulo" className="hg-li-sr">{modo === "escolha" ? "Escolha como entrar no Reino" : modo === "cadastro" ? "Criar conta no Reino" : modo === "validar" ? "Validar e-mail" : modo === "esqueci" ? "Recuperar acesso" : modo === "nova-senha" ? "Nova senha" : "Entrar no Reino"}</h1>
 
           {progresso >= 0 ? (
             <div className="hg-li-progresso" aria-label={passoCadastroIdx < TOTAL ? `Etapa ${passoCadastroIdx + 1} de ${TOTAL}: ${ROTULOS[passoCadastroIdx]}` : "Resumo do cadastro"}>
@@ -512,6 +575,20 @@ async function criarConta() {
             </div>
           </div>
 
+          {modo === "escolha" ? (
+            <div className="hg-li-escolha" role="group" aria-label="Como você quer entrar">
+              <div className="hg-li-escolha-cartoes">
+                <button type="button" className="hg-li-escolha-btn is-cadastro" onClick={() => irPara("cadastro", 0, 1)} disabled={indo || saindo}>
+                  <span className="hg-li-escolha-ico" aria-hidden="true"><IcCadastro /></span>
+                  <span className="hg-li-escolha-item"><b>Fazer cadastro</b><small>Crio minha conta · leva uns 2 minutos</small></span>
+                </button>
+                <button type="button" className="hg-li-escolha-btn is-entrar" onClick={() => irPara("entrar", 0, 1)} disabled={indo || saindo}>
+                  <span className="hg-li-escolha-ico" aria-hidden="true"><IcSeta /></span>
+                  <span className="hg-li-escolha-item"><b>Já tenho conta</b><small>Entro com usuário e senha</small></span>
+                </button>
+              </div>
+            </div>
+          ) : (
           <form className="hg-li-barra" onSubmit={enviar} noValidate aria-busy={indo}>
             <div className="hg-li-barra-dentro" ref={barraRef}>
               {ondaId > 0 ? <span key={ondaId} className="hg-li-onda" aria-hidden="true" onAnimationEnd={() => setOndaId(0)} /> : null}
@@ -552,6 +629,7 @@ async function criarConta() {
               </button>
             </div>
           </form>
+          )}
 
           <p className="hg-li-dica" aria-live="polite">
             {indo ? "Criando sua conta no Reino…" : dica}

@@ -73,10 +73,14 @@
     const r = rng(11);
     return Array.from({ length: 42 }, () => ({ x: 60 + r() * 1600, y: 570 + r() * 320, k: 2 + Math.floor(r() * 3), ph: r(), ph2: r(), amp: 8 + r() * 22, rise: 70 + r() * 110, s: 2 + r() * 3 }));
   })();
+  // naves: cada uma cruza o céu inteiro (entram fora da tela num lado e saem do outro),
+  // só o acender/apagar acontece junto às bordas — nunca somem no meio do caminho
   const SHIPS = [
-    { x0: 810, x1: 1020, y: 160, w: 34, k: 1, dir: 1, tilt: -2, ph: 0 },
-    { x0: 1000, x1: 1250, y: 55, w: 22, k: 2, dir: -1, tilt: 1, ph: 0.3 },
-    { x0: 880, x1: 1010, y: 278, w: 26, k: 1, dir: 1, tilt: 0, ph: 0.5 },
+    { x0: -110, x1: 1760, y: 150, w: 40, k: 1, dir: 1, tilt: -2, ph: 0 },
+    { x0: -110, x1: 1760, y: 52, w: 26, k: 2, dir: -1, tilt: 1, ph: 0.15 },
+    { x0: -110, x1: 1760, y: 300, w: 30, k: 1, dir: 1, tilt: 0, ph: 0.35 },
+    { x0: -110, x1: 1760, y: 96, w: 20, k: 3, dir: -1, tilt: 1, ph: 0.5 },
+    { x0: -110, x1: 1760, y: 252, w: 22, k: 2, dir: 1, tilt: 0, ph: 0.6 },
   ];
   const FALLS = [[722, 452, 42, 95], [620, 480, 42, 60], [1357, 460, 40, 95], [1557, 405, 40, 80], [307, 390, 32, 55], [1640, 385, 28, 45], [1290, 368, 26, 42]];
   const DIPS = [[9.4, 0.55, 0.16], [14.75, 0.4, 0.1], [16.9, 0.3, 0.12]];
@@ -166,7 +170,7 @@
           const p = frac(T / TOTAL * sh.k * SPD + sh.ph);
           const x = sh.dir > 0 ? sh.x0 + p * (sh.x1 - sh.x0) : sh.x1 - p * (sh.x1 - sh.x0);
           const y = sh.y + 2.5 * Math.sin(TAU * (p * 3 + i));
-          const fade = clamp(Math.min(p, 1 - p) / 0.14, 0, 1);
+          const fade = clamp(Math.min(X(x) - 12, IW - 12 - X(x)) / 22, 0, 1); // só some bem junto das duas bordas da tela
           const pisca = Math.pow(0.5 + 0.5 * wave(T, 30, i * 0.3), 10);
           const w = sh.w, h = w * 0.3;
           return (
