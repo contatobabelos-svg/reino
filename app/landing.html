@@ -1,0 +1,341 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reino · O clube de network com inteligência artificial</title>
+<meta name="description" content="O clube de network onde a inteligência artificial encontra seus próximos clientes. Primeira Corte com acesso antes da inauguração — portão abre em 23 de outubro.">
+<link rel="stylesheet" href="../design-system/styles.css">
+<style>
+  :root{
+    --font-d:"Exo 2",system-ui,sans-serif;
+    --font:"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg,#030817)}
+  body{color:var(--text,#e6efff);font-family:var(--font);overflow-x:hidden;
+    background:radial-gradient(1200px 700px at 50% -10%,rgba(63,227,255,.10),transparent 60%),
+               radial-gradient(1000px 600px at 90% 10%,rgba(139,92,255,.12),transparent 55%),
+               radial-gradient(900px 600px at 8% 30%,rgba(224,75,255,.08),transparent 55%),
+               var(--bg,#030817);}
+  a{color:var(--cyan,#3fe3ff);text-decoration:none}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+  h1,h2,h3,.disp{font-family:var(--font-d);font-weight:700;letter-spacing:.02em}
+  h2{font-size:clamp(1.5rem,3.4vw,2.15rem);margin:0 0 .6rem}
+  .sub{color:var(--text-2,rgba(186,204,240,.7));font-size:1.04rem;line-height:1.65}
+  .barra{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:rgba(3,8,23,.72);border-bottom:1px solid var(--line,rgba(80,140,255,.26))}
+  .barra-in{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.7rem 0}
+  .logo{font-family:var(--font-d);font-weight:700;font-size:1.15rem;letter-spacing:.24em}
+  .logo b{color:var(--cyan,#3fe3ff)}
+  .nav-links{display:flex;gap:1.1rem;font-size:.85rem;color:var(--text-2,rgba(186,204,240,.7))}
+  .nav-links a:hover{color:var(--cyan,#3fe3ff)}
+  .hero{padding:clamp(2.5rem,7vw,5rem) 0 clamp(2rem,5vw,3.5rem);text-align:center}
+  .pill{display:inline-flex;align-items:center;gap:.5rem;padding:.35rem .85rem;border-radius:999px;
+    border:1px solid rgba(63,227,255,.4);background:rgba(63,227,255,.07);color:var(--cyan,#3fe3ff);
+    font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
+  .hero h1{font-size:clamp(2rem,6vw,3.6rem);line-height:1.08;margin:.95rem auto .7rem;max-width:20ch}
+  .hero h1 .grad{background:linear-gradient(92deg,var(--cyan,#3fe3ff),var(--violet,#8b5cff) 55%,#e04bff);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .sub{max-width:62ch;margin:0 auto}
+  .acro{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin:1.6rem 0}
+  .acro span{font-family:var(--font-d);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+    padding:.34rem .7rem;border-radius:10px;border:1px solid var(--line,rgba(80,140,255,.26));
+    background:rgba(10,18,40,.55);color:var(--text-2,rgba(186,204,240,.7))}
+  .acro span b{display:block;color:var(--cyan,#3fe3ff);font-size:.52rem;letter-spacing:.3em;margin-bottom:.15rem}
+  .portao{position:relative;display:inline-block;margin:1.2rem auto .7rem;text-align:center}
+  .portao-prog{position:absolute;left:0;top:0;bottom:0;border-radius:12px;opacity:.55;
+    background:linear-gradient(90deg,var(--cyan,#3fe3ff),var(--violet,#8b5cff));width:0%}
+  .portao-btn{position:relative;display:inline-flex;align-items:center;gap:.6rem;
+    padding:.95rem 1.7rem;border-radius:14px;border:1px solid rgba(63,227,255,.55);
+    background:rgba(5,14,34,.6);color:var(--text,#e6efff);font-family:var(--font-d);
+    font-weight:700;font-size:1.02rem;letter-spacing:.05em;cursor:pointer;overflow:hidden;
+    box-shadow:0 0 22px rgba(63,227,255,.22),inset 0 0 18px rgba(63,227,255,.08);user-select:none;
+    touch-action:manipulation}
+  .portao-btn:disabled{cursor:wait}
+  .portao-btn.is-full{-webkit-text-fill-color:initial;color:#021024;border-color:var(--cyan,#3fe3ff);
+    box-shadow:0 0 40px rgba(63,227,255,.7)}
+  .portao-btn.is-full .portao-prog{border-radius:14px;opacity:1}
+  .portao .hint{display:block;font-size:.72rem;color:var(--text-3,rgba(150,175,225,.45));margin-top:.55rem}
+  .escolhas{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin:1.35rem 0 .35rem}
+  .escolha{position:relative;display:inline-flex;align-items:center;gap:.7rem;padding:1rem 1.7rem;border-radius:14px;
+    font-family:var(--font-d);font-weight:700;font-size:1.04rem;letter-spacing:.04em;overflow:hidden;
+    isolation:isolate;text-decoration:none;user-select:none;cursor:pointer;
+    transition:transform .15s ease,box-shadow .25s ease,filter .2s ease,border-color .2s ease}
+  .escolha:focus-visible{outline:2px solid var(--cyan,#3fe3ff);outline-offset:3px}
+  .escolha:hover{transform:translateY(-2px)}
+  .escolha:active{transform:translateY(0) scale(.98)}
+  .escolha>svg{width:19px;height:19px;flex:0 0 auto;transition:transform .2s ease}
+  .escolha:hover>svg{transform:translateX(3px)}
+  .escolha .pe{display:block;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;opacity:.78;font-weight:500}
+  .escolha .brilho{position:absolute;inset:0;z-index:-1;
+    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.3) 50%,transparent 70%);
+    background-size:250% 100%;animation:brilhar 3.6s linear infinite;pointer-events:none}
+  @keyframes brilhar{0%{background-position:130% 0}55%{background-position:-35% 0}100%{background-position:-35% 0}}
+  .escolha.is-cadastro{color:#021024;border:1px solid rgba(190,240,255,.75);
+    background:linear-gradient(92deg,#2fb8ff,#3fe3ff 42%,#8b5cff 118%);
+    box-shadow:0 8px 30px rgba(63,227,255,.35),inset 0 0 0 1px rgba(63,227,255,.25)}
+  .escolha.is-cadastro:hover{filter:brightness(1.07);
+    box-shadow:0 13px 44px rgba(63,227,255,.55),inset 0 0 0 1px rgba(63,227,255,.4)}
+  .escolha.is-entrar{color:var(--text,#e6efff);border:1px solid rgba(63,227,255,.5);
+    background:rgba(6,16,38,.74);box-shadow:0 8px 24px rgba(0,0,0,.35),inset 0 0 18px rgba(63,227,255,.06)}
+  .escolha.is-entrar:hover{border-color:rgba(63,227,255,.9);
+    box-shadow:0 11px 36px rgba(63,227,255,.3),inset 0 0 24px rgba(63,227,255,.13)}
+  .lei-nova{font-size:.8rem;color:var(--text-3,rgba(150,175,225,.45))}
+  .secao{padding:clamp(2rem,5vw,3.4rem) 0}
+  .secao-tag{font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan,#3fe3ff);margin-bottom:.5rem}
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-top:1.6rem}
+  .cartao{position:relative;padding:1.25rem;border-radius:16px;border:1px solid var(--line,rgba(80,140,255,.26));
+    background:linear-gradient(180deg,rgba(16,26,54,.72),rgba(8,14,34,.72));
+    box-shadow:0 10px 30px rgba(0,0,0,.35);overflow:hidden}
+  .cartao::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;
+    background:linear-gradient(90deg,var(--cyan,#3fe3ff),var(--violet,#8b5cff))}
+  .cartao h3{font-size:1.02rem;margin:.15rem 0 .45rem;color:#fff}
+  .cartao p{margin:0;font-size:.9rem;line-height:1.6;color:var(--text-2,rgba(186,204,240,.7))}
+  .cartao .num{font-family:var(--font-d);font-size:.72rem;letter-spacing:.2em;color:var(--text-faint,#466);color:var(--text-3,rgba(150,175,225,.45))}
+  .cartao .ico{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;margin-bottom:.6rem;
+    border:1px solid rgba(139,92,255,.45);background:rgba(139,92,255,.12);color:var(--violet,#8b5cff);font-weight:700}
+  .rand{color:var(--green,#34e6a6);border-color:rgba(52,230,166,.45)!important;background:rgba(52,230,166,.1)!important}
+  .cip{color:var(--cyan,#3fe3ff);border-color:rgba(63,227,255,.45)!important;background:rgba(63,227,255,.1)!important}
+  .aur{color:var(--gold,#f5c76a);border-color:rgba(245,199,106,.45)!important;background:rgba(245,199,106,.1)!important}
+  .ros{color:#e04bff;border-color:rgba(224,75,255,.45)!important;background:rgba(224,75,255,.1)!important}
+  .babel{display:grid;grid-template-columns:1.1fr 1fr;gap:1.4rem;align-items:center}
+  .metricas{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.8rem}
+  .metrica{padding:1rem;border-radius:14px;border:1px solid rgba(245,199,106,.35);
+    background:linear-gradient(180deg,rgba(30,22,6,.5),rgba(12,10,20,.6));text-align:center}
+  .metrica .m-val{font-family:var(--font-d);font-size:1.5rem;font-weight:700;color:var(--gold,#f5c76a)}
+  .metrica .m-tag{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3,rgba(150,175,225,.45))}
+  .metrica.badge-ex{position:relative}
+  .metrica.badge-ex::after{content:"exemplo";position:absolute;top:.45rem;right:.55rem;font-size:.6rem;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--text-3,rgba(150,175,225,.45))}
+  table{width:100%;border-collapse:collapse;margin-top:1.4rem;font-size:.92rem}
+  th{font-family:var(--font-d);text-align:left;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--text-3,rgba(150,175,225,.45));padding:.5rem .7rem;border-bottom:1px solid var(--line,rgba(80,140,255,.26))}
+  td{padding:.85rem .7rem;border-bottom:1px solid rgba(80,140,255,.12);vertical-align:top}
+  td:first-child{font-family:var(--font-d);font-weight:700;color:#fff;white-space:nowrap}
+  .tdx{font-size:.72em;letter-spacing:.08em;text-transform:uppercase;display:inline-block;padding:.18rem .55rem;
+    border-radius:999px;border:1px solid currentColor;line-height:1.4}
+  .escolhe{color:var(--cyan,#3fe3ff)}
+  .conquista{color:var(--gold,#f5c76a)}
+  .citacao{font-family:var(--font-d);font-size:clamp(1.3rem,3vw,1.9rem);font-weight:700;line-height:1.25;
+    text-align:center;max-width:24ch;margin:1.4rem auto}
+  .citacao .gold-grad{background:linear-gradient(92deg,var(--gold,#f5c76a),#ffb547 60%,var(--cyan,#3fe3ff));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  ul.limpo{list-style:none;padding:0;margin:1rem 0 0;display:grid;gap:.7rem}
+  ul.limpo li{padding-left:1.5rem;position:relative;color:var(--text-2,rgba(186,204,240,.7));font-size:.96rem;line-height:1.6}
+  ul.limpo li::before{content:"◆";position:absolute;left:0;top:.15rem;color:var(--cyan,#3fe3ff);font-size:.8rem}
+  .corte{display:grid;grid-template-columns:1.15fr .85fr;gap:1.4rem;align-items:center}
+  .faixa{background:linear-gradient(90deg,rgba(63,227,255,.10),rgba(139,92,255,.14) 50%,rgba(224,75,255,.10));
+    border:1px solid rgba(139,92,255,.4);border-radius:16px;padding:1.05rem 1.25rem;
+    display:flex;align-items:center;gap:1rem;margin-top:1.2rem}
+  .faixa .f-tit{font-family:var(--font-d);font-weight:700;color:#fff}
+  .faixa .f-sub{font-size:.82rem;color:var(--text-2,rgba(186,204,240,.7))}
+  .btns{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center;margin-top:.8rem}
+  .lanc{grid-template-columns:2fr 1fr}
+  .rodape{border-top:1px solid var(--line,rgba(80,140,255,.26));padding:2rem 0 3rem;margin-top:2rem;
+    text-align:center;color:var(--text-3,rgba(150,175,225,.45));font-size:.8rem;line-height:1.8}
+  @media (max-width:840px){
+    .nav-links{display:none}
+    .babel,.corte,.lanc{grid-template-columns:1fr}
+  }
+</style>
+</head><body>
+
+<header class="barra"><div class="wrap barra-in">
+  <div class="logo">R<b>E</b>INO</div>
+  <nav class="nav-links">
+    <a href="#como">Como funciona</a>
+    <a href="#recursos">Recursos</a>
+    <a href="#titulos">Títulos</a>
+    <a href="#primeira-corte">Primeira Corte</a>
+    <a href="#codigo">Código do Reino</a>
+  </nav>
+  <a class="hg-btn is-ghost" href="entrar.html">Já sou membro →</a>
+</div></header>
+
+<section class="hero"><div class="wrap">
+  <span class="pill">Inauguração · 23 de outubro</span>
+  <h1>O clube de network com <span class="grad">inteligência artificial</span></h1>
+  <p class="sub">O clube de network onde a IA encontra seus próximos clientes: ela analisa quem vende,
+    quem compra, localização, segmento e interesses — e produz as conexões comerciais que você ia perder.</p>
+  <div class="acro">
+    <span><b>R</b>Relacionamento</span><span><b>E</b>Empresários</span>
+    <span><b>I</b>Influência</span><span><b>N</b>Network</span><span><b>O</b>Oportunidades</span>
+  </div>
+  <div class="escolhas">
+    <a class="escolha is-cadastro" href="entrar.html" id="ctaCadastro">
+      <i class="brilho" aria-hidden="true"></i><i class="pe" aria-hidden="true">Novo no Reino</i>
+      Fazer cadastro
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+    <a class="escolha is-entrar" href="entrar.html?modo=login" id="ctaEntrar">
+      <i class="brilho" aria-hidden="true"></i><i class="pe" aria-hidden="true">Já sou do Reino</i>
+      Tenho conta
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+    </a>
+  </div>
+  <div class="portao">
+    <button class="portao-btn" id="portao" type="button"><i class="portao-prog" id="portaoProg"></i>Segure para abrir o portão</button>
+    <span class="hint" id="portaoHint">pré-cadastro gratuito · guarda o seu lugar na Primeira Corte</span>
+  </div>
+  <p class="lei-nova">Não é mais um grupo de networking. É um Reino. Com portão, código de honra e uma inteligência que trabalha por você.</p>
+</div></section>
+
+<section class="secao" id="como"><div class="wrap">
+  <div class="secao-tag">Como funciona</div>
+  <h2>Três passos, zero cerimônia</h2>
+  <div class="grid3">
+    <div class="cartao"><span class="num">1</span><div class="ico rand">♜</div><h3>Você diz quem é</h3>
+      <p>Informa o que vende, o que compra, onde atua e quais conexões procura.</p></div>
+    <div class="cartao"><span class="num">2</span><div class="ico cip">✦</div><h3>A IA cruza você com o Reino</h3>
+      <p>Analisa todos os empresários da rede simultaneamente à procura de compatibilidade.</p></div>
+    <div class="cartao"><span class="num">3</span><div class="ico aur">⚑</div><h3>Você recebe o match</h3>
+      <p>Identifica quem pode comprar de você, fornecer para você ou virar parceiro.</p></div>
+  </div>
+  <p class="sub" style="margin-top:1.4rem;text-align:center">Networking empresarial mais fácil, rápido e automatizado.</p>
+</div></section>
+
+<section class="secao" id="recursos"><div class="wrap">
+  <div class="secao-tag">Recursos</div>
+  <h2>Dentro do portão</h2>
+  <div class="grid3">
+    <div class="cartao"><div class="ico cip">❖</div><h3>Match Reino</h3><p>A IA identifica compradores, fornecedores e possíveis parceiros.</p></div>
+    <div class="cartao"><div class="ico cip">⇄</div><h3>Busca reversa</h3><p>Você publica o que precisa e recebe membros compatíveis.</p></div>
+    <div class="cartao"><div class="ico cip">⌕</div><h3>Busca inteligente</h3><p>Procure por interesse, região, reputação, desconto e nível.</p></div>
+    <div class="cartao"><div class="ico aur">❐</div><h3>Clube de Benefícios</h3><p>Descontos entre os próprios membros do Reino.</p></div>
+    <div class="cartao"><div class="ico aur">★</div><h3>Score de reputação</h3><p>Estrelas e avaliações das empresas da rede.</p></div>
+    <div class="cartao"><div class="ico ros">◈</div><h3>Rede social de negócios</h3><p>Feed empresarial onde a publicação pode virar contrato.</p></div>
+    <div class="cartao"><div class="ico ros">✎</div><h3>Revista do Reino</h3><p>Notícias sobre membros, mercado e finanças.</p></div>
+    <div class="cartao"><div class="ico ros">⌾</div><h3>Eventos e rodadas</h3><p>Rodadas de negócios e encontros que colocam a rede em movimento.</p></div>
+    <div class="cartao"><div class="ico rand">♜</div><h3>Guildas</h3><p>Divisão dos membros por segmento de atuação.</p></div>
+  </div>
+</div></section>
+
+<section class="secao"><div class="wrap babel">
+  <div>
+    <div class="secao-tag">A IA do ecossistema</div>
+    <h2>Babel trabalha o seu tempo</h2>
+    <p class="sub">A inteligência artificial que atende, vende, faz remarketing e dá suporte para empresas.
+      Vinte e quatro horas por dia. Sua empresa traz clientes para o ecossistema; a Babel conversa com eles,
+      descobre o que precisam e apresenta as empresas certas do Reino.</p>
+  </div>
+  <div class="metricas">
+    <div class="metrica badge-ex"><div class="m-val">R$ 0</div><div class="m-tag">Investimento em anúncios</div></div>
+    <div class="metrica badge-ex"><div class="m-val">0</div><div class="m-tag">Contatos recebidos</div></div>
+    <div class="metrica badge-ex"><div class="m-val">R$ 0</div><div class="m-tag">Custo por contato</div></div>
+    <div class="metrica badge-ex"><div class="m-val">0</div><div class="m-tag">Contratos fechados</div></div>
+    <div class="metrica badge-ex"><div class="m-val">R$ 0</div><div class="m-tag">Vendas no mês</div></div>
+  </div>
+</div></section>
+
+<section class="secao" id="titulos"><div class="wrap">
+  <div class="secao-tag">Títulos do Reino</div>
+  <h2>Coroa de verdade não se compra</h2>
+  <div class="citacao">“Aqui ninguém compra a coroa. <span class="gold-grad">Ela é conquistada.</span>”</div>
+  <div style="overflow-x:auto">
+  <table>
+    <thead><tr><th>Título</th><th>Como se obtém</th><th>Abre</th></tr></thead>
+    <tbody>
+      <tr><td>Visconde</td><td><span class="tdx escolhe">Você escolhe</span></td><td>Perfil no Reino, IA de pesquisa, Clube de Benefícios, rede social e 5 matches por mês.</td></tr>
+      <tr><td>Conde</td><td><span class="tdx escolhe">Você escolhe</span></td><td>Tudo do Visconde, mais matches ilimitados, Reino Academy, gestor financeiro, e-mail próprio e perfil verificado.</td></tr>
+      <tr><td>Marquês</td><td><span class="tdx escolhe">Você escolhe</span></td><td>Topo da busca, Guildas, inteligência de mercado, compras coletivas e prioridade nos contatos da Babel.</td></tr>
+      <tr><td>Duque</td><td><span class="tdx conquista">Conquista</span></td><td>Líder de uma cidade com 10 membros ativos. Preside a rodada de negócios da cidade e ganha espaço nos eventos.</td></tr>
+      <tr><td>Príncipe</td><td><span class="tdx conquista">Conquista</span></td><td>Líder estadual com 5 Duques. Cadeira e voto no Conselho, e participa da definição de novas Guildas.</td></tr>
+      <tr><td>Rei</td><td><span class="tdx conquista">Conquista</span></td><td>Líder regional com 1.000 membros ativos e 2 Príncipes. Opera a sede regional e tem voto dobrado.</td></tr>
+      <tr><td>Imperador</td><td><span class="tdx conquista">Conquista</span></td><td>Líder nacional com 5 Reis, um de cada região. O título é vitalício.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="sub" style="margin-top:1.3rem">Com a Carta de Apresentação, quem entra pelo seu link entra na sua rede — e a sua rede é o que sustenta a sua coroa.</p>
+</div></section>
+
+<section class="secao" id="primeira-corte"><div class="wrap corte">
+  <div>
+    <div class="secao-tag">Antes da inauguração</div>
+    <h2>A Primeira Corte</h2>
+    <p class="sub">Quem entra antes do portão abrir. O pré-cadastro é gratuito e não compromete você a nada —
+      ele apenas guarda o seu lugar.</p>
+    <ul class="limpo">
+      <li>Acesso antecipado ao Reino demonstrativo.</li>
+      <li>Comunidade fechada com os cofundadores.</li>
+      <li>Participação na formação inicial do Reino.</li>
+      <li>Lugar numerado no Livro do Reino.</li>
+      <li>Condição de entrada <b style="color:var(--gold,#f5c76a)">40% melhor</b> que a de quem chegar na inauguração.</li>
+    </ul>
+    <div class="btns">
+      <a class="hg-btn is-cyan" href="#" id="ctaCorte">Segure para abrir o portão</a>
+      <a class="hg-btn is-ghost" href="entrar.html">Entrar no Reino</a>
+    </div>
+  </div>
+  <div class="faixa">
+    <div>
+      <div class="f-tit">Livro do Reino</div>
+      <div class="f-sub">O portão abre em 23 de outubro. Os lugares numerados pertencem à Primeira Corte.</div>
+    </div>
+  </div>
+</div></section>
+
+<section class="secao" id="codigo"><div class="wrap">
+  <div class="secao-tag">Código do Reino</div>
+  <h2>A palavra vale mais que o contrato</h2>
+  <div class="citacao">“A palavra de um membro vale mais que o contrato.”</div>
+  <div class="grid3">
+    <div class="cartao"><div class="ico cip">○</div><h3>Todo mundo se vê</h3><p>Nome, empresa e reputação ficam visíveis. Sua história anda com você.</p></div>
+    <div class="cartao"><div class="ico cip">↗</div><h3>Quem indica responde</h3><p>Você responde pela indicação que faz. Por isso ela vale ouro.</p></div>
+    <div class="cartao"><div class="ico aur">▲</div><h3>Quem entrega bem sobe</h3><p>Quem cumpre a palavra sobe na hierarquia. Quem a quebra pode deixar de pertencer ao Reino.</p></div>
+  </div>
+  <p class="sub" style="text-align:center;margin-top:1.4rem">Por isso, aqui, negócio se fecha na confiança.</p>
+</div></section>
+
+<section class="secao"><div class="wrap lanc">
+  <div>
+    <div class="secao-tag">Para todo empresário</div>
+    <h2>Do MEI à indústria</h2>
+    <p class="sub">O Reino é para todo empresário que quer crescer em rede. Reuniões não são obrigatórias:
+      a IA faz os matches automaticamente, enquanto eventos e rodadas ficam por sua conta quando você quiser ir.</p>
+  </div>
+  <div class="cartao"><div class="ico ros">✉</div><h3>Carta de Apresentação</h3>
+    <p>Cada membro tem um link único. Quem entra por ele fica associado à sua rede — e a sua rede constrói a sua coroa.</p>
+    <a href="entrar.html" style="font-size:.9rem">Entrar e receber a sua Carta →</a>
+  </div>
+</div></section>
+
+<footer class="rodape"><div class="wrap">
+  Reino · O clube de network com inteligência artificial<br>
+  <a href="entrar.html">Entrar</a> · <a href="#como">Como funciona</a> · <a href="#primeira-corte">Primeira Corte</a> · <a href="#titulos">Títulos</a>
+</div></footer>
+
+<script>
+(function(){
+  var raiz = new URLSearchParams(location.search).get("ref");
+  var destino = "entrar.html" + (raiz ? "?ref=" + encodeURIComponent(raiz) : "");
+  var cadastro = document.getElementById("ctaCadastro");
+  var entrar = document.getElementById("ctaEntrar");
+  var ctaCorte = document.getElementById("ctaCorte");
+  if (cadastro) cadastro.href = destino;
+  if (entrar) entrar.href = (raiz ? "entrar.html?ref=" + encodeURIComponent(raiz) + "&modo=login" : "entrar.html?modo=login");
+  if (ctaCorte) ctaCorte.href = destino;
+  var portao = document.getElementById("portao");
+  var prog = document.getElementById("portaoProg");
+  var hint = document.getElementById("portaoHint");
+  var timer = null, apertura = 0, completo = false;
+  function ir(){ location.href = destino; }
+  function zerar(){ if(timer){ clearInterval(timer); timer = null; } if(!completo){ apertura = 0; prog.style.width = "0%"; portao.classList.remove("is-full"); } }
+  function segurando(){
+    if(completo) return;
+    timer = setInterval(function(){
+      apertura += 6;
+      if(apertura >= 100){
+        apertura = 100; completo = true; clearInterval(timer); timer = null;
+        portao.classList.add("is-full"); portao.disabled = true;
+        hint.textContent = "portão abrindo…";
+        prog.style.width = "100%";
+        setTimeout(ir, 520);
+      } else { prog.style.width = apertura + "%"; hint.textContent = "segurando…"; }
+    }, 60);
+  }
+  portao.addEventListener("pointerdown", segurando);
+  window.addEventListener("pointerup", zerar);
+  window.addEventListener("pointercancel", zerar);
+  portao.addEventListener("click", function(){ if(!completo) ir(); });
+  if(raiz){ hint.textContent = "você chegou pela Carta de " + raiz + " · já vai entrar no seu cadastro"; }
+})();
+</script>
+</body></html>
