@@ -337,7 +337,7 @@ Fundador: quer a opção de "já tenho conta ou cadastrar" na própria tela de l
 - [x] AQ1 `LoginImersivo.jsx`: nova primeira tela `modo: "escolha"` com os dois botões ("Fazer cadastro" e "Já tenho conta") no lugar da barra de comando; ao escolher, o carrossel segue como antes (cadastro 7 campos ou entrar usuário/senha); Esc dentro de "entrar" na etapa 1 volta para a escolha; pílula "Criar conta/Já tenho conta" some na escolha para não duplicar; h1 e dica de acessibilidade atualizados.
 - [x] AQ2 `login-imersivo.css`: cartões vidro "hg-li-escolha" — "Fazer cadastro" com gradiente ciano→violeta da casa + reflexo, "Já tenho conta" com vidro transparente; empilham no celular.
 - [x] AQ3 Verificado local (montar-site.sh + Playwright headless): `/` mostra a escolha com as duas bolhas de boas-vindas; "Fazer cadastro" → "Etapa 1 de 7 · Nome"; "Já tenho conta" → campo "Usuário ou e-mail". Dominic ok.
-- [ ] AQ4 Publicar no `main` (Vercel) — pedir o OK do fundador.
+- [x] AQ4 Publicado no `main` (Vercel) em `cc66e2f` — validar em https://o-reino.vercel.app.
 
 ## AR — afinamentos da tela de escolha + naves + entrada (24/09)
 Fundador (na tela de escolha que ficou pronta): "abaixa a altura pra ficar igual um botão", "os dois vêm apagados, ao passar o mouse ele acende e uma luz na borda fica girando estilo neon para mostrar energia", "as naves no fundo não desaparecem, elas voam até o fim da tela", "remover a animação flash ao entrar; a câmera olha pra cima e voa em direção a um portal na velocidade da luz, fica tudo escuro e aí a página entra".
@@ -348,4 +348,4 @@ Fundador (na tela de escolha que ficou pronta): "abaixa a altura pra ficar igual
 - [x] AR5 Verificado local: Playwright (botões 56px, hover acende + neon girando, navegação certa, camadas luz/portal/escuro presentes) e análise de pixels dos quadros do vídeo novo (naves nos dois extremos x<100 e x>1830 do ciclo). Dominic sem bloqueio. `montar-site.sh` re-rodado.
 - [x] AR6 Portal removido: camada `hg-li-portal` e as animações `hg-li-portal-forja`/`hg-li-portal-gira` saíram do CSS e do JSX; a saída ficou só com `voo → flash → escuro` (renomeei a fase `tunel` → `flash` e o keyframe `hg-li-luz-tunel` → `hg-li-luz-flash`).
 - [x] AR7 Música de fundo no login: faixa "Frequência de Deus – 963 Hz" (youtu.be/SX0vVb12Zaw) baixada via yt-dlp, recortada num loop de 3 min com crossfade (`assets/login/fundo-musica.mp3`, ~2,8 MB; o original de 3 h ficou em /tmp). `<audio>` em loop, volume 0.28; os navegadores bloqueiam o som até o primeiro gesto, então ele tenta tocar sozinho e liga no primeiro toque/tecla se não puder. Botão `.hg-li-som` no topo liga/desliga (ícone de caixa de som acende quando está tocando); ao entrar, a música tem fade-out no fim do zoom.
-- [ ] AR8 Publicar no `main` (Vercel) — pedir o OK do fundador junto do AQ4.
+- [x] AR8 Publicado no `main` (Vercel) em `cc66e2f` junto do AQ4 — validar em https://o-reino.vercel.app.
