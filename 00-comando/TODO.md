@@ -325,3 +325,9 @@ Auditoria completa (RLS, edge functions, auth, frontend, deploy, git) entregue n
 - [ ] AO10 Fala no chat depende do `titulo` que a pessoa edita no próprio perfil (`perfis_editar` deixa) — decisão de permissão com o fundador (título só-admin ou regra por `situacao`)
 - [ ] AO11 Restringir a chave `REINO_GOOGLE` a um referrer no Google Cloud (fundador) e decidir se `avatares` continua bucket público
 - [ ] AO12 Sessão (access+refresh) fora do `localStorage` (memória + refresh próprio) — refactor grande, não entrou neste lote
+
+## AP — (REVERTIDO) landing na raiz com botões Tenho conta/Fazer cadastro (24/09)
+Fundador pediu "botão na tela inicial: tenho conta / fazer cadastro" e depois mandou voltar: "não é o que eu pedí, volte uma atualização para trás como estava a paisagem do Reino". A raiz voltou a ser o login imersivo (paisagem em vídeo), como antes.
+- [x] AP1 Criei `app/landing.html` (marketing: R-E-I-N-O, como funciona, recursos, Babel, títulos, Primeira Corte) e fiz "/" virar a landing no `vercel.json`; botões "Fazer cadastro" e "Tenho conta" com `?modo=login` no carrossel (`LoginImersivo.jsx`). Commit `3f57442` foi ao ar.
+- [x] AP2 Revertido pelo commit `bf2efed` (revert de `3f57442`): `landing.html` removido, `vercel.json` voltou "/" → `/entrar.html` (paisagem do Reino de volta), `LoginImersivo.jsx` sem o `?modo`. Publicado no `main` e local rebuiledo sem a landing.
+- [ ] AP3 Se o fundador quiser só os botões dentro da TELA DE LOGIN (paisagem atual) em vez de landing, é um pedido novo.
