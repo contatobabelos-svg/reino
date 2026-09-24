@@ -87,7 +87,10 @@
     if (c.length < 3) return { ok: false, motivo: "Use pelo menos 3 letras." };
     if (!CFG()) return { ok: true, codigo: c, local: true };
     try {
-      const r = await rest("codigos", "GET", null, "codigo=eq." + encodeURIComponent(c) + "&select=codigo,user_id");
+      /* auditoria 24/09: anônimo só pode ler a coluna codigo (não vê de quem é o código);
+         logado pede user_id também, para reconhecer o próprio código. */
+      const cols = sessao && sessao.id ? "codigo,user_id" : "codigo";
+      const r = await rest("codigos", "GET", null, "codigo=eq." + encodeURIComponent(c) + "&select=" + cols);
       const dono = r && r[0];
       if (!dono) return { ok: true, codigo: c };
       if (sessao && dono.user_id === sessao.id) return { ok: true, codigo: c, meu: true };
@@ -293,6 +296,8 @@
     entrarUsuario, reenviarConfirmacao, cadastrarCompleto, usuarioDisponivel,
     codigoLivre, reservarCodigo, limpar, assumir,
     online: () => !!CFG(), token,
-    trocarSenha: async (nova) => { if (!CFG() || !sessao || !sessao.token) throw new Error("Entre novamente para trocar a senha."); const r = await fetch(base() + "/auth/v1/user", { method: "PUT", headers: cab({ Authorization: "Bearer " + sessao.token }), body: JSON.stringify({ password: nova }) }); if (!r.ok) throw new Error(erroDe(await r.json().catch(() => ({})), r)); return true; },
+    /* auditoria 24/09: trocou a senha no Auth → a conta é madura (senha_definida true). O banco
+       só permite true vindas de false; tentar voltar para false é travado pelo gatilho. */
+    trocarSenha: async (nova) => { if (!CFG() || !sessao || !sessao.token) throw new Error("Entre novamente para trocar a senha."); const r = await fetch(base() + "/auth/v1/user", { method: "PUT", headers: cab({ Authorization: "Bearer " + sessao.token }), body: JSON.stringify({ password: nova }) }); if (!r.ok) throw new Error(erroDe(await r.json().catch(() => ({})), r)); try { await rest("perfis", "PATCH", { senha_definida: true }, "id=eq." + sessao.id); } catch (e) {} return true; },
   };
 })();

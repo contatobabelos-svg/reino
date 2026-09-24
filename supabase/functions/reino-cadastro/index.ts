@@ -4,12 +4,15 @@
 // cadastro e depois reentra por eles no "Já tenho conta". Empresa, nicho e cidade vão direto
 // para o perfil; sem foto e sem CAPTCHA (decisão do fundador em AN).
 //
-// Reentrada: se o WhatsApp já tem conta, o sistema reconhece o número, abre a sessão
-// da conta existente (situação que vem do banco — aguardando = demonstração, membro/admin =
-// completo), atualiza nome/empresa/nicho/cidade que a pessoa redigiu, e GRAVA o usuário e a
-// senha digitados — é assim que contas antigas (que nasceram com senha aleatória) passam a
-// ter login por usuário+senha. Usuário alheio é barrado; o atual dela pode ser trocado por
-// outro livre. A sessão sai por um magic link gerado e trocado aqui dentro.
+// Reentrada: se o WhatsApp já tem conta, o sistema reconhece o número e abre a sessão da conta
+// existente (situação que vem do banco — aguardando = demonstração, membro/admin = completo).
+// Auditoria 24/09 (CRÍTICA): reentrar NUNCA mais sobrescreve a senha de uma conta que já tem a
+// dela. Conta madura (perfis.senha_definida = true) só abre a sessão quem digita a senha ATUAL
+// (signInWithPassword — a senha digitada nunca é gravada) e só preenche nome/empresa/nicho/cidade/
+// usuário que faltam (fill-only, subindo o que a pessoa redigiu). Conta legada (senha_definida =
+// false — nasceu com senha aleatória no período AJ/AN, sem usuário) tem UMA janela: a senha e o
+// usuário digitados passam a ser os dela e ela fica madura. Usuário alheio é barrado; o atual pode
+// ser trocado por outro livre. Limite de reentradas por conta (10 em 5 min).
 //
 // Conta nova nasce com a SENHA DIGITADA (não aleatória) e o usuário nos metadados — o
 // gatilho privado.criar_perfil copia o usuário para perfis.usuario, e o "Já tenho conta"
@@ -161,34 +164,75 @@ Deno.serve(async (req) => {
     const s = `${(e as { code?: unknown })?.code ?? ""} ${(e as { message?: unknown })?.message ?? ""} ${(e as { error_code?: unknown })?.error_code ?? ""}`.toLowerCase();
     return /weak_password|password is known to be weak|too easy to guess|null_password|pwned/i.test(s) || /weak/i.test(s);
   };
-  const atualizarPerfil = async (id: string, usuarioAtual: string | null): Promise<string | null> => {
-    // reentrada: redigitou os dados; atualiza o que era editável e ajunta o título escolhido
-    const patch: Record<string, unknown> = { nome, empresa, nicho, cidade };
-    if (titulo) patch.titulo = titulo;
-    // o usuário digitado troca o atual só se estiver livre (já conferido antes)
-    if (usuario !== usuarioAtual) patch.usuario = usuario;
-    const { error: ePerfil } = await admin.from("perfis").update(patch).eq("id", id);
+  // preenche só o que faltou no perfil (fill-only): nunca pisa em nome/empresa/nicho/cidade/título
+  // que o dono já tem ou já editou em Minha conta; o usuário digitado troca o atual só se estiver
+  // livre (já conferido antes)
+  const preencherPerfil = async (ja: { id: string } & Record<string, unknown>): Promise<void> => {
+    const preenchido = (v: unknown) => typeof v === "string" && v.trim() !== "";
+    const patch: Record<string, unknown> = {};
+    if (!preenchido(ja.nome) && nome) patch.nome = nome;
+    if (!preenchido(ja.empresa) && empresa) patch.empresa = empresa;
+    if (!preenchido(ja.nicho) && nicho) patch.nicho = nicho;
+    if (!preenchido(ja.cidade) && cidade) patch.cidade = cidade;
+    if (titulo && !preenchido(ja.titulo)) patch.titulo = titulo;
+    if (usuario !== (ja.usuario ?? null)) patch.usuario = usuario;
+    if (!Object.keys(patch).length) return;
+    const { error: ePerfil } = await admin.from("perfis").update(patch).eq("id", ja.id);
     if (ePerfil) console.error("perfis.update na reentrada", ePerfil);
-    // a senha digitada vira a senha da conta (é assim que contas antigas passam a relogar por ela)
-    const { error: eSenha } = await admin.auth.admin.updateUserById(id, { password: senha });
-    if (eSenha) {
-      if (senhaFraca(eSenha)) return "Escolha uma senha mais forte para a sua conta. Misture letras, números e símbolos.";
-      console.error("updateUserById (senha) na reentrada", eSenha);
-    }
-    return null;
   };
 
   // ------------------------------------------------------------ reentrada pelo WhatsApp (conta já existe)
   if (wppJa === true) {
-    const { data: ja } = await admin.from("perfis").select("id, usuario").eq("whatsapp", whatsapp).maybeSingle();
+    // senha_definida vem da migração 2026-09-24_reentrada_exige_senha.sql — aplique-a antes desta função
+    const { data: ja, error: ePer } = await admin.from("perfis")
+      .select("id, usuario, senha_definida, titulo, nome, empresa, nicho, cidade")
+      .eq("whatsapp", whatsapp).maybeSingle();
+    if (ePer) { console.error("perfis.select na reentrada", ePer); return erro("servidor", "Não foi possível reconhecer seu WhatsApp agora. Tente de novo.", undefined, 500); }
     if (!ja) { console.error("whatsapp sem perfil?", whatsapp); return erro("servidor", "Não foi possível reconhecer seu WhatsApp agora. Tente de novo.", undefined, 500); }
     const id = ja.id as string;
     // o usuário digitado pertence a outra conta: pede outro (o dela continua valendo)
     if (usuarioEmUso && usuario !== (ja.usuario ?? null)) {
       return erro("usuario_em_uso", "Esse usuário já pertence a outra conta. Escolha outro.", "usuario");
     }
-    const msgSenha = await atualizarPerfil(id, ja.usuario ?? null);
-    if (msgSenha) return erro("senha_fraca", msgSenha, "senha");
+    // auditoria 24/09: senha errada repetida (ou tentativa de reentrar) não pode martelar — 10 em 5 min por conta
+    if (!(await cabe(`reentry:${id}`, 10))) {
+      return erro("muitas_tentativas", "Muitas reentradas seguidas nesta conta. Aguarde alguns minutos e tente de novo.", undefined, 429);
+    }
+
+    let ses: { access_token: string; refresh_token: string; id: string } | null = null;
+    const legada = ja.senha_definida === false;
+
+    if (legada) {
+      // ÚNICA janela: conta nasceu com senha aleatória (período AJ/AN). A senha e o usuário
+      // digitados passam a ser os dela — depois disso ela é madura e exige a senha atual.
+      await preencherPerfil(ja);
+      const { error: eSenha } = await admin.auth.admin.updateUserById(id, { password: senha });
+      if (eSenha) {
+        if (senhaFraca(eSenha)) return erro("senha_fraca", "Escolha uma senha mais forte para a sua conta. Misture letras, números e símbolos.", "senha");
+        console.error("updateUserById (senha) na reentrada legada", eSenha, id);
+        return erro("servidor", "Não foi possível salvar a sua senha agora. Tente de novo.", undefined, 500);
+      }
+      ses = await abrirSessao(id, ip);
+      if (!ses) return erro("servidor", "Não foi possível abrir a sua conta agora. Tente de novo.", undefined, 500);
+      const { error: eMarca } = await admin.from("perfis").update({ senha_definida: true }).eq("id", id);
+      if (eMarca) console.error("senha_definida=true na reentrada legada", eMarca, id);
+    } else {
+      // CONTA MADURA: só abre a sessão quem digita a senha ATUAL (o Auth confere); a senha
+      // digitada nunca é gravada aqui. Usuário/telefone não fazem parte desta prova.
+      const { data: au } = await admin.auth.admin.getUserById(id);
+      const emailAuth = au?.user?.email;
+      if (!emailAuth) { console.error("sem e-mail na reentrada madura", id); return erro("servidor", "Não foi possível abrir a sua conta agora. Tente de novo.", undefined, 500); }
+      // cliente com a chave SECRETA e só o Sb-Forwarded-For (C5): o Auth conta o limite por pessoa
+      const servidor = createClient(SUPABASE_URL, SECRETA, { ...sem, global: { headers: { "Sb-Forwarded-For": ip } } });
+      const { data: resultado, error: eEntra } = await servidor.auth.signInWithPassword({ email: emailAuth, password: senha });
+      if (eEntra || !resultado?.session) {
+        console.warn("senha não conferiu na reentrada madura", id, eEntra?.message ?? "sem sessão");
+        return erro("senha_nao_confere", "Essa conta já tem senha. Digite a senha atual para continuar.", "senha");
+      }
+      await preencherPerfil(ja);
+      ses = { access_token: resultado.session.access_token, refresh_token: resultado.session.refresh_token, id };
+    }
+
     // a linha de afiliação nasce no cadastro; na reentrada só se faltou (conta pré-hierarquia)
     const { data: linha } = await admin.from("cadastros").select("id").eq("id", id).maybeSingle();
     if (!linha) {
@@ -198,8 +242,6 @@ Deno.serve(async (req) => {
         criado_em: new Date().toISOString(),
       }).then(() => {}).catch((e) => console.error("cadastros.insert na reentrada", e));
     }
-    const ses = await abrirSessao(id, ip);
-    if (!ses) return erro("servidor", "Não foi possível abrir a sua conta agora. Tente de novo.", undefined, 500);
     return resposta({ ok: true, reentrou: true, access_token: ses.access_token, refresh_token: ses.refresh_token, user: { id: ses.id, email: null } });
   }
 

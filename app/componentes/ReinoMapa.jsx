@@ -572,7 +572,7 @@ function ReinoMapa({ uf, cidade, bairro, onVoltar }) {
                   {e.telefone || e.site ? (
                     <div style={{ display: "flex", gap: ".45rem", marginTop: ".4rem", flexWrap: "wrap" }}>
                       {e.telefone ? <a href={"tel:" + e.telefone.replace(/\D/g, "")} style={{ fontSize: ".72rem", color: "#5ad8ff", textDecoration: "none" }}>{e.telefone}</a> : null}
-                      {e.site ? <a href={e.site} target="_blank" rel="noopener noreferrer" style={{ fontSize: ".72rem", color: "#5ad8ff", textDecoration: "none" }}>site</a> : null}
+                      {e.site && /^https?:\/\//i.test(e.site) ? <a href={e.site} target="_blank" rel="noopener noreferrer" style={{ fontSize: ".72rem", color: "#5ad8ff", textDecoration: "none" }}>site</a> : null}
                     </div>
                   ) : null}
                   {cartoes.origem === "regiao" ? <span style={{ display: "block", fontSize: ".68rem", color: "rgba(234,243,255,.42)", marginTop: ".4rem", fontStyle: "italic" }}>Fonte: Google Maps · não é membro do Reino</span> : null}
